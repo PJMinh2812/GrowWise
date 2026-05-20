@@ -1,4 +1,7 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_state.dart';
 import '../../theme/app_theme.dart';
@@ -14,330 +17,329 @@ class ChildDashboard extends StatefulWidget {
 }
 
 class _ChildDashboardState extends State<ChildDashboard> {
-  int _currentIndex = 0;
+  int _tab = 0;
 
   @override
   Widget build(BuildContext context) {
     return Theme(
       data: AppTheme.childTheme(),
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('🌱 GrowWise - Player Hub'),
-          actions: [
-            Container(
-              margin: const EdgeInsets.only(right: 12),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                children: [
-                  const Text('🪙', style: TextStyle(fontSize: 16)),
-                  const SizedBox(width: 4),
-                  Consumer<AppState>(
-                    builder: (context, appState, _) => Text(
-                      '${appState.totalCoins}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+        backgroundColor: AppTheme.bg,
         body: IndexedStack(
-          index: _currentIndex,
-          children: [
-            _buildHome(),
-            const ChildTaskList(),
-            const ChildJars(),
-            const ChildDreamJar(),
-          ],
+          index: _tab,
+          children: const [_HomeTab(), ChildTaskList(), ChildJars(), ChildDreamJar()],
         ),
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: _currentIndex,
-          onDestinationSelected: (i) => setState(() => _currentIndex = i),
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.home_rounded),
-              label: 'Trang chủ',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.assignment),
-              label: 'Nhiệm vụ',
-            ),
-            NavigationDestination(icon: Icon(Icons.savings), label: '3 Hũ'),
-            NavigationDestination(icon: Icon(Icons.star), label: 'Ước mơ'),
-          ],
+        bottomNavigationBar: _BottomNav(
+          current: _tab,
+          onTap: (i) => setState(() => _tab = i),
         ),
       ),
     );
   }
+}
 
-  Widget _buildHome() {
-    return Consumer<AppState>(
-      builder: (context, appState, _) => SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+class _BottomNav extends StatelessWidget {
+  final int current;
+  final ValueChanged<int> onTap;
+  const _BottomNav({required this.current, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    const tabs = [
+      (Icons.home_rounded, Icons.home_outlined, 'Trang chủ'),
+      (Icons.assignment_rounded, Icons.assignment_outlined, 'Nhiệm vụ'),
+      (Icons.savings_rounded, Icons.savings_outlined, '3 Hũ'),
+      (Icons.star_rounded, Icons.star_outline_rounded, 'Ước mơ'),
+    ];
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: AppTheme.border)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: 60,
+          child: Row(
+            children: tabs.asMap().entries.map((e) {
+              final i = e.key;
+              final t = e.value;
+              final active = current == i;
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () => onTap(i),
+                  behavior: HitTestBehavior.opaque,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        active ? t.$1 : t.$2,
+                        size: 22,
+                        color: active ? AppTheme.green : AppTheme.textHint,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        t.$3,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 10,
+                          fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                          color: active ? AppTheme.green : AppTheme.textHint,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Home Tab ─────────────────────────────────────────────────────────────────
+
+class _HomeTab extends StatelessWidget {
+  const _HomeTab();
+
+  @override
+  Widget build(BuildContext context) {
+    final app = context.watch<AppState>();
+    final pending = app.pendingTasks.length;
+    final done = app.approvedTasks.length;
+
+    return CustomScrollView(
+      physics: const ClampingScrollPhysics(),
+      slivers: [
+        SliverToBoxAdapter(
+          child: _HeroSection(app: app),
+        ),
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+          sliver: SliverList(
+            delegate: SliverChildListDelegate([
+              // Bonding card
+              if (app.bondingMessage.isNotEmpty) ...[
+                _BondCard(message: app.bondingMessage)
+                    .animate(delay: 200.ms).fadeIn(duration: 400.ms),
+                const SizedBox(height: 16),
+              ],
+
+              // Today summary
+              _TodaySummary(pending: pending, done: done)
+                  .animate(delay: 300.ms).fadeIn(duration: 400.ms).slideY(begin: 0.06, end: 0),
+              const SizedBox(height: 20),
+
+              // Jar balances
+              _JarRow(app: app)
+                  .animate(delay: 400.ms).fadeIn(duration: 400.ms).slideY(begin: 0.06, end: 0),
+              const SizedBox(height: 20),
+
+              // Badges
+              if (app.badges.isNotEmpty) ...[
+                _Badges(badges: app.badges)
+                    .animate(delay: 500.ms).fadeIn(duration: 400.ms),
+                const SizedBox(height: 20),
+              ],
+            ]),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _HeroSection extends StatefulWidget {
+  final AppState app;
+  const _HeroSection({required this.app});
+
+  @override
+  State<_HeroSection> createState() => _HeroSectionState();
+}
+
+class _HeroSectionState extends State<_HeroSection>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _xpCtrl;
+  late Animation<double> _xpAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _xpCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    );
+    final pct = widget.app.xpToNextLevel > 0
+        ? widget.app.xp / widget.app.xpToNextLevel
+        : 0.0;
+    _xpAnim = Tween<double>(begin: 0, end: pct.clamp(0.0, 1.0)).animate(
+      CurvedAnimation(parent: _xpCtrl, curve: Curves.easeOutCubic),
+    );
+    Future.delayed(500.ms, () { if (mounted) _xpCtrl.forward(); });
+  }
+
+  @override
+  void dispose() {
+    _xpCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final app = widget.app;
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 28),
+      child: SafeArea(
+        bottom: false,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Profile Card
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF66BB6A), Color(0xFF43A047)],
-                ),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.primaryGreen.withValues(alpha: 0.4),
-                    blurRadius: 15,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 60,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.3),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Center(
-                          child: Text(
-                            appState.childAvatarEmoji,
-                            style: const TextStyle(fontSize: 36),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Xin chào, ${appState.childName}! 👋',
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.25),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(
-                              '⭐ Level ${appState.level} - Nhà Thám Hiểm',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  // XP Bar
-                  Column(
+            const SizedBox(height: 20),
+            // Top row: greeting + coin badge
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Kinh nghiệm: ${appState.xp}/${appState.xpToNextLevel} XP',
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.9),
-                              fontSize: 13,
-                            ),
-                          ),
-                          Text(
-                            'Level ${appState.level + 1} →',
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.7),
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: LinearProgressIndicator(
-                          value: appState.xp / appState.xpToNextLevel,
-                          minHeight: 10,
-                          backgroundColor: Colors.white.withValues(alpha: 0.3),
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                            AppTheme.accentYellow,
-                          ),
+                      Text(
+                        'Xin chào,',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 14,
+                          color: AppTheme.textHint,
                         ),
                       ),
+                      Text(
+                        app.childName,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w900,
+                          color: AppTheme.textPrimary,
+                          letterSpacing: -0.8,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // Voice note / message from parent
-            if (appState.bondingMessage.isNotEmpty)
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFF3E0),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: AppTheme.accentOrange.withValues(alpha: 0.3),
-                  ),
+                  ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.1, end: 0),
                 ),
-                child: Row(
+                // Coin display
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    const Text('💌', style: TextStyle(fontSize: 32)),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Tin nhắn từ Bố/Mẹ!',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '"${appState.bondingMessage}"  💛',
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
-                        ],
+                    Text(
+                      '${app.totalCoins}',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w900,
+                        color: const Color(0xFFF59E0B),
+                        letterSpacing: -1,
+                      ),
+                    ),
+                    Text(
+                      '🪙 xu tích lũy',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 11,
+                        color: AppTheme.textHint,
                       ),
                     ),
                   ],
-                ),
-              ),
-            if (appState.bondingMessage.isNotEmpty) const SizedBox(height: 20),
-
-            // Badges
-            const Text(
-              '🏅 Huy hiệu của con',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: appState.badges.map((badge) {
-                return Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppTheme.accentYellow.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppTheme.accentYellow),
-                  ),
-                  child: Text(
-                    badge,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 20),
-
-            // Quick 3-jar summary
-            const Text(
-              '💰 Tổng tài sản',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                _QuickJar(
-                  '🛒',
-                  'Tiêu dùng',
-                  appState.spendJar,
-                  const Color(0xFFE3F2FD),
-                ),
-                const SizedBox(width: 8),
-                _QuickJar(
-                  '🏦',
-                  'Tiết kiệm',
-                  appState.saveJar,
-                  const Color(0xFFE8F5E9),
-                ),
-                const SizedBox(width: 8),
-                _QuickJar(
-                  '💝',
-                  'Sẻ chia',
-                  appState.shareJar,
-                  const Color(0xFFFCE4EC),
-                ),
+                ).animate(delay: 100.ms).fadeIn(duration: 400.ms),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
 
-            // AI Smart Planner
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFE8EAF6), Color(0xFFE1F5FE)],
-                ),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                children: [
-                  const Text('🤖', style: TextStyle(fontSize: 32)),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'AI Smart Planner',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
+            // Level + XP arc
+            Row(
+              children: [
+                // XP arc
+                SizedBox(
+                  width: 80,
+                  height: 80,
+                  child: AnimatedBuilder(
+                    animation: _xpAnim,
+                    builder: (ctx, child) => CustomPaint(
+                      painter: _ArcPainter(
+                        progress: _xpAnim.value,
+                        bgColor: AppTheme.border,
+                        fgColor: AppTheme.green,
+                        strokeWidth: 8,
+                      ),
+                      child: child,
+                    ),
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '${app.level}',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w900,
+                              color: AppTheme.textPrimary,
+                            ),
                           ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          'Con cần làm thêm 3 việc nhà tuần này để kịp mua Lego Ninjago vào sinh nhật! 🧱',
-                          style: TextStyle(fontSize: 13),
-                        ),
-                      ],
+                          Text(
+                            'LVL',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.textHint,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(width: 20),
+
+                // XP details
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        app.childAvatarEmoji,
+                        style: const TextStyle(fontSize: 28),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'XP: ${app.xp} / ${app.xpToNextLevel}',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: AnimatedBuilder(
+                          animation: _xpAnim,
+                          builder: (ctx, snap) => LinearProgressIndicator(
+                            value: _xpAnim.value,
+                            minHeight: 6,
+                            backgroundColor: AppTheme.border,
+                            valueColor: const AlwaysStoppedAnimation(AppTheme.green),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Cần ${app.xpToNextLevel - app.xp} XP để lên cấp',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 11,
+                          color: AppTheme.textHint,
+                        ),
+                      ),
+                    ],
+                  ).animate(delay: 200.ms).fadeIn(duration: 400.ms),
+                ),
+              ],
             ),
           ],
         ),
@@ -346,38 +348,305 @@ class _ChildDashboardState extends State<ChildDashboard> {
   }
 }
 
-class _QuickJar extends StatelessWidget {
-  final String emoji;
-  final String label;
-  final int value;
+// CustomPainter: arc progress
+class _ArcPainter extends CustomPainter {
+  final double progress;
   final Color bgColor;
+  final Color fgColor;
+  final double strokeWidth;
 
-  const _QuickJar(this.emoji, this.label, this.value, this.bgColor);
+  const _ArcPainter({
+    required this.progress,
+    required this.bgColor,
+    required this.fgColor,
+    this.strokeWidth = 10,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.shortestSide - strokeWidth) / 2;
+    const startAngle = math.pi * 0.75;
+    const sweepAngle = math.pi * 1.5;
+
+    final bg = Paint()
+      ..color = bgColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+
+    final fg = Paint()
+      ..color = fgColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      startAngle, sweepAngle, false, bg,
+    );
+    if (progress > 0) {
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        startAngle, sweepAngle * progress, false, fg,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_ArcPainter old) => old.progress != progress;
+}
+
+class _TodaySummary extends StatelessWidget {
+  final int pending;
+  final int done;
+  const _TodaySummary({required this.pending, required this.done});
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(14),
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppTheme.border),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              children: [
+                Text(
+                  '$pending',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 30,
+                    fontWeight: FontWeight.w900,
+                    color: pending > 0 ? const Color(0xFFF59E0B) : AppTheme.textHint,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                Text(
+                  'Cần hoàn thành',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 11,
+                    color: AppTheme.textHint,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(width: 1, height: 40, color: AppTheme.border),
+          Expanded(
+            child: Column(
+              children: [
+                Text(
+                  '$done',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 30,
+                    fontWeight: FontWeight.w900,
+                    color: done > 0 ? AppTheme.green : AppTheme.textHint,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                Text(
+                  'Đã hoàn thành',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 11,
+                    color: AppTheme.textHint,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _JarRow extends StatelessWidget {
+  final AppState app;
+  const _JarRow({required this.app});
+
+  @override
+  Widget build(BuildContext context) {
+    final total = app.totalCoins == 0 ? 1 : app.totalCoins;
+    final jars = [
+      ('💰', 'Tiêu dùng', app.spendJar, const Color(0xFF3B82F6)),
+      ('🏦', 'Tiết kiệm', app.saveJar, AppTheme.green),
+      ('🤝', 'Sẻ chia', app.shareJar, AppTheme.coral),
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Hũ tiền',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 15,
+            fontWeight: FontWeight.w800,
+            color: AppTheme.textPrimary,
+          ),
         ),
-        child: Column(
-          children: [
-            Text(emoji, style: const TextStyle(fontSize: 28)),
-            const SizedBox(height: 4),
-            Text(
-              '$value',
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            Text(
-              label,
-              style: const TextStyle(fontSize: 11, color: AppTheme.textMedium),
-            ),
-          ],
+        const SizedBox(height: 10),
+        Row(
+          children: jars.asMap().entries.map((e) {
+            final j = e.value;
+            final pct = (j.$3 / total * 100).round();
+            return Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(right: e.key < 2 ? 10 : 0),
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppTheme.border),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(j.$1, style: const TextStyle(fontSize: 20)),
+                      const SizedBox(height: 6),
+                      Text(
+                        '${j.$3}',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                          color: j.$4,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                      Text(
+                        '$pct%',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 11,
+                          color: AppTheme.textHint,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(3),
+                        child: LinearProgressIndicator(
+                          value: j.$3 / total,
+                          minHeight: 4,
+                          backgroundColor: AppTheme.border,
+                          valueColor: AlwaysStoppedAnimation(j.$4),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        j.$2,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 9,
+                          color: AppTheme.textHint,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ).animate(delay: Duration(milliseconds: e.key * 60)).fadeIn(duration: 300.ms),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+}
+
+class _BondCard extends StatelessWidget {
+  final String message;
+  const _BondCard({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border(left: BorderSide(color: AppTheme.amber, width: 3),
+          top: BorderSide(color: AppTheme.border),
+          right: BorderSide(color: AppTheme.border),
+          bottom: BorderSide(color: AppTheme.border),
         ),
       ),
+      child: Row(
+        children: [
+          const Text('💛', style: TextStyle(fontSize: 20)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Bố/Mẹ gửi cho con',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.amber,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  message,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13,
+                    color: AppTheme.textPrimary,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Badges extends StatelessWidget {
+  final List<String> badges;
+  const _Badges({required this.badges});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Huy hiệu',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 15,
+            fontWeight: FontWeight.w800,
+            color: AppTheme.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: badges.asMap().entries.map((e) => Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppTheme.border),
+            ),
+            child: Text(
+              e.value,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+          ).animate(delay: Duration(milliseconds: e.key * 50)).fadeIn(duration: 300.ms)).toList(),
+        ),
+      ],
     );
   }
 }

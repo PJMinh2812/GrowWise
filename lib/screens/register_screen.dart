@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../providers/app_state.dart';
@@ -17,23 +18,40 @@ class RegisterScreen extends StatefulWidget {
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
+class _RegisterScreenState extends State<RegisterScreen>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
-  bool _obscurePassword = true;
+  final _nameCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _passCtrl = TextEditingController();
+  final _confirmCtrl = TextEditingController();
+  bool _obscurePass = true;
   bool _obscureConfirm = true;
   bool _isLoading = false;
   bool _isGoogleLoading = false;
   bool _agreedToTerms = false;
-  late final StreamSubscription<AuthState> _authSubscription;
+  late final StreamSubscription<AuthState> _authSub;
+  late final AnimationController _animCtrl;
+  late final Animation<double> _fadeAnim;
+  late final Animation<Offset> _slideAnim;
 
   @override
   void initState() {
     super.initState();
-    _authSubscription = Supabase.instance.client.auth.onAuthStateChange.listen((
+    _animCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
+    _fadeAnim = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut),
+    );
+    _slideAnim = Tween<Offset>(
+      begin: const Offset(0, 0.06),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut));
+    _animCtrl.forward();
+
+    _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((
       data,
     ) async {
       if (!mounted) return;
@@ -41,17 +59,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
         final appState = context.read<AppState>();
         await appState.initializeAfterOAuth();
         if (!mounted) return;
-        Widget destination;
+        Widget dest;
         if (!appState.hasSeenOnboarding) {
-          destination = const OnboardingScreen();
+          dest = const OnboardingScreen();
         } else if (!appState.hasChild) {
-          destination = const SetupScreen();
+          dest = const SetupScreen();
         } else {
-          destination = const RoleSelectionScreen();
+          dest = const RoleSelectionScreen();
         }
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => destination),
+          MaterialPageRoute(builder: (_) => dest),
         );
       }
     });
@@ -59,65 +77,97 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   void dispose() {
-    _authSubscription.cancel();
-    _nameController.dispose();
-    _emailController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
+    _animCtrl.dispose();
+    _authSub.cancel();
+    _nameCtrl.dispose();
+    _emailCtrl.dispose();
+    _passCtrl.dispose();
+    _confirmCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
-
     if (!_agreedToTerms) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Vui lòng đồng ý với điều khoản sử dụng'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showError('Vui lòng đồng ý với điều khoản sử dụng');
       return;
     }
-
     setState(() => _isLoading = true);
-
     try {
       await context.read<AppState>().register(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-        fullName: _nameController.text.trim(),
+        email: _emailCtrl.text.trim(),
+        password: _passCtrl.text,
+        fullName: _nameCtrl.text.trim(),
       );
-
       if (!mounted) return;
+      _showEmailSentDialog();
+    } on AuthException catch (e) {
+      if (!mounted) return;
+      String msg;
+      switch (e.statusCode) {
+        case '422':
+          msg = 'Email đã được đăng ký. Vui lòng dùng email khác.';
+          break;
+        case '429':
+          msg = 'Quá nhiều yêu cầu. Vui lòng thử lại sau.';
+          break;
+        default:
+          msg = e.message;
+      }
+      _showError(msg);
+    } catch (e) {
+      if (!mounted) return;
+      _showError('Lỗi đăng ký: ${e.toString()}');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (ctx) => AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('📧', style: TextStyle(fontSize: 56)),
-              const SizedBox(height: 12),
-              const Text(
-                'Xác nhận email',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+  void _showError(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: const Color(0xFFEF4444)),
+    );
+  }
+
+  void _showEmailSentDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('📧', style: TextStyle(fontSize: 56)),
+            const SizedBox(height: 14),
+            Text(
+              'Xác nhận email',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                color: AppTheme.textPrimary,
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Chúng tôi đã gửi link xác nhận đến\n${_emailController.text.trim()}\n\nVui lòng kiểm tra email và nhấn vào link xác nhận.',
-                textAlign: TextAlign.center,
-                style: const TextStyle(height: 1.5),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Chúng tôi đã gửi link xác nhận đến\n${_emailCtrl.text.trim()}\n\nVui lòng kiểm tra email và nhấn vào link xác nhận.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 14,
+                height: 1.6,
+                color: AppTheme.textSecondary,
               ),
-            ],
-          ),
-          actions: [
-            SizedBox(
-              width: double.infinity,
+            ),
+          ],
+        ),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: AppTheme.gradientGreen,
+                borderRadius: BorderRadius.circular(14),
+              ),
               child: FilledButton(
                 onPressed: () {
                   Navigator.pop(ctx);
@@ -126,393 +176,436 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     MaterialPageRoute(builder: (_) => const LoginScreen()),
                   );
                 },
-                child: const Text('Đã hiểu, đến trang Đăng nhập'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                child: Text(
+                  'Đến trang Đăng nhập',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
               ),
             ),
-          ],
-        ),
-      );
-    } on AuthException catch (e) {
-      if (!mounted) return;
-      String message;
-      switch (e.statusCode) {
-        case '422':
-          message = 'Email đã được đăng ký. Vui lòng dùng email khác.';
-          break;
-        case '429':
-          message = 'Quá nhiều yêu cầu. Vui lòng thử lại sau.';
-          break;
-        default:
-          message = e.message;
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message), backgroundColor: Colors.red),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Lỗi đăng ký: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF4CAF50), Color(0xFFE8F5E9)],
+      body: Stack(
+        children: [
+          Container(
+            height: 260,
+            decoration: const BoxDecoration(gradient: AppTheme.gradientGreen),
           ),
-        ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              children: [
-                const SizedBox(height: 20),
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Text('🌱', style: TextStyle(fontSize: 44)),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Tạo tài khoản GrowWise',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Bắt đầu hành trình cùng con',
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: Colors.white.withValues(alpha: 0.9),
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // Form
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
+          SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: FadeTransition(
+                opacity: _fadeAnim,
+                child: SlideTransition(
+                  position: _slideAnim,
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 24),
+                      Container(
+                        width: 70,
+                        height: 70,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.25),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.4),
+                            width: 2,
+                          ),
+                        ),
+                        child: const Center(
+                          child: Text('🌱', style: TextStyle(fontSize: 34)),
+                        ),
                       ),
-                    ],
-                  ),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Đăng ký',
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                          ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Tạo tài khoản',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 26,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          letterSpacing: -0.5,
                         ),
-                        const SizedBox(height: 20),
+                      ),
+                      const SizedBox(height: 24),
 
-                        // Name
-                        TextFormField(
-                          controller: _nameController,
-                          textCapitalization: TextCapitalization.words,
-                          validator: Validators.name,
-                          decoration: InputDecoration(
-                            labelText: 'Họ và tên',
-                            hintText: 'VD: Nguyễn Văn Minh',
-                            prefixIcon: const Icon(Icons.person_outline),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
+                      // Card
+                      Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(28),
+                          boxShadow: AppTheme.shadowLg(Colors.black),
                         ),
-                        const SizedBox(height: 14),
-
-                        // Email
-                        TextFormField(
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          validator: Validators.email,
-                          decoration: InputDecoration(
-                            labelText: 'Email',
-                            hintText: 'email@example.com',
-                            prefixIcon: const Icon(Icons.email_outlined),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-
-                        // Password
-                        TextFormField(
-                          controller: _passwordController,
-                          obscureText: _obscurePassword,
-                          validator: Validators.password,
-                          decoration: InputDecoration(
-                            labelText: 'Mật khẩu',
-                            hintText: 'Tối thiểu 6 ký tự',
-                            prefixIcon: const Icon(Icons.lock_outline),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscurePassword
-                                    ? Icons.visibility_off
-                                    : Icons.visibility,
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _Label('Họ và tên'),
+                              const SizedBox(height: 6),
+                              TextFormField(
+                                controller: _nameCtrl,
+                                textCapitalization: TextCapitalization.words,
+                                validator: Validators.name,
+                                autovalidateMode:
+                                    AutovalidateMode.onUserInteraction,
+                                decoration: const InputDecoration(
+                                  hintText: 'Nguyễn Văn Minh',
+                                  prefixIcon: Icon(
+                                    Icons.person_outline_rounded,
+                                    size: 20,
+                                    color: AppTheme.textHint,
+                                  ),
+                                ),
                               ),
-                              onPressed: () => setState(
-                                () => _obscurePassword = !_obscurePassword,
-                              ),
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
+                              const SizedBox(height: 16),
 
-                        // Confirm password
-                        TextFormField(
-                          controller: _confirmPasswordController,
-                          obscureText: _obscureConfirm,
-                          validator: Validators.confirmPassword(
-                            _passwordController.text,
-                          ),
-                          decoration: InputDecoration(
-                            labelText: 'Xác nhận mật khẩu',
-                            hintText: 'Nhập lại mật khẩu',
-                            prefixIcon: const Icon(Icons.lock_outline),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscureConfirm
-                                    ? Icons.visibility_off
-                                    : Icons.visibility,
+                              _Label('Email'),
+                              const SizedBox(height: 6),
+                              TextFormField(
+                                controller: _emailCtrl,
+                                keyboardType: TextInputType.emailAddress,
+                                validator: Validators.email,
+                                autovalidateMode:
+                                    AutovalidateMode.onUserInteraction,
+                                decoration: const InputDecoration(
+                                  hintText: 'email@example.com',
+                                  prefixIcon: Icon(
+                                    Icons.email_outlined,
+                                    size: 20,
+                                    color: AppTheme.textHint,
+                                  ),
+                                ),
                               ),
-                              onPressed: () => setState(
-                                () => _obscureConfirm = !_obscureConfirm,
-                              ),
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
+                              const SizedBox(height: 16),
 
-                        // Terms
-                        Row(
-                          children: [
-                            Checkbox(
-                              value: _agreedToTerms,
-                              onChanged: (v) =>
-                                  setState(() => _agreedToTerms = v ?? false),
-                              activeColor: AppTheme.primaryGreen,
-                            ),
-                            Expanded(
-                              child: GestureDetector(
+                              _Label('Mật khẩu'),
+                              const SizedBox(height: 6),
+                              TextFormField(
+                                controller: _passCtrl,
+                                obscureText: _obscurePass,
+                                validator: Validators.password,
+                                autovalidateMode:
+                                    AutovalidateMode.onUserInteraction,
+                                decoration: InputDecoration(
+                                  hintText: 'Tối thiểu 6 ký tự',
+                                  prefixIcon: const Icon(
+                                    Icons.lock_outline,
+                                    size: 20,
+                                    color: AppTheme.textHint,
+                                  ),
+                                  suffixIcon: IconButton(
+                                    icon: Icon(
+                                      _obscurePass
+                                          ? Icons.visibility_off_outlined
+                                          : Icons.visibility_outlined,
+                                      size: 20,
+                                      color: AppTheme.textHint,
+                                    ),
+                                    onPressed: () => setState(
+                                      () => _obscurePass = !_obscurePass,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+
+                              _Label('Xác nhận mật khẩu'),
+                              const SizedBox(height: 6),
+                              TextFormField(
+                                controller: _confirmCtrl,
+                                obscureText: _obscureConfirm,
+                                validator: Validators.confirmPassword(
+                                  _passCtrl.text,
+                                ),
+                                autovalidateMode:
+                                    AutovalidateMode.onUserInteraction,
+                                decoration: InputDecoration(
+                                  hintText: 'Nhập lại mật khẩu',
+                                  prefixIcon: const Icon(
+                                    Icons.lock_outline,
+                                    size: 20,
+                                    color: AppTheme.textHint,
+                                  ),
+                                  suffixIcon: IconButton(
+                                    icon: Icon(
+                                      _obscureConfirm
+                                          ? Icons.visibility_off_outlined
+                                          : Icons.visibility_outlined,
+                                      size: 20,
+                                      color: AppTheme.textHint,
+                                    ),
+                                    onPressed: () => setState(
+                                      () => _obscureConfirm = !_obscureConfirm,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 14),
+
+                              // Terms
+                              GestureDetector(
                                 onTap: () => setState(
                                   () => _agreedToTerms = !_agreedToTerms,
                                 ),
-                                child: const Text(
-                                  'Tôi đồng ý với Điều khoản sử dụng và Chính sách bảo mật',
-                                  style: TextStyle(fontSize: 13),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    SizedBox(
+                                      width: 22,
+                                      height: 22,
+                                      child: Checkbox(
+                                        value: _agreedToTerms,
+                                        onChanged: (v) => setState(
+                                          () => _agreedToTerms = v ?? false,
+                                        ),
+                                        activeColor: AppTheme.green,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text(
+                                        'Tôi đồng ý với Điều khoản sử dụng và Chính sách bảo mật',
+                                        style: GoogleFonts.plusJakartaSans(
+                                          fontSize: 13,
+                                          color: AppTheme.textSecondary,
+                                          height: 1.4,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
+                              const SizedBox(height: 20),
 
-                        // Register button
-                        SizedBox(
-                          width: double.infinity,
-                          child: FilledButton(
-                            onPressed: _isLoading ? null : _register,
-                            style: FilledButton.styleFrom(
-                              backgroundColor: AppTheme.primaryGreen,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: _isLoading
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
+                              // Register button
+                              SizedBox(
+                                width: double.infinity,
+                                child: DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    gradient: AppTheme.gradientGreen,
+                                    borderRadius: BorderRadius.circular(14),
+                                    boxShadow:
+                                        AppTheme.shadowMd(AppTheme.green),
+                                  ),
+                                  child: FilledButton(
+                                    onPressed: _isLoading ? null : _register,
+                                    style: FilledButton.styleFrom(
+                                      backgroundColor: Colors.transparent,
+                                      shadowColor: Colors.transparent,
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 16,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
                                     ),
-                                  )
-                                : const Text(
-                                    'Tạo tài khoản',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
+                                    child: _isLoading
+                                        ? const SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.white,
+                                            ),
+                                          )
+                                        : Text(
+                                            'Tạo tài khoản',
+                                            style: GoogleFonts.plusJakartaSans(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w700,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+
+                              // Divider
+                              Row(
+                                children: [
+                                  const Expanded(
+                                      child: Divider(color: AppTheme.border)),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12),
+                                    child: Text(
+                                      'hoặc',
+                                      style: GoogleFonts.plusJakartaSans(
+                                          fontSize: 13,
+                                          color: AppTheme.textHint),
                                     ),
                                   ),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
+                                  const Expanded(
+                                      child: Divider(color: AppTheme.border)),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
 
-                        // Divider
-                        Row(
-                          children: [
-                            const Expanded(child: Divider()),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                              ),
-                              child: Text(
-                                'hoặc',
-                                style: TextStyle(color: Colors.grey[500]),
-                              ),
-                            ),
-                            const Expanded(child: Divider()),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Google Sign-Up button
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton(
-                            onPressed: _isGoogleLoading
-                                ? null
-                                : () async {
-                                    setState(() => _isGoogleLoading = true);
-                                    try {
-                                      await context
-                                          .read<AppState>()
-                                          .loginWithGoogle();
-                                    } catch (e) {
-                                      if (mounted) {
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          SnackBar(
-                                            content: Text(
-                                              'Lỗi Google: ${e.toString()}',
-                                            ),
-                                            backgroundColor: Colors.red,
-                                          ),
-                                        );
-                                      }
-                                    } finally {
-                                      if (mounted)
-                                        setState(
-                                          () => _isGoogleLoading = false,
-                                        );
-                                    }
-                                  },
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              side: BorderSide(color: Colors.grey.shade300),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: _isGoogleLoading
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
+                              // Google button
+                              SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton(
+                                  onPressed: _isGoogleLoading
+                                      ? null
+                                      : () async {
+                                          setState(
+                                              () => _isGoogleLoading = true);
+                                          try {
+                                            await context
+                                                .read<AppState>()
+                                                .loginWithGoogle();
+                                          } catch (e) {
+                                            if (mounted) {
+                                              _showError(
+                                                  'Lỗi Google: ${e.toString()}');
+                                            }
+                                          } finally {
+                                            if (mounted) {
+                                              setState(
+                                                () => _isGoogleLoading = false,
+                                              );
+                                            }
+                                          }
+                                        },
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 14),
+                                    side: const BorderSide(
+                                        color: AppTheme.border),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(14),
                                     ),
-                                  )
-                                : Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Container(
-                                        width: 24,
-                                        height: 24,
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          borderRadius: BorderRadius.circular(
-                                            4,
-                                          ),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.grey.withValues(
-                                                alpha: 0.3,
+                                  ),
+                                  child: _isGoogleLoading
+                                      ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                              strokeWidth: 2),
+                                        )
+                                      : Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Container(
+                                              width: 22,
+                                              height: 22,
+                                              decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                borderRadius:
+                                                    BorderRadius.circular(4),
+                                                boxShadow: AppTheme.shadowSm(
+                                                    Colors.black),
                                               ),
-                                              blurRadius: 4,
+                                              child: const Center(
+                                                child: Text(
+                                                  'G',
+                                                  style: TextStyle(
+                                                    color: Color(0xFF4285F4),
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 10),
+                                            Text(
+                                              'Tiếp tục với Google',
+                                              style:
+                                                  GoogleFonts.plusJakartaSans(
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.w600,
+                                                color: AppTheme.textPrimary,
+                                              ),
                                             ),
                                           ],
                                         ),
-                                        child: const Center(
-                                          child: Text(
-                                            'G',
-                                            style: TextStyle(
-                                              color: Color(0xFF4285F4),
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 16,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      const Text(
-                                        'Đăng ký với Google',
-                                        style: TextStyle(
-                                          fontSize: 15,
-                                          color: AppTheme.textDark,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Login link
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text('Đã có tài khoản? '),
-                            TextButton(
-                              onPressed: () => Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const LoginScreen(),
                                 ),
                               ),
-                              child: const Text(
-                                'Đăng nhập',
-                                style: TextStyle(fontWeight: FontWeight.bold),
+                              const SizedBox(height: 20),
+
+                              // Login link
+                              Center(
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      'Đã có tài khoản? ',
+                                      style: GoogleFonts.plusJakartaSans(
+                                        fontSize: 14,
+                                        color: AppTheme.textSecondary,
+                                      ),
+                                    ),
+                                    GestureDetector(
+                                      onTap: () => Navigator.pushReplacement(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (_) =>
+                                                const LoginScreen()),
+                                      ),
+                                      child: Text(
+                                        'Đăng nhập',
+                                        style: GoogleFonts.plusJakartaSans(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w700,
+                                          color: AppTheme.green,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 32),
+                    ],
                   ),
                 ),
-              ],
+              ),
             ),
           ),
-        ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Label extends StatelessWidget {
+  final String text;
+  const _Label(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: GoogleFonts.plusJakartaSans(
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+        color: AppTheme.textPrimary,
       ),
     );
   }

@@ -1,8 +1,15 @@
 ﻿import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/task_model.dart';
 import '../services/supabase_service.dart';
 
 class AppState extends ChangeNotifier {
+  // Demo mode (active when .env uses placeholder values)
+  bool get isDemoMode {
+    final url = dotenv.env['SUPABASE_URL'] ?? '';
+    return url.contains('placeholder') || url.isEmpty;
+  }
+
   // Auth state
   bool _isLoggedIn = false;
   bool _hasSeenOnboarding = false;
@@ -44,6 +51,10 @@ class AppState extends ChangeNotifier {
   // ── Initialize ─────────────────────────────────────────────────────────────
 
   Future<void> initialize() async {
+    if (isDemoMode) {
+      _seedDemoData();
+      return;
+    }
     final user = SupabaseService.auth.currentUser;
     if (user == null) return;
 
@@ -244,6 +255,22 @@ class AppState extends ChangeNotifier {
 
   Future<void> addTask(TaskModel task) async {
     if (_familyId == null || _childId == null) return;
+    if (isDemoMode) {
+      _tasks.insert(
+        0,
+        TaskModel(
+          id: 'demo-${DateTime.now().millisecondsSinceEpoch}',
+          title: task.title,
+          description: task.description,
+          category: task.category,
+          icon: task.icon,
+          coinReward: task.coinReward,
+          createdAt: DateTime.now(),
+        ),
+      );
+      notifyListeners();
+      return;
+    }
     final row = await SupabaseService.createTask(
       familyId: _familyId!,
       childId: _childId!,
@@ -262,7 +289,9 @@ class AppState extends ChangeNotifier {
     if (index == -1) return;
     _tasks[index] = _tasks[index].copyWith(status: TaskStatus.submitted);
     notifyListeners();
-    await SupabaseService.updateTaskStatus(taskId, 'submitted');
+    if (!isDemoMode) {
+      await SupabaseService.updateTaskStatus(taskId, 'submitted');
+    }
     _addXp(10);
   }
 
@@ -271,22 +300,29 @@ class AppState extends ChangeNotifier {
     if (index == -1) return;
 
     final task = _tasks[index];
-    _tasks[index] = task.copyWith(status: TaskStatus.approved);
+    _tasks[index] = task.copyWith(
+      status: TaskStatus.approved,
+      reviewedAt: DateTime.now(),
+    );
     notifyListeners();
 
-    await SupabaseService.updateTaskStatus(taskId, 'approved');
+    if (!isDemoMode) {
+      await SupabaseService.updateTaskStatus(taskId, 'approved');
+    }
     _addCoins(task.coinReward);
     _addXp(15);
 
     // Add memory
     if (_familyId != null && _childId != null) {
-      await SupabaseService.addMemory(
-        familyId: _familyId!,
-        childId: _childId!,
-        taskTitle: task.title,
-        emoji: task.icon,
-        note: 'Hoàn thành xuất sắc!',
-      );
+      if (!isDemoMode) {
+        await SupabaseService.addMemory(
+          familyId: _familyId!,
+          childId: _childId!,
+          taskTitle: task.title,
+          emoji: task.icon,
+          note: 'Hoàn thành xuất sắc!',
+        );
+      }
       _memories.insert(0, {
         'date': _formatDate(DateTime.now().toIso8601String()),
         'task': task.title,
@@ -302,7 +338,9 @@ class AppState extends ChangeNotifier {
     if (index == -1) return;
     _tasks[index] = _tasks[index].copyWith(status: TaskStatus.rejected);
     notifyListeners();
-    await SupabaseService.updateTaskStatus(taskId, 'rejected');
+    if (!isDemoMode) {
+      await SupabaseService.updateTaskStatus(taskId, 'rejected');
+    }
   }
 
   // ── Coin & Jar actions ─────────────────────────────────────────────────────
@@ -352,7 +390,7 @@ class AppState extends ChangeNotifier {
       if (_level == 10) newBadge = '👑 Level 10!';
       if (newBadge != null) {
         _badges.add(newBadge);
-        if (_childId != null) {
+        if (_childId != null && !isDemoMode) {
           SupabaseService.addBadge(
             _childId!,
             'Level $_level!',
@@ -369,13 +407,14 @@ class AppState extends ChangeNotifier {
   Future<void> addDream(String name, int price, String icon) async {
     final progress = price > 0 ? _totalCoins / price : 0.0;
     _dreamItems.add({
+      'id': 'demo-dream-${DateTime.now().millisecondsSinceEpoch}',
       'name': name,
       'price': price,
       'icon': icon,
       'progress': progress > 1.0 ? 1.0 : progress,
     });
     notifyListeners();
-    if (_childId != null) {
+    if (_childId != null && !isDemoMode) {
       await SupabaseService.addDreamItem(
         childId: _childId!,
         name: name,
@@ -397,44 +436,50 @@ class AppState extends ChangeNotifier {
 
   Future<void> updateParentName(String name) async {
     _parentName = name;
-    await SupabaseService.updateProfile(fullName: name);
     notifyListeners();
+    if (!isDemoMode) {
+      await SupabaseService.updateProfile(fullName: name);
+    }
   }
 
   Future<void> updateChildName(String name) async {
     _childName = name;
-    if (_childId != null) {
+    notifyListeners();
+    if (_childId != null && !isDemoMode) {
       await SupabaseService.updateChild(_childId!, {'name': name});
     }
-    notifyListeners();
   }
 
   Future<void> updateChildEmoji(String emoji) async {
     _childAvatarEmoji = emoji;
-    if (_childId != null) {
+    notifyListeners();
+    if (_childId != null && !isDemoMode) {
       await SupabaseService.updateChild(_childId!, {'avatar_emoji': emoji});
     }
-    notifyListeners();
   }
 
   Future<void> updateChildAge(int age) async {
     _childAge = age;
-    if (_childId != null) {
+    notifyListeners();
+    if (_childId != null && !isDemoMode) {
       await SupabaseService.updateChild(_childId!, {'age': age});
     }
-    notifyListeners();
   }
 
   Future<void> addBondingMessage(String message) async {
     _bondingMessage = message;
     notifyListeners();
-    await SupabaseService.updateSettings({'bonding_message': message});
+    if (!isDemoMode) {
+      await SupabaseService.updateSettings({'bonding_message': message});
+    }
   }
 
   Future<void> updateNotifications(bool enabled) async {
     _notificationsEnabled = enabled;
     notifyListeners();
-    await SupabaseService.updateSettings({'notifications_enabled': enabled});
+    if (!isDemoMode) {
+      await SupabaseService.updateSettings({'notifications_enabled': enabled});
+    }
   }
 
   // ── Dream Jar mark purchased ───────────────────────────────────────────────
@@ -458,7 +503,7 @@ class AppState extends ChangeNotifier {
     _updateDreamProgress();
 
     final dreamId = item['id'] as String?;
-    if (dreamId != null) {
+    if (dreamId != null && !isDemoMode) {
       await SupabaseService.markDreamPurchased(dreamId);
     }
     _persistChildProfile();
@@ -468,7 +513,7 @@ class AppState extends ChangeNotifier {
   // ── Helpers ────────────────────────────────────────────────────────────────
 
   void _persistChildProfile() {
-    if (_childId == null) return;
+    if (_childId == null || isDemoMode) return;
     SupabaseService.updateChild(_childId!, {
       'level': _level,
       'total_coins': _totalCoins,
@@ -478,6 +523,122 @@ class AppState extends ChangeNotifier {
       'xp': _xp,
       'xp_to_next_level': _xpToNextLevel,
     });
+  }
+
+  void _seedDemoData() {
+    _isLoggedIn = true;
+    _hasSeenOnboarding = true;
+    _parentName = 'Phụ huynh Demo';
+    _parentEmail = 'demo@growwise.app';
+    _familyId = 'demo-family';
+    _childId = 'demo-child';
+    _childName = 'Tôm';
+    _childAvatarEmoji = '🦊';
+    _childAge = 8;
+    _level = 3;
+    _totalCoins = 145;
+    _spendJar = 60;
+    _saveJar = 60;
+    _shareJar = 25;
+    _xp = 45;
+    _xpToNextLevel = 120;
+    _badges = ['🏅 Khởi đầu', '🔥 3 ngày liên tiếp', '🌟 Level 3!'];
+    _bondingMessage = 'Hôm nay con đã làm rất tốt! Bố/Mẹ tự hào về con! 💛';
+    _notificationsEnabled = true;
+
+    final now = DateTime.now();
+    _tasks = [
+      TaskModel(
+        id: 'demo-1',
+        title: 'Rửa bát sau bữa tối',
+        description: 'Rửa sạch chén đĩa sau bữa tối và cất gọn vào tủ.',
+        category: 'Việc nhà',
+        icon: '🍽️',
+        coinReward: 15,
+        status: TaskStatus.submitted,
+        createdAt: now.subtract(const Duration(hours: 2)),
+      ),
+      TaskModel(
+        id: 'demo-2',
+        title: 'Đọc sách 30 phút',
+        description: 'Đọc một chương sách yêu thích và kể lại cho bố mẹ.',
+        category: 'Học tập',
+        icon: '📚',
+        coinReward: 20,
+        status: TaskStatus.pending,
+        createdAt: now.subtract(const Duration(hours: 5)),
+      ),
+      TaskModel(
+        id: 'demo-3',
+        title: 'Tưới cây ban công',
+        description: 'Tưới đều các chậu cây trên ban công.',
+        category: 'Việc nhà',
+        icon: '🌱',
+        coinReward: 10,
+        status: TaskStatus.pending,
+        createdAt: now.subtract(const Duration(hours: 6)),
+      ),
+      TaskModel(
+        id: 'demo-4',
+        title: 'Tập thể dục buổi sáng',
+        description: 'Tập 15 phút bài thể dục buổi sáng.',
+        category: 'Sức khỏe',
+        icon: '🏃',
+        coinReward: 15,
+        status: TaskStatus.approved,
+        createdAt: now.subtract(const Duration(days: 1)),
+        reviewedAt: now.subtract(const Duration(hours: 20)),
+      ),
+      TaskModel(
+        id: 'demo-5',
+        title: 'Gấp quần áo',
+        description: 'Gấp gọn quần áo đã giặt.',
+        category: 'Việc nhà',
+        icon: '👕',
+        coinReward: 15,
+        status: TaskStatus.approved,
+        createdAt: now.subtract(const Duration(days: 2)),
+        reviewedAt: now.subtract(const Duration(days: 1, hours: 18)),
+      ),
+    ];
+
+    _dreamItems = [
+      {
+        'id': 'dream-1',
+        'name': 'Lego Ninjago',
+        'price': 300,
+        'icon': '🧱',
+        'progress': _totalCoins / 300,
+      },
+      {
+        'id': 'dream-2',
+        'name': 'Bộ truyện Doraemon',
+        'price': 150,
+        'icon': '📖',
+        'progress': (_totalCoins / 150).clamp(0.0, 1.0),
+      },
+    ];
+
+    _memories = [
+      {
+        'date': _formatDate(
+          now.subtract(const Duration(hours: 20)).toIso8601String(),
+        ),
+        'task': 'Tập thể dục buổi sáng',
+        'emoji': '🏃',
+        'note': 'Hoàn thành xuất sắc!',
+      },
+      {
+        'date': _formatDate(
+          now.subtract(const Duration(days: 1, hours: 18)).toIso8601String(),
+        ),
+        'task': 'Gấp quần áo',
+        'emoji': '👕',
+        'note': 'Con gấp rất gọn gàng!',
+      },
+    ];
+
+    notifyListeners();
   }
 
   String _formatDate(String isoDate) {
