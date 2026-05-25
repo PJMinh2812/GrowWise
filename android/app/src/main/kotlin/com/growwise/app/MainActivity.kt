@@ -1,4 +1,4 @@
-package com.example.demo_1
+package com.growwise.app
 
 import io.flutter.embedding.android.FlutterActivity
 

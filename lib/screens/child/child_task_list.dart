@@ -13,8 +13,7 @@ class ChildTaskList extends StatefulWidget {
   State<ChildTaskList> createState() => _ChildTaskListState();
 }
 
-class _ChildTaskListState extends State<ChildTaskList>
-    with SingleTickerProviderStateMixin {
+class _ChildTaskListState extends State<ChildTaskList> with SingleTickerProviderStateMixin {
   late TabController _tabCtrl;
 
   @override
@@ -39,73 +38,122 @@ class _ChildTaskListState extends State<ChildTaskList>
         final todo = [...pending, ...submitted];
 
         return Scaffold(
-          backgroundColor: AppTheme.bg,
-          body: SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header
-                Container(
-                  color: Colors.white,
-                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Nhiệm vụ',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 26,
-                          fontWeight: FontWeight.w900,
-                          color: AppTheme.textPrimary,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                      Text(
-                        '${todo.length} việc cần làm · ${approved.length} đã xong',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 13,
-                          color: AppTheme.textHint,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      TabBar(
-                        controller: _tabCtrl,
-                        labelStyle: GoogleFonts.plusJakartaSans(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 14,
-                        ),
-                        unselectedLabelStyle: GoogleFonts.plusJakartaSans(
-                          fontWeight: FontWeight.w500,
-                          fontSize: 14,
-                        ),
-                        labelColor: AppTheme.green,
-                        unselectedLabelColor: AppTheme.textHint,
-                        indicatorColor: AppTheme.green,
-                        indicatorWeight: 2,
-                        tabs: [
-                          Tab(text: 'Cần làm (${todo.length})'),
-                          Tab(text: 'Đã xong (${approved.length})'),
-                        ],
-                      ),
-                    ],
-                  ),
+          backgroundColor: AppTheme.surfaceBright,
+          body: Column(
+            children: [
+              _buildHeader(todo.length, approved.length),
+              Expanded(
+                child: TabBarView(
+                  controller: _tabCtrl,
+                  children: [
+                    _TaskSection(tasks: todo, showAction: true),
+                    _TaskSection(tasks: approved, showAction: false),
+                  ],
                 ),
-
-                // Tab content
-                Expanded(
-                  child: TabBarView(
-                    controller: _tabCtrl,
-                    children: [
-                      _TaskSection(tasks: todo, showAction: true),
-                      _TaskSection(tasks: approved, showAction: false),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         );
       },
+    );
+  }
+
+  Widget _buildHeader(int todoCount, int doneCount) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceContainerLowest,
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Nhiệm vụ',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w800,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '$todoCount việc cần làm · $doneCount đã xong',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: AppTheme.outline,
+                    ),
+                  ),
+                ],
+              ),
+              GestureDetector(
+                onTap: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Chỉ Bố/Mẹ mới có thể thêm nhiệm vụ mới!')),
+                  );
+                },
+                child: Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryContainer,
+                    shape: BoxShape.circle,
+                    boxShadow: const [
+                      BoxShadow(
+                        color: AppTheme.onPrimaryFixedVariant,
+                        offset: Offset(0, 4),
+                      )
+                    ],
+                  ),
+                  child: const Icon(Icons.add, color: AppTheme.onTertiaryContainer),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceContainer,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: TabBar(
+              controller: _tabCtrl,
+              dividerColor: Colors.transparent,
+              indicator: BoxDecoration(
+                color: AppTheme.surfaceContainerLowest,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
+                ],
+              ),
+              labelColor: AppTheme.vibrantPrimary,
+              unselectedLabelColor: AppTheme.outline,
+              labelStyle: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 14),
+              unselectedLabelStyle: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, fontSize: 14),
+              tabs: [
+                Tab(text: 'Cần làm ($todoCount)'),
+                Tab(text: 'Đã xong ($doneCount)'),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -113,339 +161,241 @@ class _ChildTaskListState extends State<ChildTaskList>
 class _TaskSection extends StatelessWidget {
   final List<TaskModel> tasks;
   final bool showAction;
+
   const _TaskSection({required this.tasks, required this.showAction});
 
   @override
   Widget build(BuildContext context) {
     if (tasks.isEmpty) {
       return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              showAction ? '🎉' : '📭',
-              style: const TextStyle(fontSize: 48),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Container(
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceContainerLowest,
+              borderRadius: BorderRadius.circular(32),
+              border: Border.all(color: AppTheme.surfaceContainer, width: 2),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                )
+              ],
             ),
-            const SizedBox(height: 12),
-            Text(
-              showAction ? 'Không có việc gì cần làm!' : 'Chưa hoàn thành việc nào',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: AppTheme.textSecondary,
-              ),
-            ),
-            if (showAction) ...[
-              const SizedBox(height: 4),
-              Text(
-                'Bố/Mẹ chưa giao việc gì hôm nay',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 13,
-                  color: AppTheme.textHint,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryFixed,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Center(
+                    child: Text('🎉', style: TextStyle(fontSize: 60)),
+                  ),
                 ),
-              ),
-            ],
-          ],
+                const SizedBox(height: 24),
+                Text(
+                  showAction ? 'Không có việc gì cần làm!' : 'Chưa hoàn thành việc nào',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  showAction ? 'Bố/Mẹ chưa giao việc gì hôm nay' : 'Hãy hoàn thành nhiệm vụ để tích lũy Xu nhé!',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: AppTheme.outline,
+                  ),
+                ),
+                if (showAction) ...[
+                  const SizedBox(height: 32),
+                  GestureDetector(
+                    onTap: () {},
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      decoration: BoxDecoration(
+                        color: AppTheme.vibrantPrimary,
+                        borderRadius: BorderRadius.circular(32),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: AppTheme.onPrimaryFixedVariant,
+                            offset: Offset(0, 4),
+                          )
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.explore, color: Colors.white),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Khám phá hoạt động khác',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ).animate().scale(curve: Curves.easeOutBack, duration: 400.ms),
         ),
       );
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 80),
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 100),
       itemCount: tasks.length,
-      itemBuilder: (context, i) => _TaskCard(
+      itemBuilder: (context, i) => _TaskCardItem(
         task: tasks[i],
         showAction: showAction,
-        index: i,
-      )
-          .animate(delay: Duration(milliseconds: i * 25))
-          .fadeIn(duration: 160.ms)
-          .slideY(begin: 0.05, end: 0),
+      ).animate(delay: Duration(milliseconds: i * 50)).fadeIn().slideY(begin: 0.1),
     );
   }
 }
 
-class _TaskCard extends StatelessWidget {
+class _TaskCardItem extends StatelessWidget {
   final TaskModel task;
   final bool showAction;
-  final int index;
-  const _TaskCard({required this.task, required this.showAction, required this.index});
+
+  const _TaskCardItem({required this.task, required this.showAction});
 
   @override
   Widget build(BuildContext context) {
-    final statusInfo = _statusInfo(task.status);
+    final statusColor = task.status == TaskStatus.pending 
+        ? AppTheme.vibrantPrimary 
+        : (task.status == TaskStatus.submitted ? AppTheme.vibrantSecondary : AppTheme.vibrantTertiary);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border(
-          left: BorderSide(color: statusInfo.$2, width: 3),
-          top: BorderSide(color: AppTheme.border),
-          right: BorderSide(color: AppTheme.border),
-          bottom: BorderSide(color: AppTheme.border),
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Icon
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: statusInfo.$2.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Center(
-                child: Text(task.icon, style: const TextStyle(fontSize: 20)),
-              ),
-            ),
-            const SizedBox(width: 12),
-
-            // Content
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    task.title,
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    task.description,
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 12,
-                      color: AppTheme.textHint,
-                      height: 1.4,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      // Category chip
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: AppTheme.bg,
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: AppTheme.border),
-                        ),
-                        child: Text(
-                          task.category,
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.textSecondary,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      // Coin reward
-                      Text(
-                        '${task.coinReward} xu 🪙',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFFF59E0B),
-                        ),
-                      ),
-                      const Spacer(),
-                      // Status
-                      Text(
-                        statusInfo.$1,
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: statusInfo.$2,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  // Action button for pending tasks
-                  if (showAction && task.status == TaskStatus.pending) ...[
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton(
-                        onPressed: () => _submitTask(context, task),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppTheme.green,
-                          side: const BorderSide(color: AppTheme.green, width: 1.5),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                        ),
-                        child: Text(
-                          'Đã làm xong — Báo cáo',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-
-                  // Waiting badge
-                  if (task.status == TaskStatus.submitted) ...[
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        const SizedBox(
-                          width: 12, height: 12,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 1.5,
-                            color: Color(0xFFF59E0B),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Đang chờ Bố/Mẹ duyệt...',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 12,
-                            color: const Color(0xFFF59E0B),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  (String, Color) _statusInfo(TaskStatus s) => switch (s) {
-    TaskStatus.pending => ('Chờ làm', AppTheme.textHint),
-    TaskStatus.submitted => ('Chờ duyệt', const Color(0xFFF59E0B)),
-    TaskStatus.approved => ('Hoàn thành ✓', AppTheme.green),
-    TaskStatus.rejected => ('Cần làm lại', AppTheme.coral),
-  };
-
-  void _submitTask(BuildContext context, TaskModel task) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => _SubmitSheet(task: task),
-    );
-  }
-}
-
-class _SubmitSheet extends StatelessWidget {
-  final TaskModel task;
-  const _SubmitSheet({required this.task});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-        top: 24,
-        left: 24,
-        right: 24,
-      ),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        color: AppTheme.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppTheme.surfaceContainerHigh, width: 2),
       ),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Center(
-            child: Container(
-              width: 36, height: 4,
-              decoration: BoxDecoration(
-                color: AppTheme.border,
-                borderRadius: BorderRadius.circular(2),
+          Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Center(
+                  child: Text(task.icon, style: const TextStyle(fontSize: 24)),
+                ),
               ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'Xác nhận hoàn thành',
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-              color: AppTheme.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            '${task.icon} ${task.title}',
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 15,
-              color: AppTheme.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Bạn sẽ nhận được ${task.coinReward} xu sau khi Bố/Mẹ duyệt.',
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 13,
-              color: AppTheme.textHint,
-              height: 1.5,
-            ),
-          ),
-          const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: () {
-                context.read<AppState>().submitTask(task.id);
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Đã báo cáo! Đợi Bố/Mẹ duyệt nhé 🎉'),
-                    behavior: SnackBarBehavior.floating,
-                    backgroundColor: AppTheme.green,
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      task.title,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      task.category,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 14,
+                        color: AppTheme.outline,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppTheme.secondaryFixed,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  '+${task.coinReward} Xu',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.onSecondaryFixed,
                   ),
+                ),
+              ),
+            ],
+          ),
+          if (showAction && task.status == TaskStatus.pending) ...[
+            const SizedBox(height: 16),
+            GestureDetector(
+              onTap: () {
+                context.read<AppState>().submitTask(task.id);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Đã báo cáo! Đợi Bố/Mẹ duyệt nhé 🎉')),
                 );
               },
-              style: FilledButton.styleFrom(
-                backgroundColor: AppTheme.green,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              ),
-              child: Text(
-                'Xác nhận đã làm xong!',
-                style: GoogleFonts.plusJakartaSans(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 15,
-                  color: Colors.white,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: AppTheme.surfaceBright,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppTheme.vibrantPrimary, width: 2),
+                ),
+                child: Center(
+                  child: Text(
+                    'Đã làm xong — Báo cáo',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.vibrantPrimary,
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            child: TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(
-                'Huỷ',
-                style: GoogleFonts.plusJakartaSans(color: AppTheme.textHint),
-              ),
+          ],
+          if (task.status == TaskStatus.submitted) ...[
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                const SizedBox(
+                  width: 16, height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.vibrantSecondary),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Đang chờ Bố/Mẹ duyệt...',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.vibrantSecondary,
+                  ),
+                ),
+              ],
             ),
-          ),
+          ],
         ],
       ),
     );

@@ -21,6 +21,47 @@ class AppTheme {
   static const Color textHint = Color(0xFF94A3B8);
   static const Color border = Color(0xFFE2E8F0);
 
+  // Vibrant UI Colors (Tailwind config)
+  static const Color vibrantPrimary = Color(0xFF6B38D4);
+  static const Color vibrantSecondary = Color(0xFF735C00);
+  static const Color vibrantTertiary = Color(0xFF904800);
+  static const Color onVibrantPrimary = Color(0xFFFFFFFF);
+  static const Color onVibrantSecondary = Color(0xFFFFFFFF);
+
+  static const Color surfaceContainerHighest = Color(0xFFD9E3F4);
+  static const Color primaryFixed = Color(0xFFE9DDFF);
+  static const Color primaryFixedDim = Color(0xFFD0BCFF);
+  static const Color onPrimaryFixed = Color(0xFF23005C);
+  static const Color onPrimaryFixedVariant = Color(0xFF5516BE);
+  static const Color primaryContainer = Color(0xFF8455EF);
+  
+  static const Color secondaryFixed = Color(0xFFFFE083);
+  static const Color secondaryFixedDim = Color(0xFFEEC200);
+  static const Color secondaryContainer = Color(0xFFFED01B);
+  static const Color onSecondaryContainer = Color(0xFF6F5900);
+  static const Color onSecondaryFixed = Color(0xFF231B00);
+  static const Color onSecondaryFixedVariant = Color(0xFF574500);
+
+  static const Color tertiaryFixed = Color(0xFFFFDCC5);
+  static const Color tertiaryFixedDim = Color(0xFFFFB783);
+  static const Color tertiaryContainer = Color(0xFFB55D00);
+  static const Color onTertiaryContainer = Color(0xFFFFFBFF);
+  static const Color onTertiaryFixed = Color(0xFF301400);
+  static const Color onTertiaryFixedVariant = Color(0xFF713700);
+
+  static const Color surfaceBright = Color(0xFFF8F9FF);
+  static const Color surfaceContainerHigh = Color(0xFFDFE9FA);
+  static const Color surfaceContainer = Color(0xFFE5EEFF);
+  static const Color surfaceContainerLow = Color(0xFFEEF4FF);
+  static const Color surfaceContainerLowest = Color(0xFFFFFFFF);
+  
+  static const Color outline = Color(0xFF7B7486);
+  static const Color outlineVariant = Color(0xFFCBC3D7);
+  static const Color inverseSurface = Color(0xFF27313E);
+  static const Color errorContainer = Color(0xFFFFDAD6);
+  static const Color onErrorContainer = Color(0xFF93000A);
+
+
   // Legacy aliases (keep backward compat)
   static const Color primaryGreen = green;
   static const Color darkGreen = greenDark;

@@ -12,10 +12,14 @@ void main() async {
 
   await dotenv.load(fileName: '.env');
 
-  await Supabase.initialize(
-    url: dotenv.env['SUPABASE_URL']!,
-    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
-  );
+  try {
+    await Supabase.initialize(
+      url: dotenv.env['SUPABASE_URL'] ?? 'https://placeholder.supabase.co',
+      anonKey: dotenv.env['SUPABASE_ANON_KEY'] ?? 'placeholder_anon_key',
+    );
+  } catch (_) {
+    // Demo mode — Supabase not configured, app runs with local seed data
+  }
 
   final appState = AppState();
   await appState.initialize();
