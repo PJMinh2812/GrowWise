@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_state.dart';
 import '../../theme/app_theme.dart';
@@ -10,379 +12,490 @@ class ChildDreamJar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Consumer<AppState>(
-      builder: (context, appState, _) {
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFE1BEE7), Color(0xFFCE93D8)],
+      builder: (context, app, child) {
+        final dreams = app.dreamItemsList;
+
+        return Scaffold(
+          backgroundColor: AppTheme.bg,
+          body: SafeArea(
+            child: CustomScrollView(
+              physics: const ClampingScrollPhysics(),
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Container(
+                    color: Colors.white,
+                    padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Ước mơ',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.w900,
+                                  color: AppTheme.textPrimary,
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
+                              Text(
+                                '${app.totalCoins} xu đang có',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 13,
+                                  color: AppTheme.textHint,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        // Add button
+                        GestureDetector(
+                          onTap: () => _showAddDream(context),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFA855F7).withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: const Color(0xFFA855F7).withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.add_rounded, size: 16, color: Color(0xFFA855F7)),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Thêm ước mơ',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFFA855F7),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Column(
-                  children: [
-                    Text('⭐', style: TextStyle(fontSize: 44)),
-                    SizedBox(height: 8),
-                    Text(
-                      'Dream Jar',
-                      style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+
+                if (dreams.isEmpty)
+                  SliverFillRemaining(
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text('⭐', style: TextStyle(fontSize: 52)),
+                          const SizedBox(height: 14),
+                          Text(
+                            'Chưa có ước mơ nào',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Thêm ước mơ đầu tiên của con!',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 13,
+                              color: AppTheme.textHint,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          OutlinedButton.icon(
+                            onPressed: () => _showAddDream(context),
+                            icon: const Icon(Icons.add_rounded, size: 18),
+                            label: const Text('Thêm ước mơ'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFFA855F7),
+                              side: const BorderSide(color: Color(0xFFA855F7)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    Text(
-                      'Đặt mục tiêu và tích Xu để đạt ước mơ!',
-                      style: TextStyle(color: Colors.white, fontSize: 14),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              const Text(
-                '🎯 Mục tiêu của con',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 12),
-
-              // Dream items
-              ...appState.dreamItemsList.asMap().entries.map((entry) {
-                final idx = entry.key;
-                final item = entry.value;
-                return _DreamItemCard(
-                  index: idx,
-                  name: item['name'] as String,
-                  price: item['price'] as int,
-                  icon: item['icon'] as String,
-                  progress: item['progress'] as double,
-                  currentCoins: appState.totalCoins,
-                  isPurchased: item['is_purchased'] == true,
-                );
-              }),
-
-              const SizedBox(height: 20),
-
-              // Add new dream
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () => _showAddDreamDialog(context),
-                  icon: const Icon(Icons.add),
-                  label: const Text('Thêm ước mơ mới'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                  )
+                else
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, i) => _DreamCard(
+                          item: dreams[i],
+                          index: i,
+                          currentCoins: app.totalCoins,
+                          onBuy: () => app.markDreamPurchased(i),
+                        )
+                            .animate(delay: Duration(milliseconds: i * 35))
+                            .fadeIn(duration: 160.ms)
+                            .slideY(begin: 0.05, end: 0),
+                        childCount: dreams.length,
+                      ),
                     ),
                   ),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
     );
   }
 
-  void _showAddDreamDialog(BuildContext context) {
-    final formKey = GlobalKey<FormState>();
-    final nameController = TextEditingController();
-    final priceController = TextEditingController();
-    showDialog(
+  void _showAddDream(BuildContext context) {
+    showModalBottomSheet(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('⭐ Thêm ước mơ mới'),
-        content: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => const _AddDreamSheet(),
+    );
+  }
+}
+
+class _DreamCard extends StatelessWidget {
+  final Map<String, dynamic> item;
+  final int index;
+  final int currentCoins;
+  final VoidCallback onBuy;
+
+  const _DreamCard({
+    required this.item,
+    required this.index,
+    required this.currentCoins,
+    required this.onBuy,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final name = item['name'] as String;
+    final price = item['price'] as int;
+    final icon = item['icon'] as String;
+    final progress = (item['progress'] as double).clamp(0.0, 1.0);
+    final isPurchased = item['is_purchased'] as bool? ?? false;
+    final canAfford = currentCoins >= price;
+    const purple = Color(0xFFA855F7);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isPurchased
+              ? AppTheme.green.withValues(alpha: 0.4)
+              : canAfford
+                  ? purple.withValues(alpha: 0.4)
+                  : AppTheme.border,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              TextFormField(
-                controller: nameController,
-                validator: Validators.name,
-                autovalidateMode: AutovalidateMode.onUserInteraction,
-                decoration: InputDecoration(
-                  labelText: 'Tên món đồ',
-                  hintText: 'VD: Lego Star Wars',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+              // Icon
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: isPurchased
+                      ? AppTheme.greenLight
+                      : canAfford
+                          ? purple.withValues(alpha: 0.08)
+                          : AppTheme.bg,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Center(
+                  child: Text(icon, style: const TextStyle(fontSize: 26)),
+                ),
+              ),
+              const SizedBox(width: 14),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (isPurchased)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppTheme.greenLight,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          '✓ Đã mua',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.green,
+                          ),
+                        ),
+                      )
+                    else if (canAfford)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: purple.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          '🎉 Đủ xu rồi!',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: purple,
+                          ),
+                        ),
+                      ),
+                    Text(
+                      name,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Price
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '$price',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                      color: canAfford || isPurchased ? purple : AppTheme.textSecondary,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  Text(
+                    'xu 🪙',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 11,
+                      color: AppTheme.textHint,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 14),
+
+          // Progress bar
+          Row(
+            children: [
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 8,
+                    backgroundColor: AppTheme.border,
+                    valueColor: AlwaysStoppedAnimation(
+                      isPurchased ? AppTheme.green : purple,
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: priceController,
-                keyboardType: TextInputType.number,
-                validator: Validators.positiveInt,
-                autovalidateMode: AutovalidateMode.onUserInteraction,
-                decoration: InputDecoration(
-                  labelText: 'Giá (Xu)',
-                  hintText: 'VD: 500',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  prefixText: '🪙 ',
+              const SizedBox(width: 10),
+              Text(
+                '${(progress * 100).round()}%',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  color: isPurchased ? AppTheme.green : purple,
                 ),
               ),
             ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Hủy'),
+          const SizedBox(height: 6),
+          Text(
+            isPurchased
+                ? 'Đã hoàn thành!'
+                : '$currentCoins / $price xu  ·  còn ${(price - currentCoins).clamp(0, price)} xu nữa',
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 12,
+              color: AppTheme.textHint,
+            ),
           ),
-          FilledButton(
-            onPressed: () {
-              if (!formKey.currentState!.validate()) return;
-              final name = nameController.text.trim();
-              final price = int.parse(priceController.text.trim());
-              context.read<AppState>().addDream(name, price, '🎁');
-              Navigator.pop(dialogContext);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('⭐ Đã thêm ước mơ mới! Cố gắng tích Xu nhé!'),
-                  backgroundColor: AppTheme.primaryGreen,
+
+          // Buy button
+          if (!isPurchased && canAfford) ...[
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: onBuy,
+                style: FilledButton.styleFrom(
+                  backgroundColor: purple,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-              );
-            },
-            child: const Text('Thêm'),
-          ),
+                child: Text(
+                  'Mua ngay! 🎉',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
 }
 
-class _DreamItemCard extends StatelessWidget {
-  final int index;
-  final String name;
-  final int price;
-  final String icon;
-  final double progress;
-  final int currentCoins;
-  final bool isPurchased;
+class _AddDreamSheet extends StatefulWidget {
+  const _AddDreamSheet();
 
-  const _DreamItemCard({
-    required this.index,
-    required this.name,
-    required this.price,
-    required this.icon,
-    required this.progress,
-    required this.currentCoins,
-    this.isPurchased = false,
-  });
+  @override
+  State<_AddDreamSheet> createState() => _AddDreamSheetState();
+}
+
+class _AddDreamSheetState extends State<_AddDreamSheet> {
+  final _nameCtrl = TextEditingController();
+  final _priceCtrl = TextEditingController();
+  String _icon = '⭐';
+  bool _loading = false;
+
+  final _icons = ['⭐', '🎮', '🧸', '📱', '🎨', '📚', '🚲', '⚽', '🎵', '🦄', '🏆', '🎁'];
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _priceCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final currentAmount = (price * progress).round();
-    final isCompleted = progress >= 1.0;
+    return Container(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+        top: 24,
+        left: 24,
+        right: 24,
+      ),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 36, height: 4,
+              decoration: BoxDecoration(color: AppTheme.border, borderRadius: BorderRadius.circular(2)),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'Thêm ước mơ mới',
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: AppTheme.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 20),
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 14),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: isCompleted
-                        ? AppTheme.lightGreen
-                        : AppTheme.accentYellow.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Center(
-                    child: Text(icon, style: const TextStyle(fontSize: 30)),
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        name,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '$currentAmount / $price Xu',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: AppTheme.textMedium,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (isPurchased)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFB2DFDB),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Text(
-                      '✅ Đã mua!',
-                      style: TextStyle(
-                        color: Color(0xFF00695C),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                      ),
-                    ),
-                  )
-                else if (isCompleted)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppTheme.lightGreen,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Text(
-                      '🎉 Đủ Xu!',
-                      style: TextStyle(
-                        color: AppTheme.darkGreen,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                      ),
-                    ),
-                  )
-                else
-                  Text(
-                    '${(progress * 100).round()}%',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                      color: AppTheme.accentOrange,
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: LinearProgressIndicator(
-                value: progress,
-                minHeight: 10,
-                backgroundColor: Colors.grey[200],
-                valueColor: AlwaysStoppedAnimation(
-                  isCompleted ? AppTheme.primaryGreen : AppTheme.accentOrange,
-                ),
-              ),
-            ),
-            if (isPurchased) ...[
-              const SizedBox(height: 10),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 10),
+          // Icon picker
+          Text(
+            'Chọn biểu tượng',
+            style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textSecondary),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _icons.map((ic) => GestureDetector(
+              onTap: () => setState(() => _icon = ic),
+              child: Container(
+                width: 44, height: 44,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFB2DFDB),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Text(
-                  '🎁 Con đã mua được rồi! Tuyệt vời!',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF00695C),
+                  color: _icon == ic ? const Color(0xFFA855F7).withValues(alpha: 0.1) : AppTheme.bg,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: _icon == ic ? const Color(0xFFA855F7) : AppTheme.border,
+                    width: _icon == ic ? 2 : 1,
                   ),
                 ),
+                child: Center(child: Text(ic, style: const TextStyle(fontSize: 22))),
               ),
-            ] else if (isCompleted) ...[
-              const SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (ctx) => AlertDialog(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        content: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Text('🎉', style: TextStyle(fontSize: 56)),
-                            const SizedBox(height: 12),
-                            const Text(
-                              'Tuyệt vời!',
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Con đã tích đủ $price Xu để mua "$name"!',
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(ctx),
-                            child: const Text('Chưa mua'),
-                          ),
-                          FilledButton(
-                            onPressed: () {
-                              context.read<AppState>().markDreamPurchased(
-                                index,
-                              );
-                              Navigator.pop(ctx);
-                            },
-                            style: FilledButton.styleFrom(
-                              backgroundColor: AppTheme.primaryGreen,
-                            ),
-                            child: const Text('Mua ngay! 🎉'),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.shopping_cart_checkout),
-                  label: const Text('Mua ngay! 🎉'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppTheme.primaryGreen,
-                  ),
-                ),
+            )).toList(),
+          ),
+          const SizedBox(height: 16),
+
+          // Name field
+          Text('Tên ước mơ', style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textSecondary)),
+          const SizedBox(height: 6),
+          TextFormField(
+            controller: _nameCtrl,
+            decoration: const InputDecoration(hintText: 'VD: Lego, Xe đạp...'),
+          ),
+          const SizedBox(height: 14),
+
+          // Price field
+          Text('Giá xu', style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textSecondary)),
+          const SizedBox(height: 6),
+          TextFormField(
+            controller: _priceCtrl,
+            keyboardType: TextInputType.number,
+            validator: (v) => Validators.positiveInt(v, 'Giá'),
+            decoration: const InputDecoration(hintText: 'VD: 200'),
+          ),
+          const SizedBox(height: 20),
+
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: _loading ? null : _submit,
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFA855F7),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
-            ] else ...[
-              const SizedBox(height: 8),
-              Text(
-                '🤖 Cần thêm ${price - currentAmount} Xu nữa! Cố lên con!',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppTheme.textMedium,
-                ),
-              ),
-            ],
-          ],
-        ),
+              child: _loading
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : Text(
+                      'Thêm ước mơ',
+                      style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 15, color: Colors.white),
+                    ),
+            ),
+          ),
+        ],
       ),
     );
+  }
+
+  Future<void> _submit() async {
+    final name = _nameCtrl.text.trim();
+    final price = int.tryParse(_priceCtrl.text.trim()) ?? 0;
+    if (name.isEmpty || price <= 0) return;
+
+    setState(() => _loading = true);
+    await context.read<AppState>().addDream(name, price, _icon);
+    if (mounted) Navigator.pop(context);
   }
 }

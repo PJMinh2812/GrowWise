@@ -1,343 +1,339 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_state.dart';
 import '../../theme/app_theme.dart';
 
-class ChildJars extends StatelessWidget {
+class ChildJars extends StatefulWidget {
   const ChildJars({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Consumer<AppState>(
-      builder: (context, appState, _) {
-        final spendJar = appState.spendJar;
-        final saveJar = appState.saveJar;
-        final shareJar = appState.shareJar;
-        final total = spendJar + saveJar + shareJar;
+  State<ChildJars> createState() => _ChildJarsState();
+}
 
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              // Total
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFFFF8E1), Color(0xFFFFECB3)],
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Column(
-                  children: [
-                    const Text('💰', style: TextStyle(fontSize: 40)),
-                    const SizedBox(height: 8),
-                    Text(
-                      '$total Xu',
-                      style: const TextStyle(
-                        fontSize: 36,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const Text(
-                      'Tổng tài sản của con',
-                      style: TextStyle(
-                        color: AppTheme.textMedium,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
+class _ChildJarsState extends State<ChildJars>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ringCtrl;
+  late Animation<double> _ringAnim;
 
-              // 3 Jars explanation
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  '🏦 Phương pháp 3 Hũ',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ),
-              const SizedBox(height: 4),
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Chia Xu vào 3 hũ để học quản lý tài chính!',
-                  style: TextStyle(color: AppTheme.textMedium, fontSize: 13),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Spend Jar
-              _JarCard(
-                emoji: '🛒',
-                name: 'Hũ Tiêu dùng',
-                description: 'Mua đồ chơi, quà tặng',
-                amount: spendJar,
-                total: total,
-                color: const Color(0xFF42A5F5),
-                bgColor: const Color(0xFFE3F2FD),
-                onAdd: () => _transferDialog(context, 'Tiêu dùng'),
-              ),
-              const SizedBox(height: 12),
-
-              // Save Jar
-              _JarCard(
-                emoji: '🏦',
-                name: 'Hũ Tiết kiệm',
-                description: 'Để dành cho mục tiêu lớn (lãi +5%/tháng)',
-                amount: saveJar,
-                total: total,
-                color: const Color(0xFF66BB6A),
-                bgColor: const Color(0xFFE8F5E9),
-                onAdd: () => _transferDialog(context, 'Tiết kiệm'),
-                interestRate: '+5%/tháng',
-              ),
-              const SizedBox(height: 12),
-
-              // Share Jar
-              _JarCard(
-                emoji: '💝',
-                name: 'Hũ Sẻ chia',
-                description: 'Từ thiện, giúp đỡ người khác',
-                amount: shareJar,
-                total: total,
-                color: const Color(0xFFEC407A),
-                bgColor: const Color(0xFFFCE4EC),
-                onAdd: () => _transferDialog(context, 'Sẻ chia'),
-              ),
-              const SizedBox(height: 24),
-
-              // Pie chart visual (simple)
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 10,
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    const Text(
-                      '📊 Phân bổ tài sản',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    // Simple bar chart
-                    _BarRow(
-                      '🛒 Tiêu dùng',
-                      spendJar,
-                      total,
-                      const Color(0xFF42A5F5),
-                    ),
-                    const SizedBox(height: 8),
-                    _BarRow(
-                      '🏦 Tiết kiệm',
-                      saveJar,
-                      total,
-                      const Color(0xFF66BB6A),
-                    ),
-                    const SizedBox(height: 8),
-                    _BarRow(
-                      '💝 Sẻ chia',
-                      shareJar,
-                      total,
-                      const Color(0xFFEC407A),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+  @override
+  void initState() {
+    super.initState();
+    _ringCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
     );
+    _ringAnim = CurvedAnimation(parent: _ringCtrl, curve: Curves.easeOutCubic);
+    Future.delayed(400.ms, () { if (mounted) _ringCtrl.forward(); });
   }
 
-  void _transferDialog(BuildContext context, String jarName) {
-    final amountController = TextEditingController();
-    final formKey = GlobalKey<FormState>();
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Chuyển Xu vào hũ $jarName'),
-        content: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Số Xu trong hũ Tiêu dùng có thể chuyển:',
-                style: TextStyle(color: Colors.grey[600], fontSize: 13),
-              ),
-              const SizedBox(height: 4),
-              Consumer<AppState>(
-                builder: (context, appState, _) => Text(
-                  '${appState.spendJar} Xu',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                    color: Color(0xFF42A5F5),
-                  ),
+  @override
+  void dispose() {
+    _ringCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final app = context.watch<AppState>();
+    final total = app.totalCoins == 0 ? 1 : app.totalCoins;
+
+    final jars = [
+      _Jar('💰', 'Tiêu dùng', app.spendJar, total, const Color(0xFF3B82F6)),
+      _Jar('🏦', 'Tiết kiệm', app.saveJar, total, AppTheme.green),
+      _Jar('🤝', 'Sẻ chia', app.shareJar, total, AppTheme.coral),
+    ];
+
+    return Scaffold(
+      backgroundColor: AppTheme.bg,
+      body: SafeArea(
+        child: CustomScrollView(
+          physics: const ClampingScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(
+              child: Container(
+                color: Colors.white,
+                padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Hũ tiền',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w900,
+                        color: AppTheme.textPrimary,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    Text(
+                      'Tổng cộng ${app.totalCoins} xu',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 13,
+                        color: AppTheme.textHint,
+                      ),
+                    ),
+                    const SizedBox(height: 28),
+
+                    // Three rings
+                    AnimatedBuilder(
+                      animation: _ringAnim,
+                      builder: (ctx, child) => Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: jars.map((j) => _Ring(
+                          jar: j,
+                          progress: _ringAnim.value,
+                        )).toList(),
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // Allocation bar
+                    _AllocationBar(jars: jars, total: total),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: amountController,
-                keyboardType: TextInputType.number,
-                autofocus: true,
-                validator: (v) {
-                  if (v == null || v.isEmpty) return 'Nhập số Xu';
-                  final n = int.tryParse(v);
-                  if (n == null || n <= 0) return 'Số Xu phải > 0';
-                  final spend = context.read<AppState>().spendJar;
-                  if (n > spend) return 'Không đủ Xu (có $spend)';
-                  return null;
-                },
-                decoration: InputDecoration(
-                  labelText: 'Số Xu muốn chuyển',
-                  prefixText: '🪙 ',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+            ),
+
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  Text(
+                    'Chi tiết',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: AppTheme.textPrimary,
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 12),
+                  ...jars.asMap().entries.map((e) =>
+                    _JarCard(jar: e.value, progress: _ringAnim.value)
+                        .animate(delay: Duration(milliseconds: e.key * 40))
+                        .fadeIn(duration: 160.ms)
+                        .slideY(begin: 0.05, end: 0),
+                  ),
+                ]),
               ),
-              const SizedBox(height: 12),
-              // Quick chips
-              Wrap(
-                spacing: 8,
-                children: [5, 10, 20, 50].map((amount) {
-                  return ActionChip(
-                    label: Text('+$amount'),
-                    onPressed: () {
-                      amountController.text = amount.toString();
-                    },
-                  );
-                }).toList(),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Huỷ'),
-          ),
-          FilledButton(
-            onPressed: () {
-              if (!formKey.currentState!.validate()) return;
-              final amount = int.parse(amountController.text.trim());
-              context.read<AppState>().transferToJar(jarName, amount);
-              Navigator.pop(dialogContext);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('✅ Đã chuyển $amount Xu vào hũ $jarName!'),
-                  backgroundColor: AppTheme.primaryGreen,
-                ),
-              );
-            },
-            child: const Text('Chuyển'),
-          ),
-        ],
       ),
     );
   }
 }
 
-class _JarCard extends StatelessWidget {
-  final String emoji;
+class _Jar {
+  final String icon;
   final String name;
-  final String description;
   final int amount;
   final int total;
   final Color color;
-  final Color bgColor;
-  final VoidCallback onAdd;
-  final String? interestRate;
+  double get ratio => amount / total;
+  String get pct => '${(ratio * 100).round()}%';
 
-  const _JarCard({
-    required this.emoji,
-    required this.name,
-    required this.description,
-    required this.amount,
-    required this.total,
-    required this.color,
-    required this.bgColor,
-    required this.onAdd,
-    this.interestRate,
-  });
+  const _Jar(this.icon, this.name, this.amount, this.total, this.color);
+}
+
+class _Ring extends StatelessWidget {
+  final _Jar jar;
+  final double progress;
+  const _Ring({required this.jar, required this.progress});
 
   @override
   Widget build(BuildContext context) {
-    final percentage = total > 0 ? (amount / total * 100).round() : 0;
+    final ringSize = (MediaQuery.of(context).size.width / 4.5).clamp(72.0, 100.0);
+    return Column(
+      children: [
+        SizedBox(
+          width: ringSize,
+          height: ringSize,
+          child: CustomPaint(
+            painter: _RingPainter(
+              progress: jar.ratio * progress,
+              color: jar.color,
+              bgColor: AppTheme.border,
+              strokeWidth: 9,
+            ),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(jar.icon, style: const TextStyle(fontSize: 22)),
+                  Text(
+                    jar.pct,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: jar.color,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          '${jar.amount} xu',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 14,
+            fontWeight: FontWeight.w800,
+            color: AppTheme.textPrimary,
+          ),
+        ),
+        Text(
+          jar.name,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 11,
+            color: AppTheme.textHint,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _RingPainter extends CustomPainter {
+  final double progress;
+  final Color color;
+  final Color bgColor;
+  final double strokeWidth;
+
+  const _RingPainter({
+    required this.progress,
+    required this.color,
+    required this.bgColor,
+    this.strokeWidth = 10,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.shortestSide - strokeWidth) / 2;
+
+    final bg = Paint()
+      ..color = bgColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+
+    final fg = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawCircle(center, radius, bg);
+    if (progress > 0) {
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        -math.pi / 2,
+        2 * math.pi * progress,
+        false,
+        fg,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_RingPainter old) => old.progress != progress;
+}
+
+class _AllocationBar extends StatelessWidget {
+  final List<_Jar> jars;
+  final int total;
+  const _AllocationBar({required this.jars, required this.total});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Phân bổ',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.textHint,
+          ),
+        ),
+        const SizedBox(height: 8),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: Row(
+            children: jars.map((j) => Flexible(
+              flex: (j.ratio * 100).round().clamp(1, 100),
+              child: Container(
+                height: 12,
+                color: j.color,
+              ),
+            )).toList(),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: jars.map((j) => Expanded(
+            child: Row(
+              children: [
+                Container(width: 8, height: 8, decoration: BoxDecoration(
+                  color: j.color,
+                  borderRadius: BorderRadius.circular(2),
+                )),
+                const SizedBox(width: 4),
+                Text(j.name, style: GoogleFonts.plusJakartaSans(fontSize: 10, color: AppTheme.textHint)),
+              ],
+            ),
+          )).toList(),
+        ),
+      ],
+    );
+  }
+}
+
+class _JarCard extends StatelessWidget {
+  final _Jar jar;
+  final double progress;
+  const _JarCard({required this.jar, required this.progress});
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppTheme.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Text(emoji, style: const TextStyle(fontSize: 32)),
-              const SizedBox(width: 10),
+              Text(jar.icon, style: const TextStyle(fontSize: 26)),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Text(
-                          name,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: color,
-                            fontSize: 16,
-                          ),
-                        ),
-                        if (interestRate != null) ...[
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: color.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              interestRate!,
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: color,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
+                    Text(
+                      jar.name,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.textPrimary,
+                      ),
                     ),
                     Text(
-                      description,
-                      style: const TextStyle(
+                      '${jar.pct} tổng xu',
+                      style: GoogleFonts.plusJakartaSans(
                         fontSize: 12,
-                        color: AppTheme.textMedium,
+                        color: AppTheme.textHint,
                       ),
                     ),
                   ],
@@ -347,89 +343,215 @@ class _JarCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    '$amount Xu',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: color,
+                    '${jar.amount}',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                      color: jar.color,
+                      letterSpacing: -0.5,
                     ),
                   ),
                   Text(
-                    '$percentage%',
-                    style: TextStyle(fontSize: 12, color: color),
+                    'xu',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 11,
+                      color: AppTheme.textHint,
+                    ),
                   ),
                 ],
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: LinearProgressIndicator(
-                    value: total > 0 ? amount / total : 0,
-                    minHeight: 8,
-                    backgroundColor: Colors.white.withValues(alpha: 0.7),
-                    valueColor: AlwaysStoppedAnimation(color),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              SizedBox(
-                height: 32,
-                child: FilledButton.icon(
-                  onPressed: onAdd,
-                  icon: const Icon(Icons.add, size: 16),
-                  label: const Text('Chuyển', style: TextStyle(fontSize: 12)),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: color,
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                  ),
-                ),
-              ),
-            ],
+          const SizedBox(height: 14),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: jar.ratio * progress,
+              minHeight: 6,
+              backgroundColor: AppTheme.border,
+              valueColor: AlwaysStoppedAnimation(jar.color),
+            ),
           ),
+          if (jar.name == 'Tiêu dùng' && jar.amount > 0) ...[
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () => _showTransfer(context),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: jar.color,
+                  side: BorderSide(color: jar.color, width: 1.5),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                ),
+                child: Text(
+                  'Chuyển sang hũ khác',
+                  style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 13),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
+
+  void _showTransfer(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _TransferSheet(spendJar: jar.amount),
+    );
+  }
 }
 
-class _BarRow extends StatelessWidget {
-  final String label;
-  final int amount;
-  final int total;
-  final Color color;
+class _TransferSheet extends StatefulWidget {
+  final int spendJar;
+  const _TransferSheet({required this.spendJar});
 
-  const _BarRow(this.label, this.amount, this.total, this.color);
+  @override
+  State<_TransferSheet> createState() => _TransferSheetState();
+}
+
+class _TransferSheetState extends State<_TransferSheet> {
+  String _target = 'Tiết kiệm';
+  int _amount = 10;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        SizedBox(
-          width: 110,
-          child: Text(label, style: const TextStyle(fontSize: 13)),
-        ),
-        Expanded(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: total > 0 ? amount / total : 0,
-              minHeight: 14,
-              backgroundColor: Colors.grey[200],
-              valueColor: AlwaysStoppedAnimation(color),
+    final quickAmounts = [5, 10, 20, 30];
+    return Container(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+        top: 24,
+        left: 24,
+        right: 24,
+      ),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 36, height: 4,
+              decoration: BoxDecoration(
+                color: AppTheme.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
           ),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          '$amount',
-          style: TextStyle(fontWeight: FontWeight.bold, color: color),
-        ),
-      ],
+          const SizedBox(height: 20),
+          Text(
+            'Chuyển xu',
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: AppTheme.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Hũ Tiêu dùng còn ${widget.spendJar} xu',
+            style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppTheme.textHint),
+          ),
+          const SizedBox(height: 20),
+
+          // Target selector
+          Text(
+            'Chuyển sang hũ',
+            style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textSecondary),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: ['Tiết kiệm', 'Sẻ chia'].map((name) {
+              final active = _target == name;
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() => _target = name),
+                  child: Container(
+                    margin: const EdgeInsets.only(right: 8),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      color: active ? AppTheme.green : AppTheme.bg,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: active ? AppTheme.green : AppTheme.border,
+                      ),
+                    ),
+                    child: Text(
+                      name == 'Tiết kiệm' ? '🏦 $name' : '🤝 $name',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                        color: active ? Colors.white : AppTheme.textPrimary,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 20),
+
+          // Amount
+          Text(
+            'Số lượng',
+            style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textSecondary),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            children: quickAmounts.map((a) {
+              final active = _amount == a;
+              return GestureDetector(
+                onTap: () => setState(() => _amount = a),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: active ? AppTheme.green : Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: active ? AppTheme.green : AppTheme.border),
+                  ),
+                  child: Text(
+                    '$a xu',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                      color: active ? Colors.white : AppTheme.textPrimary,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 24),
+
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: () {
+                context.read<AppState>().transferToJar(_target, _amount);
+                Navigator.pop(context);
+              },
+              style: FilledButton.styleFrom(
+                backgroundColor: AppTheme.green,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              child: Text(
+                'Chuyển $_amount xu → $_target',
+                style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 15, color: Colors.white),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

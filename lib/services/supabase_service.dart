@@ -183,8 +183,9 @@ class SupabaseService {
     String? parentNote,
   }) async {
     final updates = <String, dynamic>{'status': status};
-    if (status == 'submitted')
+    if (status == 'submitted') {
       updates['submitted_at'] = DateTime.now().toIso8601String();
+    }
     if (status == 'approved' || status == 'rejected') {
       updates['reviewed_at'] = DateTime.now().toIso8601String();
     }

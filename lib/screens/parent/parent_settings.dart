@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_state.dart';
 import '../../theme/app_theme.dart';
@@ -14,136 +15,60 @@ class ParentSettings extends StatelessWidget {
     return Theme(
       data: AppTheme.parentTheme(),
       child: Scaffold(
-        appBar: AppBar(title: const Text('Cài đặt')),
+        appBar: AppBar(
+          title: Text(
+            'Cài đặt',
+            style: GoogleFonts.plusJakartaSans(
+              fontWeight: FontWeight.w700,
+              color: AppTheme.textPrimary,
+            ),
+          ),
+          backgroundColor: AppTheme.surface,
+          elevation: 0,
+          iconTheme: const IconThemeData(color: AppTheme.textPrimary),
+        ),
         body: Consumer<AppState>(
           builder: (context, appState, _) {
             return ListView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
               children: [
-                // Profile section
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 10,
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 60,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          color: AppTheme.parentBlueLight,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: const Center(
-                          child: Text(
-                            '👨‍👩‍👧',
-                            style: TextStyle(fontSize: 28),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              appState.parentName,
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              appState.parentEmail,
-                              style: const TextStyle(
-                                color: AppTheme.textMedium,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () => _editProfileDialog(context, appState),
-                        icon: const Icon(
-                          Icons.edit,
-                          color: AppTheme.parentBlue,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
+                // Profile card
+                _ProfileCard(appState: appState, onEdit: () => _editProfileDialog(context, appState)),
+                const SizedBox(height: 28),
 
-                // Child info
-                const Text(
-                  '👦 Hồ sơ con',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 12),
-                _SettingsTile(
-                  icon: Icons.person,
+                _SectionLabel('👦 Hồ sơ con'),
+                const SizedBox(height: 10),
+                _Tile(
+                  icon: Icons.person_outline_rounded,
                   title: 'Tên con',
                   subtitle: appState.childName,
                   onTap: () => _editChildNameDialog(context, appState),
                 ),
-                _SettingsTile(
-                  icon: Icons.cake,
+                _Tile(
+                  icon: Icons.cake_outlined,
                   title: 'Tuổi',
                   subtitle: '${appState.childAge} tuổi',
                   onTap: () => _editAgeDialog(context, appState),
                 ),
                 const SizedBox(height: 24),
 
-                // App settings
-                const Text(
-                  '⚙️ Cài đặt ứng dụng',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                _SectionLabel('⚙️ Cài đặt ứng dụng'),
+                const SizedBox(height: 10),
+                _SwitchTile(
+                  icon: Icons.notifications_outlined,
+                  title: 'Thông báo',
+                  subtitle: appState.notificationsEnabled ? 'Đang bật' : 'Đang tắt',
+                  value: appState.notificationsEnabled,
+                  onChanged: appState.updateNotifications,
                 ),
-                const SizedBox(height: 12),
-                Card(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: SwitchListTile(
-                    secondary: const Icon(
-                      Icons.notifications,
-                      color: AppTheme.parentBlue,
-                    ),
-                    title: const Text(
-                      'Thông báo',
-                      style: TextStyle(fontWeight: FontWeight.w500),
-                    ),
-                    subtitle: Text(
-                      appState.notificationsEnabled ? 'Đang bật' : 'Đang tắt',
-                      style: const TextStyle(fontSize: 13),
-                    ),
-                    value: appState.notificationsEnabled,
-                    onChanged: (v) => appState.updateNotifications(v),
-                    activeTrackColor: AppTheme.parentBlue,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-                _SettingsTile(
-                  icon: Icons.language,
+                _Tile(
+                  icon: Icons.language_outlined,
                   title: 'Ngôn ngữ',
                   subtitle: 'Tiếng Việt',
-                  onTap: () {},
+                  onTap: () => _showComingSoon(context),
                 ),
-                _SettingsTile(
-                  icon: Icons.shield,
+                _Tile(
+                  icon: Icons.shield_outlined,
                   title: 'Bảo mật',
                   subtitle: 'Đổi mật khẩu',
                   onTap: () => Navigator.push(
@@ -155,27 +80,23 @@ class ParentSettings extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
 
-                // About
-                const Text(
-                  'ℹ️ Thông tin',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 12),
-                _SettingsTile(
-                  icon: Icons.info,
+                _SectionLabel('ℹ️ Thông tin'),
+                const SizedBox(height: 10),
+                _Tile(
+                  icon: Icons.info_outline_rounded,
                   title: 'Về GrowWise',
-                  subtitle: 'Version 1.0.0 - EXE101 Demo',
+                  subtitle: 'Version 1.0.0 · EXE101 Demo',
                   onTap: () => _showAboutDialog(context),
                 ),
-                _SettingsTile(
-                  icon: Icons.help,
+                _Tile(
+                  icon: Icons.help_outline_rounded,
                   title: 'Hướng dẫn sử dụng',
                   subtitle: 'Xem tutorial',
-                  onTap: () {},
+                  onTap: () => _showComingSoon(context),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 36),
 
-                // Logout
+                // Logout button
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
@@ -188,16 +109,22 @@ class ParentSettings extends StatelessWidget {
                         (route) => false,
                       );
                     },
-                    icon: const Icon(Icons.logout, color: Colors.red),
-                    label: const Text(
+                    icon: const Icon(
+                      Icons.logout_rounded,
+                      color: Color(0xFFEF4444),
+                    ),
+                    label: Text(
                       'Đăng xuất',
-                      style: TextStyle(color: Colors.red),
+                      style: GoogleFonts.plusJakartaSans(
+                        color: const Color(0xFFEF4444),
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      side: const BorderSide(color: Colors.red),
+                      side: const BorderSide(color: Color(0xFFEF4444)),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(14),
                       ),
                     ),
                   ),
@@ -212,118 +139,119 @@ class ParentSettings extends StatelessWidget {
 
   void _editProfileDialog(BuildContext context, AppState appState) {
     final formKey = GlobalKey<FormState>();
-    final controller = TextEditingController(text: appState.parentName);
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Đổi tên hiển thị'),
-        content: Form(
-          key: formKey,
-          child: TextFormField(
-            controller: controller,
-            validator: Validators.name,
-            autovalidateMode: AutovalidateMode.onUserInteraction,
-            decoration: InputDecoration(
-              labelText: 'Tên của bạn',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
+    final ctrl = TextEditingController(text: appState.parentName);
+    _showFormDialog(
+      context,
+      title: '✏️ Đổi tên hiển thị',
+      child: Form(
+        key: formKey,
+        child: TextFormField(
+          controller: ctrl,
+          validator: Validators.name,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          decoration: const InputDecoration(hintText: 'Tên của bạn'),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Hủy'),
-          ),
-          FilledButton(
-            onPressed: () {
-              if (!formKey.currentState!.validate()) return;
-              appState.updateParentName(controller.text.trim());
-              Navigator.pop(ctx);
-            },
-            child: const Text('Lưu'),
-          ),
-        ],
       ),
+      onSave: () {
+        if (!formKey.currentState!.validate()) return false;
+        appState.updateParentName(ctrl.text.trim());
+        return true;
+      },
     );
   }
 
   void _editChildNameDialog(BuildContext context, AppState appState) {
     final formKey = GlobalKey<FormState>();
-    final controller = TextEditingController(text: appState.childName);
+    final ctrl = TextEditingController(text: appState.childName);
+    _showFormDialog(
+      context,
+      title: '✏️ Đổi tên con',
+      child: Form(
+        key: formKey,
+        child: TextFormField(
+          controller: ctrl,
+          validator: Validators.name,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          decoration: const InputDecoration(hintText: 'Tên con'),
+        ),
+      ),
+      onSave: () {
+        if (!formKey.currentState!.validate()) return false;
+        appState.updateChildName(ctrl.text.trim());
+        return true;
+      },
+    );
+  }
+
+  void _editAgeDialog(BuildContext context, AppState appState) {
+    final ctrl = TextEditingController(text: appState.childAge.toString());
+    _showFormDialog(
+      context,
+      title: '🎂 Đổi tuổi con',
+      child: TextField(
+        controller: ctrl,
+        keyboardType: TextInputType.number,
+        decoration: const InputDecoration(
+          hintText: 'Tuổi',
+          suffixText: 'tuổi',
+        ),
+      ),
+      onSave: () {
+        final age = int.tryParse(ctrl.text.trim());
+        if (age != null && age > 0 && age < 18) {
+          appState.updateChildAge(age);
+        }
+        return true;
+      },
+    );
+  }
+
+  void _showFormDialog(
+    BuildContext context, {
+    required String title,
+    required Widget child,
+    required bool Function() onSave,
+  }) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Đổi tên con'),
-        content: Form(
-          key: formKey,
-          child: TextFormField(
-            controller: controller,
-            validator: Validators.name,
-            autovalidateMode: AutovalidateMode.onUserInteraction,
-            decoration: InputDecoration(
-              labelText: 'Tên con',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text(
+          title,
+          style: GoogleFonts.plusJakartaSans(
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
           ),
         ),
+        content: child,
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Hủy'),
+            child: Text(
+              'Hủy',
+              style: GoogleFonts.plusJakartaSans(color: AppTheme.textSecondary),
+            ),
           ),
           FilledButton(
             onPressed: () {
-              if (!formKey.currentState!.validate()) return;
-              appState.updateChildName(controller.text.trim());
-              Navigator.pop(ctx);
+              if (onSave()) Navigator.pop(ctx);
             },
-            child: const Text('Lưu'),
+            style: FilledButton.styleFrom(backgroundColor: AppTheme.indigo),
+            child: Text(
+              'Lưu',
+              style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
+            ),
           ),
         ],
       ),
     );
   }
 
-  void _editAgeDialog(BuildContext context, AppState appState) {
-    final controller = TextEditingController(
-      text: appState.childAge.toString(),
-    );
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Đổi tuổi con'),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.number,
-          decoration: InputDecoration(
-            labelText: 'Tuổi',
-            suffixText: 'tuổi',
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Hủy'),
-          ),
-          FilledButton(
-            onPressed: () {
-              final age = int.tryParse(controller.text.trim());
-              if (age != null && age > 0 && age < 18) {
-                appState.updateChildAge(age);
-              }
-              Navigator.pop(ctx);
-            },
-            child: const Text('Lưu'),
-          ),
-        ],
+  void _showComingSoon(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('✨ Tính năng đang được hoàn thiện, sẽ sớm có mặt!'),
+        backgroundColor: AppTheme.indigo,
       ),
     );
   }
@@ -332,23 +260,34 @@ class ParentSettings extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        content: const Column(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('🌱', style: TextStyle(fontSize: 56)),
-            SizedBox(height: 12),
+            const Text('🌱', style: TextStyle(fontSize: 56)),
+            const SizedBox(height: 12),
             Text(
               'GrowWise',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 24,
+                fontWeight: FontWeight.w800,
+                color: AppTheme.textPrimary,
+              ),
             ),
-            SizedBox(height: 4),
-            Text('Version 1.0.0', style: TextStyle(color: AppTheme.textMedium)),
-            SizedBox(height: 16),
+            const SizedBox(height: 4),
             Text(
-              'Nền tảng EdTech/Family-Tech giáo dục tài chính cho trẻ 6-12 tuổi.\n\nEXE101 Project - FPT University',
+              'Version 1.0.0',
+              style: GoogleFonts.plusJakartaSans(color: AppTheme.textHint),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Nền tảng EdTech/Family-Tech giáo dục tài chính cho trẻ 6–12 tuổi.\n\nEXE101 Project · FPT University',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, height: 1.5),
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 14,
+                height: 1.6,
+                color: AppTheme.textSecondary,
+              ),
             ),
           ],
         ),
@@ -357,7 +296,11 @@ class ParentSettings extends StatelessWidget {
             width: double.infinity,
             child: FilledButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Đóng'),
+              style: FilledButton.styleFrom(backgroundColor: AppTheme.indigo),
+              child: Text(
+                'Đóng',
+                style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
+              ),
             ),
           ),
         ],
@@ -366,13 +309,103 @@ class ParentSettings extends StatelessWidget {
   }
 }
 
-class _SettingsTile extends StatelessWidget {
+class _ProfileCard extends StatelessWidget {
+  final AppState appState;
+  final VoidCallback onEdit;
+
+  const _ProfileCard({required this.appState, required this.onEdit});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: AppTheme.gradientIndigo,
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: AppTheme.shadowMd(AppTheme.indigo),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 62,
+            height: 62,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: const Center(
+              child: Text('👨‍👩‍👧', style: TextStyle(fontSize: 30)),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  appState.parentName,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  appState.parentEmail,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13,
+                    color: Colors.white.withValues(alpha: 0.8),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          GestureDetector(
+            onTap: onEdit,
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.edit_outlined,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  final String text;
+  const _SectionLabel(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: GoogleFonts.plusJakartaSans(
+        fontSize: 16,
+        fontWeight: FontWeight.w700,
+        color: AppTheme.textPrimary,
+      ),
+    );
+  }
+}
+
+class _Tile extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
   final VoidCallback onTap;
 
-  const _SettingsTile({
+  const _Tile({
     required this.icon,
     required this.title,
     required this.subtitle,
@@ -381,15 +414,102 @@ class _SettingsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: AppTheme.cardShadow,
+      ),
       child: ListTile(
-        leading: Icon(icon, color: AppTheme.parentBlue),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
-        subtitle: Text(subtitle, style: const TextStyle(fontSize: 13)),
-        trailing: const Icon(Icons.chevron_right, color: AppTheme.textLight),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        leading: Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            color: AppTheme.indigoLight,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: AppTheme.indigo, size: 20),
+        ),
+        title: Text(
+          title,
+          style: GoogleFonts.plusJakartaSans(
+            fontWeight: FontWeight.w600,
+            fontSize: 15,
+            color: AppTheme.textPrimary,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 13,
+            color: AppTheme.textHint,
+          ),
+        ),
+        trailing: const Icon(
+          Icons.chevron_right_rounded,
+          color: AppTheme.textHint,
+        ),
         onTap: onTap,
+      ),
+    );
+  }
+}
+
+class _SwitchTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const _SwitchTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: AppTheme.cardShadow,
+      ),
+      child: SwitchListTile(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        secondary: Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            color: AppTheme.indigoLight,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: AppTheme.indigo, size: 20),
+        ),
+        title: Text(
+          title,
+          style: GoogleFonts.plusJakartaSans(
+            fontWeight: FontWeight.w600,
+            fontSize: 15,
+            color: AppTheme.textPrimary,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 13,
+            color: AppTheme.textHint,
+          ),
+        ),
+        value: value,
+        onChanged: onChanged,
+        activeTrackColor: AppTheme.indigo,
       ),
     );
   }
