@@ -4,10 +4,18 @@ import '../models/task_model.dart';
 import '../services/supabase_service.dart';
 
 class AppState extends ChangeNotifier {
-  // Demo mode (active when .env uses placeholder values)
+  // Demo mode (active when .env uses placeholder values OR user explicitly activated)
+  bool _forcedDemoMode = false;
+
   bool get isDemoMode {
+    if (_forcedDemoMode) return true;
     final url = dotenv.env['SUPABASE_URL'] ?? '';
     return url.contains('placeholder') || url.isEmpty;
+  }
+
+  void activateDemo() {
+    _forcedDemoMode = true;
+    _seedDemoData();
   }
 
   // Auth state

@@ -8,6 +8,7 @@ import 'child_task_list.dart';
 import 'child_jars.dart';
 import 'child_dream_jar.dart';
 import '../login_screen.dart';
+import '../ai_chat_screen.dart';
 
 class ChildDashboard extends StatefulWidget {
   const ChildDashboard({super.key});
@@ -72,7 +73,10 @@ class _ChildDashboardState extends State<ChildDashboard> {
       ),
       leading: IconButton(
         icon: const Icon(Icons.smart_toy, color: AppTheme.vibrantPrimary, size: 28),
-        onPressed: () {},
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const AiChatScreen()),
+        ),
       ),
       actions: [
         IconButton(

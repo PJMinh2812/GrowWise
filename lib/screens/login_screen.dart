@@ -93,6 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _demoLogin() {
+    context.read<AppState>().activateDemo();
     Navigator.pushReplacement(
       context,
       PageRouteBuilder(
@@ -169,8 +170,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 40),
 
-              // Demo banner
-              if (isDemoMode) ...[
+              // Demo banner (always visible)
+              if (true) ...[
                 GestureDetector(
                   onTap: _demoLogin,
                   child: Container(
