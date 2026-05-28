@@ -528,22 +528,29 @@ class AppState extends ChangeNotifier {
   void _seedDemoData() {
     _isLoggedIn = true;
     _hasSeenOnboarding = true;
-    _parentName = 'Phụ huynh Demo';
-    _parentEmail = 'demo@growwise.app';
+    _parentName = 'Nguyễn Văn Hùng';
+    _parentEmail = 'hung.nguyen@gmail.com';
     _familyId = 'demo-family';
     _childId = 'demo-child';
-    _childName = 'Tôm';
+    _childName = 'Minh';
     _childAvatarEmoji = '🦊';
-    _childAge = 8;
-    _level = 3;
-    _totalCoins = 145;
-    _spendJar = 60;
-    _saveJar = 60;
-    _shareJar = 25;
-    _xp = 45;
-    _xpToNextLevel = 120;
-    _badges = ['🏅 Khởi đầu', '🔥 3 ngày liên tiếp', '🌟 Level 3!'];
-    _bondingMessage = 'Hôm nay con đã làm rất tốt! Bố/Mẹ tự hào về con! 💛';
+    _childAge = 9;
+    _level = 5;
+    _totalCoins = 850;
+    _spendJar = 425;
+    _saveJar = 255;
+    _shareJar = 170;
+    _xp = 78;
+    _xpToNextLevel = 100;
+    _badges = [
+      '🏅 Khởi đầu',
+      '🔥 3 ngày liên tiếp',
+      '🌟 Level 5!',
+      '📚 Mọt sách',
+      '🏆 Hoàn thành 20 việc',
+      '💪 Sức khỏe tốt',
+    ];
+    _bondingMessage = 'Minh ơi, hôm nay con làm rất tốt! Bố rất tự hào về con 💛';
     _notificationsEnabled = true;
 
     final now = DateTime.now();
@@ -554,9 +561,9 @@ class AppState extends ChangeNotifier {
         description: 'Rửa sạch chén đĩa sau bữa tối và cất gọn vào tủ.',
         category: 'Việc nhà',
         icon: '🍽️',
-        coinReward: 15,
+        coinReward: 20,
         status: TaskStatus.submitted,
-        createdAt: now.subtract(const Duration(hours: 2)),
+        createdAt: now.subtract(const Duration(hours: 1)),
       ),
       TaskModel(
         id: 'demo-2',
@@ -564,9 +571,9 @@ class AppState extends ChangeNotifier {
         description: 'Đọc một chương sách yêu thích và kể lại cho bố mẹ.',
         category: 'Học tập',
         icon: '📚',
-        coinReward: 20,
+        coinReward: 25,
         status: TaskStatus.pending,
-        createdAt: now.subtract(const Duration(hours: 5)),
+        createdAt: now.subtract(const Duration(hours: 3)),
       ),
       TaskModel(
         id: 'demo-3',
@@ -574,9 +581,9 @@ class AppState extends ChangeNotifier {
         description: 'Tưới đều các chậu cây trên ban công.',
         category: 'Việc nhà',
         icon: '🌱',
-        coinReward: 10,
+        coinReward: 15,
         status: TaskStatus.pending,
-        createdAt: now.subtract(const Duration(hours: 6)),
+        createdAt: now.subtract(const Duration(hours: 5)),
       ),
       TaskModel(
         id: 'demo-4',
@@ -584,57 +591,122 @@ class AppState extends ChangeNotifier {
         description: 'Tập 15 phút bài thể dục buổi sáng.',
         category: 'Sức khỏe',
         icon: '🏃',
-        coinReward: 15,
+        coinReward: 20,
         status: TaskStatus.approved,
-        createdAt: now.subtract(const Duration(days: 1)),
-        reviewedAt: now.subtract(const Duration(hours: 20)),
+        createdAt: now.subtract(const Duration(hours: 10)),
+        reviewedAt: now.subtract(const Duration(hours: 8)),
       ),
       TaskModel(
         id: 'demo-5',
         title: 'Gấp quần áo',
-        description: 'Gấp gọn quần áo đã giặt.',
+        description: 'Gấp gọn quần áo đã giặt và cất vào tủ.',
         category: 'Việc nhà',
         icon: '👕',
         coinReward: 15,
         status: TaskStatus.approved,
+        createdAt: now.subtract(const Duration(days: 1)),
+        reviewedAt: now.subtract(const Duration(hours: 22)),
+      ),
+      TaskModel(
+        id: 'demo-6',
+        title: 'Học bài ôn tập Toán',
+        description: 'Ôn lại bài Toán chương 3 trước khi thi.',
+        category: 'Học tập',
+        icon: '✏️',
+        coinReward: 30,
+        status: TaskStatus.approved,
         createdAt: now.subtract(const Duration(days: 2)),
-        reviewedAt: now.subtract(const Duration(days: 1, hours: 18)),
+        reviewedAt: now.subtract(const Duration(days: 1, hours: 20)),
+      ),
+      TaskModel(
+        id: 'demo-7',
+        title: 'Vẽ tranh tặng bà',
+        description: 'Vẽ một bức tranh đẹp tặng bà nhân dịp sinh nhật.',
+        category: 'Sáng tạo',
+        icon: '🎨',
+        coinReward: 25,
+        status: TaskStatus.approved,
+        createdAt: now.subtract(const Duration(days: 3)),
+        reviewedAt: now.subtract(const Duration(days: 2, hours: 16)),
+      ),
+      TaskModel(
+        id: 'demo-8',
+        title: 'Quét nhà và lau sàn',
+        description: 'Quét sạch toàn bộ nhà và lau sàn phòng khách.',
+        category: 'Việc nhà',
+        icon: '🧹',
+        coinReward: 20,
+        status: TaskStatus.approved,
+        createdAt: now.subtract(const Duration(days: 4)),
+        reviewedAt: now.subtract(const Duration(days: 3, hours: 18)),
       ),
     ];
 
     _dreamItems = [
       {
         'id': 'dream-1',
-        'name': 'Lego Ninjago',
-        'price': 300,
+        'name': 'Lego Technic',
+        'price': 1000,
         'icon': '🧱',
-        'progress': _totalCoins / 300,
+        'progress': (850 / 1000).clamp(0.0, 1.0),
+        'is_purchased': false,
       },
       {
         'id': 'dream-2',
         'name': 'Bộ truyện Doraemon',
-        'price': 150,
+        'price': 350,
         'icon': '📖',
-        'progress': (_totalCoins / 150).clamp(0.0, 1.0),
+        'progress': 1.0,
+        'is_purchased': true,
+      },
+      {
+        'id': 'dream-3',
+        'name': 'Xe đạp mini',
+        'price': 1500,
+        'icon': '🚲',
+        'progress': (850 / 1500).clamp(0.0, 1.0),
+        'is_purchased': false,
+      },
+      {
+        'id': 'dream-4',
+        'name': 'Bộ màu vẽ chuyên nghiệp',
+        'price': 400,
+        'icon': '🎨',
+        'progress': 1.0,
+        'is_purchased': true,
       },
     ];
 
     _memories = [
       {
-        'date': _formatDate(
-          now.subtract(const Duration(hours: 20)).toIso8601String(),
-        ),
+        'date': _formatDate(now.subtract(const Duration(hours: 8)).toIso8601String()),
         'task': 'Tập thể dục buổi sáng',
         'emoji': '🏃',
-        'note': 'Hoàn thành xuất sắc!',
+        'note': 'Con tập rất chăm chỉ, bố rất tự hào!',
       },
       {
-        'date': _formatDate(
-          now.subtract(const Duration(days: 1, hours: 18)).toIso8601String(),
-        ),
+        'date': _formatDate(now.subtract(const Duration(hours: 22)).toIso8601String()),
         'task': 'Gấp quần áo',
         'emoji': '👕',
-        'note': 'Con gấp rất gọn gàng!',
+        'note': 'Con gấp rất gọn gàng và cẩn thận!',
+      },
+      {
+        'date': _formatDate(now.subtract(const Duration(days: 1, hours: 20)).toIso8601String()),
+        'task': 'Học bài ôn tập Toán',
+        'emoji': '✏️',
+        'note': 'Con học bài rất nghiêm túc, chúc con thi tốt!',
+      },
+      {
+        'date': _formatDate(now.subtract(const Duration(days: 2, hours: 16)).toIso8601String()),
+        'task': 'Vẽ tranh tặng bà',
+        'emoji': '🎨',
+        'note': 'Bức tranh rất đẹp, bà rất vui khi nhận được!',
+      },
+      {
+        'date': _formatDate(now.subtract(const Duration(days: 3, hours: 18)).toIso8601String()),
+        'task': 'Quét nhà và lau sàn',
+        'emoji': '🧹',
+        'note': 'Nhà sạch bóng, con thật siêng năng!',
       },
     ];
 

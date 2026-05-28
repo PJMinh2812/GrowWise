@@ -37,7 +37,7 @@ class RoleSelectionScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppTheme.surfaceBright,
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -112,7 +112,7 @@ class RoleSelectionScreen extends StatelessWidget {
                 onTap: () => _goChild(context),
               ).animate(delay: 400.ms).fadeIn(duration: 500.ms).slideY(begin: 0.2, end: 0, curve: Curves.easeOutCubic),
 
-              const Spacer(),
+              const SizedBox(height: 32),
 
               // Demo badge
               Center(

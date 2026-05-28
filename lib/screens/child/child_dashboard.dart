@@ -261,6 +261,8 @@ class _WelcomeMessage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final msg = context.watch<AppState>().bondingMessage;
+    final displayMsg = msg.isNotEmpty ? msg : 'Hôm nay con đã làm rất tốt! 💛';
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -275,10 +277,10 @@ class _WelcomeMessage extends StatelessWidget {
             ),
           ),
           child: Text(
-            'Hôm nay con đã làm rất tốt!',
+            displayMsg,
             textAlign: TextAlign.center,
             style: GoogleFonts.plusJakartaSans(
-              fontSize: 20,
+              fontSize: 18,
               fontWeight: FontWeight.w700,
               color: AppTheme.onPrimaryFixed,
             ),
