@@ -6,6 +6,7 @@ import '../services/supabase_service.dart';
 class AppState extends ChangeNotifier {
   // Demo mode (active when .env uses placeholder values OR user explicitly activated)
   bool _forcedDemoMode = false;
+  int _streakDays = 0;
 
   bool get isDemoMode {
     if (_forcedDemoMode) return true;
@@ -156,6 +157,7 @@ class AppState extends ChangeNotifier {
   int get shareJar => _shareJar;
   int get xp => _xp;
   int get xpToNextLevel => _xpToNextLevel;
+  int get streakDays => _streakDays;
   List<String> get badges => List.unmodifiable(_badges);
   bool get hasChild => _childId != null;
   List<Map<String, dynamic>> get dreamItemsList =>
@@ -550,6 +552,7 @@ class AppState extends ChangeNotifier {
     _shareJar = 170;
     _xp = 78;
     _xpToNextLevel = 100;
+    _streakDays = 7;
     _badges = [
       '🏅 Khởi đầu',
       '🔥 3 ngày liên tiếp',

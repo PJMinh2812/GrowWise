@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_state.dart';
 import '../../theme/app_theme.dart';
-import 'child_task_list.dart'; 
+import '../../models/task_model.dart';
+import 'child_task_list.dart';
 import 'child_jars.dart';
 import 'child_dream_jar.dart';
 import '../login_screen.dart';
@@ -244,488 +245,327 @@ class _HomeTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
-
+    final pending = [...app.pendingTasks, ...app.submittedTasks];
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 120),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
       children: [
-        const _WelcomeMessage().animate().fadeIn().slideY(begin: 0.1),
-        const SizedBox(height: 32),
-        _ProfileSection(app: app).animate(delay: 100.ms).fadeIn().slideY(begin: 0.1),
-        const SizedBox(height: 24),
-        _SummaryCards(app: app).animate(delay: 200.ms).fadeIn().slideY(begin: 0.1),
-        const SizedBox(height: 32),
-        _AllTasksSection(app: app).animate(delay: 300.ms).fadeIn().slideY(begin: 0.1),
+        _HeroCard(app: app)
+            .animate()
+            .fadeIn(duration: 500.ms)
+            .slideY(begin: -0.05, curve: Curves.easeOutCubic),
+        const SizedBox(height: 14),
+        _QuickStats(app: app, pendingCount: pending.length)
+            .animate(delay: 100.ms)
+            .fadeIn()
+            .slideX(begin: -0.05),
+        const SizedBox(height: 20),
+        if (app.bondingMessage.isNotEmpty) ...[
+          _ParentBubble(
+            message: app.bondingMessage,
+            parentName: app.parentName.isNotEmpty ? app.parentName : 'Bố/Mẹ',
+          ).animate(delay: 150.ms).fadeIn().slideX(begin: -0.08),
+          const SizedBox(height: 20),
+        ],
+        _TasksToday(tasks: pending)
+            .animate(delay: 200.ms)
+            .fadeIn()
+            .slideY(begin: 0.05),
+        const SizedBox(height: 20),
+        _JarPreview(app: app)
+            .animate(delay: 300.ms)
+            .fadeIn()
+            .slideY(begin: 0.05),
       ],
     );
   }
 }
 
-class _WelcomeMessage extends StatelessWidget {
-  const _WelcomeMessage();
+// ── Hero Card ─────────────────────────────────────────────────────────────────
+
+class _HeroCard extends StatelessWidget {
+  final AppState app;
+  const _HeroCard({required this.app});
 
   @override
   Widget build(BuildContext context) {
-    final msg = context.watch<AppState>().bondingMessage;
-    final displayMsg = msg.isNotEmpty ? msg : 'Hôm nay con đã làm rất tốt! 💛';
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppTheme.primaryFixed,
-            borderRadius: BorderRadius.circular(32),
-            border: const Border(
-              bottom: BorderSide(color: AppTheme.primaryFixedDim, width: 4),
-            ),
-          ),
-          child: Text(
-            displayMsg,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: AppTheme.onPrimaryFixed,
-            ),
-          ),
+    final xpPct = app.xpToNextLevel > 0
+        ? (app.xp / app.xpToNextLevel).clamp(0.0, 1.0)
+        : 0.0;
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF7C3AED), Color(0xFF4F46E5)],
         ),
-        Positioned(
-          bottom: -8,
-          left: 40,
-          child: Transform.rotate(
-            angle: 45 * 3.14159 / 180,
-            child: Container(
-              width: 20,
-              height: 20,
-              decoration: const BoxDecoration(
-                color: AppTheme.primaryFixed,
-                boxShadow: [
-                  BoxShadow(color: AppTheme.primaryFixedDim, offset: Offset(2, 2)),
-                ],
-                borderRadius: BorderRadius.all(Radius.circular(4)),
+        borderRadius: BorderRadius.circular(32),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF7C3AED).withValues(alpha: 0.35),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '⭐ Level ${app.level} Explorer',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      app.childName.isEmpty ? 'Bé yêu' : app.childName,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 30, fontWeight: FontWeight.w900,
+                        color: Colors.white, height: 1,
+                      ),
+                    ),
+                    Text(
+                      '${app.childAge} tuổi',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 13, color: Colors.white.withValues(alpha: 0.65),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        Text(
+                          '${app.xp}/${app.xpToNextLevel} XP',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 11, fontWeight: FontWeight.w700,
+                            color: Colors.white.withValues(alpha: 0.85),
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          'Level ${app.level + 1} →',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 10, color: Colors.white.withValues(alpha: 0.55),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 5),
+                    Container(
+                      height: 8,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: TweenAnimationBuilder<double>(
+                        tween: Tween(begin: 0, end: xpPct),
+                        duration: const Duration(milliseconds: 1200),
+                        curve: Curves.easeOutCubic,
+                        builder: (ctx, v, _) => FractionallySizedBox(
+                          alignment: Alignment.centerLeft,
+                          widthFactor: v,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF4ADE80),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 16),
+              Container(
+                width: 88,
+                height: 88,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(28),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 2),
+                ),
+                child: Center(
+                  child: Text(
+                    app.childAvatarEmoji.isNotEmpty ? app.childAvatarEmoji : '👦',
+                    style: const TextStyle(fontSize: 50),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.monetization_on, color: Color(0xFFFBBF24), size: 22),
+                const SizedBox(width: 8),
+                TweenAnimationBuilder<int>(
+                  tween: IntTween(begin: 0, end: app.totalCoins),
+                  duration: const Duration(milliseconds: 1200),
+                  curve: Curves.easeOutCubic,
+                  builder: (ctx, v, _) => Text(
+                    '$v xu',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 20, fontWeight: FontWeight.w900, color: Colors.white,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'đang có',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13, color: Colors.white.withValues(alpha: 0.65),
+                  ),
+                ),
+              ],
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
 
-class _ProfileSection extends StatelessWidget {
+// ── Quick Stats ───────────────────────────────────────────────────────────────
+
+class _QuickStats extends StatelessWidget {
   final AppState app;
-  const _ProfileSection({required this.app});
+  final int pendingCount;
+  const _QuickStats({required this.app, required this.pendingCount});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          _StatChip('🔥', '${app.streakDays} ngày\nliên tiếp', const Color(0xFFFF6B6B), const Color(0xFFFFE4E4)),
+          const SizedBox(width: 10),
+          _StatChip('📋', '$pendingCount việc\ncần làm', AppTheme.vibrantPrimary, AppTheme.primaryFixed),
+          const SizedBox(width: 10),
+          _StatChip('🏅', '${app.badges.length} huy\nhiệu', AppTheme.vibrantSecondary, AppTheme.secondaryFixed),
+          const SizedBox(width: 10),
+          _StatChip('🏆', '${app.approvedTasks.length} việc\nhoàn thành', AppTheme.vibrantTertiary, AppTheme.tertiaryFixed),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatChip extends StatelessWidget {
+  final String icon, label;
+  final Color color, bg;
+  const _StatChip(this.icon, this.label, this.color, this.bg);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 2),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(icon, style: const TextStyle(fontSize: 20)),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 12, fontWeight: FontWeight.w700,
+              color: color, height: 1.3,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Parent Bubble ─────────────────────────────────────────────────────────────
+
+class _ParentBubble extends StatelessWidget {
+  final String message, parentName;
+  const _ParentBubble({required this.message, required this.parentName});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: AppTheme.surfaceContainerHigh, width: 2),
+        color: const Color(0xFFFFFBEB),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(8),
+          topRight: Radius.circular(24),
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
+        ),
+        border: Border.all(color: const Color(0xFFFDE68A), width: 2),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.vibrantPrimary.withValues(alpha: 0.05),
+            color: const Color(0xFFFBBF24).withValues(alpha: 0.15),
             blurRadius: 12,
             offset: const Offset(0, 4),
-          )
+          ),
         ],
       ),
       child: Row(
-        children: [
-          // Avatar
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              color: AppTheme.surfaceBright,
-              borderRadius: BorderRadius.circular(32),
-              border: Border.all(color: AppTheme.primaryFixed, width: 2),
-              boxShadow: const [
-                BoxShadow(
-                  color: AppTheme.primaryFixedDim,
-                  offset: Offset(0, 4),
-                )
-              ],
-            ),
-            child: Center(
-              child: Text(
-                app.childAvatarEmoji.isNotEmpty ? app.childAvatarEmoji : '👦',
-                style: const TextStyle(fontSize: 40),
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          // Info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Text(
-                      app.childName,
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w800,
-                        color: AppTheme.textPrimary,
-                      ),
-                    ),
-                    Text(
-                      '${app.childAge} Tuổi',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.outline,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Level ${app.level} Explorer',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.vibrantPrimary,
-                      ),
-                    ),
-                    Text(
-                      '${app.xp}/${app.xpToNextLevel} XP',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.outline,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                // XP Bar
-                Container(
-                  height: 12,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceContainerHigh,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppTheme.surfaceContainerHighest, width: 2),
-                  ),
-                  child: FractionallySizedBox(
-                    alignment: Alignment.centerLeft,
-                    widthFactor: app.xpToNextLevel > 0 ? (app.xp / app.xpToNextLevel).clamp(0.0, 1.0) : 0,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: AppTheme.vibrantPrimary,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Align(
-                        alignment: Alignment.topCenter,
-                        child: Container(
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 16),
-          // Coins
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: AppTheme.secondaryContainer,
-              borderRadius: BorderRadius.circular(24),
-              border: const Border(
-                bottom: BorderSide(color: AppTheme.secondaryFixedDim, width: 4),
-              ),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.monetization_on, color: AppTheme.onSecondaryContainer, size: 28),
-                Text(
-                  '${app.totalCoins}',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w800,
-                    color: AppTheme.onSecondaryContainer,
-                    height: 1.0,
-                  ),
-                ),
-                Text(
-                  'Xu',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.onSecondaryContainer,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SummaryCards extends StatelessWidget {
-  final AppState app;
-  const _SummaryCards({required this.app});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _BentoCard(
-            icon: Icons.shopping_basket,
-            label: 'Spent',
-            value: app.spendJar,
-            bgColor: AppTheme.tertiaryFixed,
-            borderColor: AppTheme.tertiaryFixedDim,
-            iconColor: AppTheme.vibrantTertiary,
-            labelColor: AppTheme.onTertiaryFixedVariant,
-            valueColor: AppTheme.onTertiaryFixed,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _BentoCard(
-            icon: Icons.savings,
-            label: 'Saved',
-            value: app.saveJar,
-            bgColor: AppTheme.secondaryFixed,
-            borderColor: AppTheme.secondaryFixedDim,
-            iconColor: AppTheme.vibrantSecondary,
-            labelColor: AppTheme.onSecondaryFixedVariant,
-            valueColor: AppTheme.onSecondaryFixed,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _BentoCard(
-            icon: Icons.volunteer_activism,
-            label: 'Shared',
-            value: app.shareJar,
-            bgColor: AppTheme.primaryFixed,
-            borderColor: AppTheme.primaryFixedDim,
-            iconColor: AppTheme.vibrantPrimary,
-            labelColor: AppTheme.onPrimaryFixedVariant,
-            valueColor: AppTheme.onPrimaryFixed,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _BentoCard extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final int value;
-  final Color bgColor;
-  final Color borderColor;
-  final Color iconColor;
-  final Color labelColor;
-  final Color valueColor;
-
-  const _BentoCard({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.bgColor,
-    required this.borderColor,
-    required this.iconColor,
-    required this.labelColor,
-    required this.valueColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: borderColor, offset: const Offset(0, 4))],
-      ),
-      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: const BoxDecoration(
-              color: AppTheme.surfaceBright,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: iconColor, size: 24),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: labelColor,
-            ),
-          ),
-          Text(
-            '$value',
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 24,
-              fontWeight: FontWeight.w900,
-              color: valueColor,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AllTasksSection extends StatelessWidget {
-  final AppState app;
-  const _AllTasksSection({required this.app});
-
-  @override
-  Widget build(BuildContext context) {
-    // For demo purposes, mapping actual pending tasks or mock ones if empty
-    final tasks = app.pendingTasks.isEmpty ? [
-      ('Trash', 'Due today', Icons.delete, AppTheme.secondaryFixed, AppTheme.vibrantSecondary),
-      ('Watering plants', 'Due tomorrow', Icons.yard, AppTheme.primaryFixed, AppTheme.vibrantPrimary),
-      ('Feed the cat', 'Everyday', Icons.pets, AppTheme.tertiaryFixed, AppTheme.vibrantTertiary),
-    ] : app.pendingTasks.map((t) => (
-      t.title,
-      'Due today',
-      Icons.task_alt,
-      AppTheme.primaryFixed,
-      AppTheme.vibrantPrimary
-    )).toList();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'All Tasks',
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 24,
-            fontWeight: FontWeight.w700,
-            color: AppTheme.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 12),
-        ...tasks.map((t) => Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: _TaskItem(
-            title: t.$1,
-            subtitle: t.$2,
-            icon: t.$3,
-            iconBg: t.$4,
-            iconColor: t.$5,
-          ),
-        )),
-      ],
-    );
-  }
-}
-
-class _TaskItem extends StatefulWidget {
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final Color iconBg;
-  final Color iconColor;
-
-  const _TaskItem({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.iconBg,
-    required this.iconColor,
-  });
-
-  @override
-  State<_TaskItem> createState() => _TaskItemState();
-}
-
-class _TaskItemState extends State<_TaskItem> {
-  bool _checked = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceBright,
-        borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: AppTheme.surfaceContainer, width: 2),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: widget.iconBg,
-              shape: BoxShape.circle,
+              color: const Color(0xFFFEF3C7),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(widget.icon, color: widget.iconColor, size: 24),
+            child: const Text('💌', style: TextStyle(fontSize: 20)),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  widget.title,
+                  parentName,
                   style: GoogleFonts.plusJakartaSans(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.textPrimary,
-                    decoration: _checked ? TextDecoration.lineThrough : null,
+                    fontSize: 12, fontWeight: FontWeight.w700,
+                    color: const Color(0xFFD97706),
                   ),
                 ),
+                const SizedBox(height: 2),
                 Text(
-                  widget.subtitle,
+                  message,
                   style: GoogleFonts.plusJakartaSans(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.outline,
+                    fontSize: 14, fontWeight: FontWeight.w600,
+                    color: const Color(0xFF78350F), height: 1.4,
                   ),
                 ),
               ],
-            ),
-          ),
-          GestureDetector(
-            onTap: () => setState(() => _checked = !_checked),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: _checked ? AppTheme.vibrantPrimary : Colors.transparent,
-                border: Border.all(
-                  color: _checked ? AppTheme.vibrantPrimary : AppTheme.outlineVariant,
-                  width: 3,
-                ),
-              ),
-              child: _checked
-                  ? const Icon(Icons.check, color: Colors.white, size: 24)
-                  : null,
             ),
           ),
         ],
@@ -733,3 +573,290 @@ class _TaskItemState extends State<_TaskItem> {
     );
   }
 }
+
+// ── Tasks Today ───────────────────────────────────────────────────────────────
+
+class _TasksToday extends StatelessWidget {
+  final List<TaskModel> tasks;
+  const _TasksToday({required this.tasks});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              'Nhiệm vụ hôm nay',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 20, fontWeight: FontWeight.w800, color: AppTheme.textPrimary,
+              ),
+            ),
+            const Spacer(),
+            if (tasks.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryFixed,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${tasks.length} việc',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.vibrantPrimary,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (tasks.isEmpty)
+          _EmptyTaskCard()
+        else
+          ...tasks.asMap().entries.map(
+            (e) => _HomeTaskCard(task: e.value)
+                .animate(delay: Duration(milliseconds: e.key * 60))
+                .fadeIn()
+                .slideY(begin: 0.05),
+          ),
+      ],
+    );
+  }
+}
+
+class _EmptyTaskCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppTheme.surfaceContainerHigh, width: 2),
+      ),
+      child: Column(
+        children: [
+          const Text('🎉', style: TextStyle(fontSize: 48)),
+          const SizedBox(height: 8),
+          Text(
+            'Không có việc gì cần làm!',
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 16, fontWeight: FontWeight.w700, color: AppTheme.textPrimary,
+            ),
+          ),
+          Text(
+            'Bố/Mẹ chưa giao việc hôm nay',
+            style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppTheme.outline),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HomeTaskCard extends StatelessWidget {
+  final TaskModel task;
+  const _HomeTaskCard({required this.task});
+
+  static const _catStyle = {
+    'Việc nhà':   (Color(0xFFE0F2FE), Color(0xFF0284C7)),
+    'Học tập':    (Color(0xFFF0FDF4), Color(0xFF16A34A)),
+    'Sức khỏe':  (Color(0xFFFFF7ED), Color(0xFFEA580C)),
+    'Sáng tạo':  (Color(0xFFFDF4FF), Color(0xFFA21CAF)),
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final style = _catStyle[task.category] ??
+        (AppTheme.primaryFixed, AppTheme.vibrantPrimary);
+    final isSubmitted = task.status == TaskStatus.submitted;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isSubmitted
+              ? AppTheme.vibrantSecondary.withValues(alpha: 0.4)
+              : AppTheme.surfaceContainerHigh,
+          width: 2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: style.$1,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Center(child: Text(task.icon, style: const TextStyle(fontSize: 26))),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  task.title,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 14, fontWeight: FontWeight.w700, color: AppTheme.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  isSubmitted ? '⏳ Đang chờ duyệt...' : task.category,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 12,
+                    color: isSubmitted ? AppTheme.vibrantSecondary : AppTheme.outline,
+                    fontWeight: isSubmitted ? FontWeight.w600 : FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: style.$1,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              '+${task.coinReward}xu',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 13, fontWeight: FontWeight.w800, color: style.$2,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Jar Preview ───────────────────────────────────────────────────────────────
+
+class _JarPreview extends StatelessWidget {
+  final AppState app;
+  const _JarPreview({required this.app});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: AppTheme.surfaceContainerHigh, width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                'Hũ tiền của con',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 17, fontWeight: FontWeight.w800, color: AppTheme.textPrimary,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppTheme.secondaryFixed,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${app.totalCoins} xu',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13, fontWeight: FontWeight.w800, color: AppTheme.vibrantSecondary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              _JarMini('💰', 'Tiêu dùng', app.spendJar, AppTheme.vibrantPrimary, AppTheme.primaryFixed),
+              const SizedBox(width: 10),
+              _JarMini('🏦', 'Tiết kiệm', app.saveJar, AppTheme.vibrantSecondary, AppTheme.secondaryFixed),
+              const SizedBox(width: 10),
+              _JarMini('🤝', 'Sẻ chia', app.shareJar, const Color(0xFFDC2626), const Color(0xFFFFDAD6)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _JarMini extends StatelessWidget {
+  final String icon, label;
+  final int value;
+  final Color color, bg;
+  const _JarMini(this.icon, this.label, this.value, this.color, this.bg);
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Column(
+          children: [
+            Text(icon, style: const TextStyle(fontSize: 26)),
+            const SizedBox(height: 4),
+            TweenAnimationBuilder<int>(
+              tween: IntTween(begin: 0, end: value),
+              duration: const Duration(milliseconds: 900),
+              curve: Curves.easeOutCubic,
+              builder: (ctx, v, _) => Text(
+                '$v',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 20, fontWeight: FontWeight.w900, color: color,
+                ),
+              ),
+            ),
+            Text(
+              'xu',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 11, color: color.withValues(alpha: 0.7), fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 10, color: AppTheme.outline, fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
