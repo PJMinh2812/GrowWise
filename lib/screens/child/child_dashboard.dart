@@ -1,13 +1,15 @@
-import 'dart:math' as math;
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_state.dart';
 import '../../theme/app_theme.dart';
+import '../../models/task_model.dart';
 import 'child_task_list.dart';
 import 'child_jars.dart';
 import 'child_dream_jar.dart';
+import '../login_screen.dart';
+import '../ai_chat_screen.dart';
 
 class ChildDashboard extends StatefulWidget {
   const ChildDashboard({super.key});
@@ -18,328 +20,217 @@ class ChildDashboard extends StatefulWidget {
 
 class _ChildDashboardState extends State<ChildDashboard> {
   int _tab = 0;
+  final _built = <int>{0};
+
+  void _switchTab(int i) {
+    setState(() {
+      _tab = i;
+      _built.add(i);
+    });
+  }
+
+  Widget _tabWidget(int i) => switch (i) {
+    0 => const _HomeTab(),
+    1 => const ChildTaskList(),
+    2 => const ChildJars(),
+    _ => const ChildDreamJar(),
+  };
 
   @override
   Widget build(BuildContext context) {
     return Theme(
-      data: AppTheme.childTheme(),
+      data: AppTheme.childTheme().copyWith(
+        scaffoldBackgroundColor: AppTheme.surfaceBright,
+      ),
       child: Scaffold(
-        backgroundColor: AppTheme.bg,
-        body: IndexedStack(
-          index: _tab,
-          children: const [_HomeTab(), ChildTaskList(), ChildJars(), ChildDreamJar()],
+        backgroundColor: AppTheme.surfaceBright,
+        appBar: _buildAppBar(),
+        body: Stack(
+          children: List.generate(4, (i) {
+            if (!_built.contains(i)) return const SizedBox.shrink();
+            return TickerMode(
+              enabled: _tab == i,
+              child: Offstage(offstage: _tab != i, child: _tabWidget(i)),
+            );
+          }),
         ),
-        bottomNavigationBar: _BottomNav(
-          current: _tab,
-          onTap: (i) => setState(() => _tab = i),
+        bottomNavigationBar: _buildBottomNav(),
+      ),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      backgroundColor: AppTheme.surface,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      title: Text(
+        'GrowWise',
+        style: GoogleFonts.plusJakartaSans(
+          fontSize: 24,
+          fontWeight: FontWeight.w800,
+          color: AppTheme.vibrantPrimary,
+        ),
+      ),
+      leading: IconButton(
+        icon: const Icon(Icons.smart_toy, color: AppTheme.vibrantPrimary, size: 28),
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const AiChatScreen()),
+        ),
+      ),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.account_circle, color: AppTheme.vibrantPrimary, size: 28),
+          onPressed: () => _showLogoutSheet(context),
+        ),
+      ],
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(4),
+        child: Container(
+          height: 4,
+          decoration: BoxDecoration(
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.vibrantPrimary.withValues(alpha: 0.1),
+                blurRadius: 0,
+                offset: const Offset(0, 4),
+              )
+            ]
+          ),
         ),
       ),
     );
   }
-}
 
-class _BottomNav extends StatelessWidget {
-  final int current;
-  final ValueChanged<int> onTap;
-  const _BottomNav({required this.current, required this.onTap});
+  void _showLogoutSheet(BuildContext context) {
+    final app = context.read<AppState>();
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: AppTheme.outlineVariant, borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 24),
+            Text(
+              app.childName.isEmpty ? 'Bé yêu' : app.childName,
+              style: GoogleFonts.plusJakartaSans(fontSize: 22, fontWeight: FontWeight.w800, color: AppTheme.textPrimary),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Level ${app.level} Explorer',
+              style: GoogleFonts.plusJakartaSans(fontSize: 14, color: AppTheme.vibrantPrimary, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 32),
+            GestureDetector(
+              onTap: () async {
+                Navigator.pop(ctx);
+                await app.logout();
+                if (!context.mounted) return;
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  (route) => false,
+                );
+              },
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFE4E4),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFFFFB8B8), width: 2),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.logout_rounded, color: Color(0xFFEF4444), size: 22),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Đăng xuất',
+                      style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w700, color: const Color(0xFFEF4444)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-  @override
-  Widget build(BuildContext context) {
-    const tabs = [
-      (Icons.home_rounded, Icons.home_outlined, 'Trang chủ'),
-      (Icons.assignment_rounded, Icons.assignment_outlined, 'Nhiệm vụ'),
-      (Icons.savings_rounded, Icons.savings_outlined, '3 Hũ'),
-      (Icons.star_rounded, Icons.star_outline_rounded, 'Ước mơ'),
-    ];
+  Widget _buildBottomNav() {
     return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: AppTheme.border)),
+        color: AppTheme.surfaceContainerLowest,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, -4),
+          )
+        ],
       ),
       child: SafeArea(
         top: false,
-        child: SizedBox(
-          height: 60,
-          child: Row(
-            children: tabs.asMap().entries.map((e) {
-              final i = e.key;
-              final t = e.value;
-              final active = current == i;
-              return Expanded(
-                child: GestureDetector(
-                  onTap: () => onTap(i),
-                  behavior: HitTestBehavior.opaque,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        active ? t.$1 : t.$2,
-                        size: 22,
-                        color: active ? AppTheme.green : AppTheme.textHint,
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        t.$3,
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 10,
-                          fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-                          color: active ? AppTheme.green : AppTheme.textHint,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _buildNavItem(0, Icons.home_filled, Icons.home_outlined, 'Trang chủ'),
+            _buildNavItem(1, Icons.assignment, Icons.assignment_outlined, 'Nhiệm vụ'),
+            _buildNavItem(2, Icons.savings, Icons.savings_outlined, '3 Hũ'),
+            _buildNavItem(3, Icons.stars, Icons.stars_outlined, 'Ước mơ'),
+          ],
         ),
       ),
     );
   }
-}
 
-// ── Home Tab ─────────────────────────────────────────────────────────────────
-
-class _HomeTab extends StatelessWidget {
-  const _HomeTab();
-
-  @override
-  Widget build(BuildContext context) {
-    final app = context.watch<AppState>();
-    final pending = app.pendingTasks.length;
-    final done = app.approvedTasks.length;
-
-    return CustomScrollView(
-      physics: const ClampingScrollPhysics(),
-      slivers: [
-        SliverToBoxAdapter(
-          child: _HeroSection(app: app),
-        ),
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
-          sliver: SliverList(
-            delegate: SliverChildListDelegate([
-              // Bonding card
-              if (app.bondingMessage.isNotEmpty) ...[
-                _BondCard(message: app.bondingMessage)
-                    .animate(delay: 200.ms).fadeIn(duration: 400.ms),
-                const SizedBox(height: 16),
-              ],
-
-              // Today summary
-              _TodaySummary(pending: pending, done: done)
-                  .animate(delay: 300.ms).fadeIn(duration: 400.ms).slideY(begin: 0.06, end: 0),
-              const SizedBox(height: 20),
-
-              // Jar balances
-              _JarRow(app: app)
-                  .animate(delay: 400.ms).fadeIn(duration: 400.ms).slideY(begin: 0.06, end: 0),
-              const SizedBox(height: 20),
-
-              // Badges
-              if (app.badges.isNotEmpty) ...[
-                _Badges(badges: app.badges)
-                    .animate(delay: 500.ms).fadeIn(duration: 400.ms),
-                const SizedBox(height: 20),
-              ],
-            ]),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _HeroSection extends StatefulWidget {
-  final AppState app;
-  const _HeroSection({required this.app});
-
-  @override
-  State<_HeroSection> createState() => _HeroSectionState();
-}
-
-class _HeroSectionState extends State<_HeroSection>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _xpCtrl;
-  late Animation<double> _xpAnim;
-
-  @override
-  void initState() {
-    super.initState();
-    _xpCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1400),
-    );
-    final pct = widget.app.xpToNextLevel > 0
-        ? widget.app.xp / widget.app.xpToNextLevel
-        : 0.0;
-    _xpAnim = Tween<double>(begin: 0, end: pct.clamp(0.0, 1.0)).animate(
-      CurvedAnimation(parent: _xpCtrl, curve: Curves.easeOutCubic),
-    );
-    Future.delayed(500.ms, () { if (mounted) _xpCtrl.forward(); });
-  }
-
-  @override
-  void dispose() {
-    _xpCtrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final app = widget.app;
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(24, 0, 24, 28),
-      child: SafeArea(
-        bottom: false,
+  Widget _buildNavItem(int index, IconData activeIcon, IconData inactiveIcon, String label) {
+    final isActive = _tab == index;
+    return GestureDetector(
+      onTap: () => _switchTab(index),
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: isActive
+            ? BoxDecoration(
+                color: AppTheme.secondaryContainer,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: const [
+                  BoxShadow(
+                    color: AppTheme.onSecondaryContainer,
+                    offset: Offset(0, 4),
+                  )
+                ],
+              )
+            : const BoxDecoration(),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            const SizedBox(height: 20),
-            // Top row: greeting + coin badge
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Xin chào,',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 14,
-                          color: AppTheme.textHint,
-                        ),
-                      ),
-                      Text(
-                        app.childName,
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w900,
-                          color: AppTheme.textPrimary,
-                          letterSpacing: -0.8,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.1, end: 0),
-                ),
-                // Coin display
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      '${app.totalCoins}',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 32,
-                        fontWeight: FontWeight.w900,
-                        color: const Color(0xFFF59E0B),
-                        letterSpacing: -1,
-                      ),
-                    ),
-                    Text(
-                      '🪙 xu tích lũy',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 11,
-                        color: AppTheme.textHint,
-                      ),
-                    ),
-                  ],
-                ).animate(delay: 100.ms).fadeIn(duration: 400.ms),
-              ],
+            Icon(
+              isActive ? activeIcon : inactiveIcon,
+              color: isActive ? AppTheme.onSecondaryContainer : AppTheme.outlineVariant,
             ),
-            const SizedBox(height: 24),
-
-            // Level + XP arc
-            Row(
-              children: [
-                // XP arc
-                SizedBox(
-                  width: 80,
-                  height: 80,
-                  child: AnimatedBuilder(
-                    animation: _xpAnim,
-                    builder: (ctx, child) => CustomPaint(
-                      painter: _ArcPainter(
-                        progress: _xpAnim.value,
-                        bgColor: AppTheme.border,
-                        fgColor: AppTheme.green,
-                        strokeWidth: 8,
-                      ),
-                      child: child,
-                    ),
-                    child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            '${app.level}',
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w900,
-                              color: AppTheme.textPrimary,
-                            ),
-                          ),
-                          Text(
-                            'LVL',
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w700,
-                              color: AppTheme.textHint,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 20),
-
-                // XP details
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        app.childAvatarEmoji,
-                        style: const TextStyle(fontSize: 28),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'XP: ${app.xp} / ${app.xpToNextLevel}',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: AppTheme.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: AnimatedBuilder(
-                          animation: _xpAnim,
-                          builder: (ctx, snap) => LinearProgressIndicator(
-                            value: _xpAnim.value,
-                            minHeight: 6,
-                            backgroundColor: AppTheme.border,
-                            valueColor: const AlwaysStoppedAnimation(AppTheme.green),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Cần ${app.xpToNextLevel - app.xp} XP để lên cấp',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 11,
-                          color: AppTheme.textHint,
-                        ),
-                      ),
-                    ],
-                  ).animate(delay: 200.ms).fadeIn(duration: 400.ms),
-                ),
-              ],
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 12,
+                fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
+                color: isActive ? AppTheme.onSecondaryContainer : AppTheme.outlineVariant,
+              ),
             ),
           ],
         ),
@@ -348,113 +239,205 @@ class _HeroSectionState extends State<_HeroSection>
   }
 }
 
-// CustomPainter: arc progress
-class _ArcPainter extends CustomPainter {
-  final double progress;
-  final Color bgColor;
-  final Color fgColor;
-  final double strokeWidth;
-
-  const _ArcPainter({
-    required this.progress,
-    required this.bgColor,
-    required this.fgColor,
-    this.strokeWidth = 10,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = (size.shortestSide - strokeWidth) / 2;
-    const startAngle = math.pi * 0.75;
-    const sweepAngle = math.pi * 1.5;
-
-    final bg = Paint()
-      ..color = bgColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
-
-    final fg = Paint()
-      ..color = fgColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
-
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      startAngle, sweepAngle, false, bg,
-    );
-    if (progress > 0) {
-      canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius),
-        startAngle, sweepAngle * progress, false, fg,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(_ArcPainter old) => old.progress != progress;
-}
-
-class _TodaySummary extends StatelessWidget {
-  final int pending;
-  final int done;
-  const _TodaySummary({required this.pending, required this.done});
+class _HomeTab extends StatelessWidget {
+  const _HomeTab();
 
   @override
   Widget build(BuildContext context) {
+    final app = context.watch<AppState>();
+    final pending = [...app.pendingTasks, ...app.submittedTasks];
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
+      children: [
+        _HeroCard(app: app)
+            .animate()
+            .fadeIn(duration: 500.ms)
+            .slideY(begin: -0.05, curve: Curves.easeOutCubic),
+        const SizedBox(height: 14),
+        _QuickStats(app: app, pendingCount: pending.length)
+            .animate(delay: 100.ms)
+            .fadeIn()
+            .slideX(begin: -0.05),
+        const SizedBox(height: 20),
+        if (app.bondingMessage.isNotEmpty) ...[
+          _ParentBubble(
+            message: app.bondingMessage,
+            parentName: app.parentName.isNotEmpty ? app.parentName : 'Bố/Mẹ',
+          ).animate(delay: 150.ms).fadeIn().slideX(begin: -0.08),
+          const SizedBox(height: 20),
+        ],
+        _TasksToday(tasks: pending)
+            .animate(delay: 200.ms)
+            .fadeIn()
+            .slideY(begin: 0.05),
+        const SizedBox(height: 20),
+        _JarPreview(app: app)
+            .animate(delay: 300.ms)
+            .fadeIn()
+            .slideY(begin: 0.05),
+      ],
+    );
+  }
+}
+
+// ── Hero Card ─────────────────────────────────────────────────────────────────
+
+class _HeroCard extends StatelessWidget {
+  final AppState app;
+  const _HeroCard({required this.app});
+
+  @override
+  Widget build(BuildContext context) {
+    final xpPct = app.xpToNextLevel > 0
+        ? (app.xp / app.xpToNextLevel).clamp(0.0, 1.0)
+        : 0.0;
     return Container(
-      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppTheme.border),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              children: [
-                Text(
-                  '$pending',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 30,
-                    fontWeight: FontWeight.w900,
-                    color: pending > 0 ? const Color(0xFFF59E0B) : AppTheme.textHint,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-                Text(
-                  'Cần hoàn thành',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 11,
-                    color: AppTheme.textHint,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF7C3AED), Color(0xFF4F46E5)],
+        ),
+        borderRadius: BorderRadius.circular(32),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF7C3AED).withValues(alpha: 0.35),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
           ),
-          Container(width: 1, height: 40, color: AppTheme.border),
-          Expanded(
-            child: Column(
-              children: [
-                Text(
-                  '$done',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 30,
-                    fontWeight: FontWeight.w900,
-                    color: done > 0 ? AppTheme.green : AppTheme.textHint,
-                    letterSpacing: -0.5,
+        ],
+      ),
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '⭐ Level ${app.level} Explorer',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      app.childName.isEmpty ? 'Bé yêu' : app.childName,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 30, fontWeight: FontWeight.w900,
+                        color: Colors.white, height: 1,
+                      ),
+                    ),
+                    Text(
+                      '${app.childAge} tuổi',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 13, color: Colors.white.withValues(alpha: 0.65),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        Text(
+                          '${app.xp}/${app.xpToNextLevel} XP',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 11, fontWeight: FontWeight.w700,
+                            color: Colors.white.withValues(alpha: 0.85),
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          'Level ${app.level + 1} →',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 10, color: Colors.white.withValues(alpha: 0.55),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 5),
+                    Container(
+                      height: 8,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: TweenAnimationBuilder<double>(
+                        tween: Tween(begin: 0, end: xpPct),
+                        duration: const Duration(milliseconds: 1200),
+                        curve: Curves.easeOutCubic,
+                        builder: (ctx, v, _) => FractionallySizedBox(
+                          alignment: Alignment.centerLeft,
+                          widthFactor: v,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF4ADE80),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              Container(
+                width: 88,
+                height: 88,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(28),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 2),
+                ),
+                child: Center(
+                  child: Text(
+                    app.childAvatarEmoji.isNotEmpty ? app.childAvatarEmoji : '👦',
+                    style: const TextStyle(fontSize: 50),
                   ),
                 ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.monetization_on, color: Color(0xFFFBBF24), size: 22),
+                const SizedBox(width: 8),
+                TweenAnimationBuilder<int>(
+                  tween: IntTween(begin: 0, end: app.totalCoins),
+                  duration: const Duration(milliseconds: 1200),
+                  curve: Curves.easeOutCubic,
+                  builder: (ctx, v, _) => Text(
+                    '$v xu',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 20, fontWeight: FontWeight.w900, color: Colors.white,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
                 Text(
-                  'Đã hoàn thành',
+                  'đang có',
                   style: GoogleFonts.plusJakartaSans(
-                    fontSize: 11,
-                    color: AppTheme.textHint,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 13, color: Colors.white.withValues(alpha: 0.65),
                   ),
                 ),
               ],
@@ -466,137 +449,120 @@ class _TodaySummary extends StatelessWidget {
   }
 }
 
-class _JarRow extends StatelessWidget {
+// ── Quick Stats ───────────────────────────────────────────────────────────────
+
+class _QuickStats extends StatelessWidget {
   final AppState app;
-  const _JarRow({required this.app});
+  final int pendingCount;
+  const _QuickStats({required this.app, required this.pendingCount});
 
   @override
   Widget build(BuildContext context) {
-    final total = app.totalCoins == 0 ? 1 : app.totalCoins;
-    final jars = [
-      ('💰', 'Tiêu dùng', app.spendJar, const Color(0xFF3B82F6)),
-      ('🏦', 'Tiết kiệm', app.saveJar, AppTheme.green),
-      ('🤝', 'Sẻ chia', app.shareJar, AppTheme.coral),
-    ];
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Hũ tiền',
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 15,
-            fontWeight: FontWeight.w800,
-            color: AppTheme.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: jars.asMap().entries.map((e) {
-            final j = e.value;
-            final pct = (j.$3 / total * 100).round();
-            return Expanded(
-              child: Padding(
-                padding: EdgeInsets.only(right: e.key < 2 ? 10 : 0),
-                child: Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppTheme.border),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(j.$1, style: const TextStyle(fontSize: 20)),
-                      const SizedBox(height: 6),
-                      Text(
-                        '${j.$3}',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w900,
-                          color: j.$4,
-                          letterSpacing: -0.3,
-                        ),
-                      ),
-                      Text(
-                        '$pct%',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 11,
-                          color: AppTheme.textHint,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(3),
-                        child: LinearProgressIndicator(
-                          value: j.$3 / total,
-                          minHeight: 4,
-                          backgroundColor: AppTheme.border,
-                          valueColor: AlwaysStoppedAnimation(j.$4),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        j.$2,
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 9,
-                          color: AppTheme.textHint,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ).animate(delay: Duration(milliseconds: e.key * 60)).fadeIn(duration: 300.ms),
-              ),
-            );
-          }).toList(),
-        ),
-      ],
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          _StatChip('🔥', '${app.streakDays} ngày\nliên tiếp', const Color(0xFFFF6B6B), const Color(0xFFFFE4E4)),
+          const SizedBox(width: 10),
+          _StatChip('📋', '$pendingCount việc\ncần làm', AppTheme.vibrantPrimary, AppTheme.primaryFixed),
+          const SizedBox(width: 10),
+          _StatChip('🏅', '${app.badges.length} huy\nhiệu', AppTheme.vibrantSecondary, AppTheme.secondaryFixed),
+          const SizedBox(width: 10),
+          _StatChip('🏆', '${app.approvedTasks.length} việc\nhoàn thành', AppTheme.vibrantTertiary, AppTheme.tertiaryFixed),
+        ],
+      ),
     );
   }
 }
 
-class _BondCard extends StatelessWidget {
-  final String message;
-  const _BondCard({required this.message});
+class _StatChip extends StatelessWidget {
+  final String icon, label;
+  final Color color, bg;
+  const _StatChip(this.icon, this.label, this.color, this.bg);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 2),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(icon, style: const TextStyle(fontSize: 20)),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 12, fontWeight: FontWeight.w700,
+              color: color, height: 1.3,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Parent Bubble ─────────────────────────────────────────────────────────────
+
+class _ParentBubble extends StatelessWidget {
+  final String message, parentName;
+  const _ParentBubble({required this.message, required this.parentName});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border(left: BorderSide(color: AppTheme.amber, width: 3),
-          top: BorderSide(color: AppTheme.border),
-          right: BorderSide(color: AppTheme.border),
-          bottom: BorderSide(color: AppTheme.border),
+        color: const Color(0xFFFFFBEB),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(8),
+          topRight: Radius.circular(24),
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
         ),
+        border: Border.all(color: const Color(0xFFFDE68A), width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFBBF24).withValues(alpha: 0.15),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('💛', style: TextStyle(fontSize: 20)),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFEF3C7),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Text('💌', style: TextStyle(fontSize: 20)),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Bố/Mẹ gửi cho con',
+                  parentName,
                   style: GoogleFonts.plusJakartaSans(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.amber,
+                    fontSize: 12, fontWeight: FontWeight.w700,
+                    color: const Color(0xFFD97706),
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   message,
                   style: GoogleFonts.plusJakartaSans(
-                    fontSize: 13,
-                    color: AppTheme.textPrimary,
-                    height: 1.4,
+                    fontSize: 14, fontWeight: FontWeight.w600,
+                    color: const Color(0xFF78350F), height: 1.4,
                   ),
                 ),
               ],
@@ -608,45 +574,289 @@ class _BondCard extends StatelessWidget {
   }
 }
 
-class _Badges extends StatelessWidget {
-  final List<String> badges;
-  const _Badges({required this.badges});
+// ── Tasks Today ───────────────────────────────────────────────────────────────
+
+class _TasksToday extends StatelessWidget {
+  final List<TaskModel> tasks;
+  const _TasksToday({required this.tasks});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Huy hiệu',
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 15,
-            fontWeight: FontWeight.w800,
-            color: AppTheme.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 10),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: badges.asMap().entries.map((e) => Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppTheme.border),
-            ),
-            child: Text(
-              e.value,
+        Row(
+          children: [
+            Text(
+              'Nhiệm vụ hôm nay',
               style: GoogleFonts.plusJakartaSans(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.textPrimary,
+                fontSize: 20, fontWeight: FontWeight.w800, color: AppTheme.textPrimary,
               ),
             ),
-          ).animate(delay: Duration(milliseconds: e.key * 50)).fadeIn(duration: 300.ms)).toList(),
+            const Spacer(),
+            if (tasks.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryFixed,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${tasks.length} việc',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.vibrantPrimary,
+                  ),
+                ),
+              ),
+          ],
         ),
+        const SizedBox(height: 12),
+        if (tasks.isEmpty)
+          _EmptyTaskCard()
+        else
+          ...tasks.asMap().entries.map(
+            (e) => _HomeTaskCard(task: e.value)
+                .animate(delay: Duration(milliseconds: e.key * 60))
+                .fadeIn()
+                .slideY(begin: 0.05),
+          ),
       ],
     );
   }
 }
+
+class _EmptyTaskCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppTheme.surfaceContainerHigh, width: 2),
+      ),
+      child: Column(
+        children: [
+          const Text('🎉', style: TextStyle(fontSize: 48)),
+          const SizedBox(height: 8),
+          Text(
+            'Không có việc gì cần làm!',
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 16, fontWeight: FontWeight.w700, color: AppTheme.textPrimary,
+            ),
+          ),
+          Text(
+            'Bố/Mẹ chưa giao việc hôm nay',
+            style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppTheme.outline),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HomeTaskCard extends StatelessWidget {
+  final TaskModel task;
+  const _HomeTaskCard({required this.task});
+
+  static const _catStyle = {
+    'Việc nhà':   (Color(0xFFE0F2FE), Color(0xFF0284C7)),
+    'Học tập':    (Color(0xFFF0FDF4), Color(0xFF16A34A)),
+    'Sức khỏe':  (Color(0xFFFFF7ED), Color(0xFFEA580C)),
+    'Sáng tạo':  (Color(0xFFFDF4FF), Color(0xFFA21CAF)),
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final style = _catStyle[task.category] ??
+        (AppTheme.primaryFixed, AppTheme.vibrantPrimary);
+    final isSubmitted = task.status == TaskStatus.submitted;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isSubmitted
+              ? AppTheme.vibrantSecondary.withValues(alpha: 0.4)
+              : AppTheme.surfaceContainerHigh,
+          width: 2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: style.$1,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Center(child: Text(task.icon, style: const TextStyle(fontSize: 26))),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  task.title,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 14, fontWeight: FontWeight.w700, color: AppTheme.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  isSubmitted ? '⏳ Đang chờ duyệt...' : task.category,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 12,
+                    color: isSubmitted ? AppTheme.vibrantSecondary : AppTheme.outline,
+                    fontWeight: isSubmitted ? FontWeight.w600 : FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: style.$1,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              '+${task.coinReward}xu',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 13, fontWeight: FontWeight.w800, color: style.$2,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Jar Preview ───────────────────────────────────────────────────────────────
+
+class _JarPreview extends StatelessWidget {
+  final AppState app;
+  const _JarPreview({required this.app});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: AppTheme.surfaceContainerHigh, width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                'Hũ tiền của con',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 17, fontWeight: FontWeight.w800, color: AppTheme.textPrimary,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppTheme.secondaryFixed,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${app.totalCoins} xu',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13, fontWeight: FontWeight.w800, color: AppTheme.vibrantSecondary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              _JarMini('💰', 'Tiêu dùng', app.spendJar, AppTheme.vibrantPrimary, AppTheme.primaryFixed),
+              const SizedBox(width: 10),
+              _JarMini('🏦', 'Tiết kiệm', app.saveJar, AppTheme.vibrantSecondary, AppTheme.secondaryFixed),
+              const SizedBox(width: 10),
+              _JarMini('🤝', 'Sẻ chia', app.shareJar, const Color(0xFFDC2626), const Color(0xFFFFDAD6)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _JarMini extends StatelessWidget {
+  final String icon, label;
+  final int value;
+  final Color color, bg;
+  const _JarMini(this.icon, this.label, this.value, this.color, this.bg);
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Column(
+          children: [
+            Text(icon, style: const TextStyle(fontSize: 26)),
+            const SizedBox(height: 4),
+            TweenAnimationBuilder<int>(
+              tween: IntTween(begin: 0, end: value),
+              duration: const Duration(milliseconds: 900),
+              curve: Curves.easeOutCubic,
+              builder: (ctx, v, _) => Text(
+                '$v',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 20, fontWeight: FontWeight.w900, color: color,
+                ),
+              ),
+            ),
+            Text(
+              'xu',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 11, color: color.withValues(alpha: 0.7), fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 10, color: AppTheme.outline, fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+

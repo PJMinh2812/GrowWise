@@ -1,4 +1,3 @@
-﻿import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -8,284 +7,190 @@ import '../theme/app_theme.dart';
 import '../screens/parent/parent_dashboard.dart';
 import '../screens/child/child_dashboard.dart';
 
-class RoleSelectionScreen extends StatefulWidget {
+class RoleSelectionScreen extends StatelessWidget {
   const RoleSelectionScreen({super.key});
 
-  @override
-  State<RoleSelectionScreen> createState() => _RoleSelectionScreenState();
-}
-
-class _RoleSelectionScreenState extends State<RoleSelectionScreen>
-    with TickerProviderStateMixin {
-  late AnimationController _bgCtrl;
-  late AnimationController _floatCtrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _bgCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 6),
-    )..repeat(reverse: true);
-
-    _floatCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 3),
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _bgCtrl.dispose();
-    _floatCtrl.dispose();
-    super.dispose();
-  }
-
-  void _goParent() => Navigator.push(
+  void _goParent(BuildContext context) => Navigator.push(
         context,
-        _fadeRoute(const ParentDashboard()),
+        PageRouteBuilder(
+          pageBuilder: (ctx, a1, a2) => const ParentDashboard(),
+          transitionsBuilder: (ctx, a1, a2, child) =>
+              FadeTransition(opacity: a1, child: child),
+          transitionDuration: const Duration(milliseconds: 350),
+        ),
       );
 
-  void _goChild() => Navigator.push(
+  void _goChild(BuildContext context) => Navigator.push(
         context,
-        _fadeRoute(const ChildDashboard()),
-      );
-
-  PageRoute _fadeRoute(Widget page) => PageRouteBuilder(
-        pageBuilder: (ctx, a1, a2) => page,
-        transitionsBuilder: (ctx, a1, a2, child) =>
-            FadeTransition(opacity: a1, child: child),
-        transitionDuration: const Duration(milliseconds: 350),
+        PageRouteBuilder(
+          pageBuilder: (ctx, a1, a2) => const ChildDashboard(),
+          transitionsBuilder: (ctx, a1, a2, child) =>
+              FadeTransition(opacity: a1, child: child),
+          transitionDuration: const Duration(milliseconds: 350),
+        ),
       );
 
   @override
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
-    final size = MediaQuery.of(context).size;
 
     return Scaffold(
-      body: Stack(
-        children: [
-          // Gradient background
-          AnimatedBuilder(
-            animation: _bgCtrl,
-            builder: (ctx, snap) => Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color.lerp(
-                      const Color(0xFF0F2027),
-                      const Color(0xFF1A1040),
-                      _bgCtrl.value,
-                    )!,
-                    Color.lerp(
-                      const Color(0xFF203A43),
-                      const Color(0xFF0F2720),
-                      _bgCtrl.value,
-                    )!,
-                    Color.lerp(
-                      const Color(0xFF2C5364),
-                      const Color(0xFF1F3A5F),
-                      _bgCtrl.value,
-                    )!,
-                  ],
+      backgroundColor: AppTheme.surfaceBright,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 48),
+
+              // Header
+              Text(
+                'Xin chào! 👋',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 15,
+                  color: AppTheme.textSecondary,
+                  fontWeight: FontWeight.w500,
                 ),
-              ),
-            ),
-          ),
+              ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.2, end: 0),
 
-          // Indigo orb top
-          Positioned(
-            top: -size.width * 0.3,
-            right: -size.width * 0.2,
-            child: Container(
-              width: size.width * 0.8,
-              height: size.width * 0.8,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    AppTheme.indigo.withValues(alpha: 0.3),
-                    Colors.transparent,
-                  ],
+              const SizedBox(height: 6),
+
+              Text(
+                'Bạn là ai?',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 36,
+                  fontWeight: FontWeight.w900,
+                  color: AppTheme.textPrimary,
+                  letterSpacing: -1,
                 ),
-              ),
-            ),
-          ),
+              ).animate(delay: 80.ms).fadeIn(duration: 400.ms).slideX(begin: -0.2, end: 0),
 
-          // Green orb bottom
-          Positioned(
-            bottom: -size.width * 0.25,
-            left: -size.width * 0.15,
-            child: Container(
-              width: size.width * 0.75,
-              height: size.width * 0.75,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    AppTheme.green.withValues(alpha: 0.25),
-                    Colors.transparent,
-                  ],
+              const SizedBox(height: 8),
+
+              Text(
+                'Chọn vai trò để tiếp tục vào ứng dụng',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 14,
+                  color: AppTheme.textHint,
                 ),
-              ),
-            ),
-          ),
+              ).animate(delay: 160.ms).fadeIn(duration: 400.ms),
 
-          // Floating dots
-          ...List.generate(5, (i) => _FloatingDot(index: i, size: size)),
+              const SizedBox(height: 40),
 
-          // Content
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 40),
+              // Parent card
+              _RoleCard(
+                icon: '👨‍👩‍👧',
+                iconBg: const LinearGradient(
+                  colors: [Color(0xFF818CF8), Color(0xFF5B5BD6)],
+                ),
+                title: 'Phụ huynh',
+                subtitle: 'Giao việc, theo dõi tiến độ\nvà khen thưởng con',
+                cardColor: AppTheme.indigoLight,
+                borderColor: AppTheme.indigo.withValues(alpha: 0.2),
+                accentColor: AppTheme.indigo,
+                arrowColor: AppTheme.indigo,
+                badges: const [('📋', 'Giao việc'), ('📊', 'Thống kê'), ('🤖', 'AI Bonding')],
+                onTap: () => _goParent(context),
+              ).animate(delay: 280.ms).fadeIn(duration: 500.ms).slideY(begin: 0.2, end: 0, curve: Curves.easeOutCubic),
 
-                  // Header
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+              const SizedBox(height: 16),
+
+              // Child card
+              _RoleCard(
+                icon: appState.childAvatarEmoji,
+                iconBg: const LinearGradient(
+                  colors: [Color(0xFF4ADE80), Color(0xFF1E8F4F)],
+                ),
+                title: appState.childName.isEmpty ? 'Bé yêu' : appState.childName,
+                subtitle: 'Làm nhiệm vụ, tích xu\nvà thực hiện ước mơ!',
+                cardColor: AppTheme.greenLight,
+                borderColor: AppTheme.green.withValues(alpha: 0.2),
+                accentColor: AppTheme.green,
+                arrowColor: AppTheme.green,
+                badges: const [('🏆', 'Nhiệm vụ'), ('🏦', '3 Hũ'), ('⭐', 'Ước mơ')],
+                onTap: () => _goChild(context),
+              ).animate(delay: 400.ms).fadeIn(duration: 500.ms).slideY(begin: 0.2, end: 0, curve: Curves.easeOutCubic),
+
+              const SizedBox(height: 32),
+
+              // Demo badge
+              Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.surfaceContainer,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
+                      const Icon(Icons.lock_outline, size: 14, color: AppTheme.textHint),
+                      const SizedBox(width: 6),
                       Text(
-                        'Xin chào! 👋',
+                        'Demo Mode — Dữ liệu mẫu',
                         style: GoogleFonts.plusJakartaSans(
-                          fontSize: 16,
-                          color: Colors.white.withValues(alpha: 0.6),
+                          fontSize: 12,
+                          color: AppTheme.textHint,
                           fontWeight: FontWeight.w500,
                         ),
-                      ).animate().fadeIn(duration: 500.ms).slideX(begin: -0.2, end: 0),
-                      const SizedBox(height: 6),
-                      ShaderMask(
-                        shaderCallback: (bounds) => const LinearGradient(
-                          colors: [Colors.white, Color(0xFF94A3B8)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ).createShader(bounds),
-                        child: Text(
-                          'Bạn là ai?',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 40,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white,
-                            letterSpacing: -1,
-                          ),
-                        ),
-                      ).animate(delay: 100.ms).fadeIn(duration: 500.ms).slideX(begin: -0.2, end: 0),
+                      ),
                     ],
                   ),
+                ),
+              ).animate(delay: 600.ms).fadeIn(duration: 400.ms),
 
-                  const SizedBox(height: 10),
-
-                  Text(
-                    'Chọn vai trò để tiếp tục vào ứng dụng',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 14,
-                      color: Colors.white.withValues(alpha: 0.5),
-                    ),
-                  ).animate(delay: 200.ms).fadeIn(duration: 500.ms),
-
-                  const SizedBox(height: 48),
-
-                  // Parent card
-                  _RoleCard(
-                    emoji: '👨‍👩‍👧',
-                    title: 'Phụ huynh',
-                    subtitle: 'Giao việc, theo dõi tiến độ\nvà khen thưởng con',
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFF6366F1), Color(0xFF4040A8)],
-                    ),
-                    accentColor: AppTheme.indigo,
-                    badges: const ['📋 Giao việc', '📊 Thống kê', '🤖 AI Bonding'],
-                    onTap: _goParent,
-                  )
-                      .animate(delay: 350.ms)
-                      .fadeIn(duration: 600.ms)
-                      .slideY(begin: 0.3, end: 0, curve: Curves.easeOutCubic),
-
-                  const SizedBox(height: 20),
-
-                  // Child card
-                  _RoleCard(
-                    emoji: appState.childAvatarEmoji,
-                    title: appState.childName.isEmpty ? 'Bé yêu' : appState.childName,
-                    subtitle: 'Làm nhiệm vụ, tích xu\nvà thực hiện ước mơ!',
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFF3DBE6E), Color(0xFF1E8F4F)],
-                    ),
-                    accentColor: AppTheme.green,
-                    badges: const ['🏆 Nhiệm vụ', '🏦 3 Hũ', '⭐ Ước mơ'],
-                    onTap: _goChild,
-                  )
-                      .animate(delay: 500.ms)
-                      .fadeIn(duration: 600.ms)
-                      .slideY(begin: 0.3, end: 0, curve: Curves.easeOutCubic),
-
-                  const Spacer(),
-
-                  // Bottom hint
-                  Center(
-                    child: Text(
-                      '🔒  Demo Mode — Dữ liệu mẫu',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 12,
-                        color: Colors.white.withValues(alpha: 0.3),
-                      ),
-                    ),
-                  ).animate(delay: 800.ms).fadeIn(duration: 500.ms),
-                  const SizedBox(height: 24),
-                ],
-              ),
-            ),
+              const SizedBox(height: 24),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
-class _FloatingDot extends StatefulWidget {
-  final int index;
-  final Size size;
-  const _FloatingDot({required this.index, required this.size});
+// ── Role Card ─────────────────────────────────────────────────────────────────
+
+class _RoleCard extends StatefulWidget {
+  final String icon;
+  final LinearGradient iconBg;
+  final String title;
+  final String subtitle;
+  final Color cardColor;
+  final Color borderColor;
+  final Color accentColor;
+  final Color arrowColor;
+  final List<(String, String)> badges;
+  final VoidCallback onTap;
+
+  const _RoleCard({
+    required this.icon,
+    required this.iconBg,
+    required this.title,
+    required this.subtitle,
+    required this.cardColor,
+    required this.borderColor,
+    required this.accentColor,
+    required this.arrowColor,
+    required this.badges,
+    required this.onTap,
+  });
 
   @override
-  State<_FloatingDot> createState() => _FloatingDotState();
+  State<_RoleCard> createState() => _RoleCardState();
 }
 
-class _FloatingDotState extends State<_FloatingDot>
-    with SingleTickerProviderStateMixin {
+class _RoleCardState extends State<_RoleCard> with SingleTickerProviderStateMixin {
   late AnimationController _ctrl;
-  late double _x, _y, _dotSize;
-  late Color _color;
-
-  final _rng = math.Random();
+  late Animation<double> _scale;
 
   @override
   void initState() {
     super.initState();
-    final i = widget.index;
-    final positions = [
-      [0.1, 0.15], [0.85, 0.25], [0.15, 0.7],
-      [0.78, 0.65], [0.5, 0.88],
-    ];
-    _x = positions[i][0] * widget.size.width;
-    _y = positions[i][1] * widget.size.height;
-    _dotSize = 4.0 + (i % 3) * 3.0;
-    final colors = [AppTheme.amber, AppTheme.green, Colors.white, AppTheme.indigo, AppTheme.coral];
-    _color = colors[i % colors.length];
-
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: Duration(milliseconds: 2000 + _rng.nextInt(2000)),
-    )..repeat(reverse: true);
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 100));
+    _scale = Tween<double>(begin: 1.0, end: 0.97).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
+    );
   }
 
   @override
@@ -296,207 +201,111 @@ class _FloatingDotState extends State<_FloatingDot>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _ctrl,
-      builder: (ctx, snap) => Positioned(
-        left: _x + _ctrl.value * 12,
-        top: _y - _ctrl.value * 16,
-        child: Opacity(
-          opacity: 0.25 + _ctrl.value * 0.35,
-          child: Container(
-            width: _dotSize + _ctrl.value * 2,
-            height: _dotSize + _ctrl.value * 2,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: _color,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _RoleCard extends StatefulWidget {
-  final String emoji;
-  final String title;
-  final String subtitle;
-  final LinearGradient gradient;
-  final Color accentColor;
-  final List<String> badges;
-  final VoidCallback onTap;
-
-  const _RoleCard({
-    required this.emoji,
-    required this.title,
-    required this.subtitle,
-    required this.gradient,
-    required this.accentColor,
-    required this.badges,
-    required this.onTap,
-  });
-
-  @override
-  State<_RoleCard> createState() => _RoleCardState();
-}
-
-class _RoleCardState extends State<_RoleCard>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _pressCtrl;
-  late Animation<double> _scaleAnim;
-
-  @override
-  void initState() {
-    super.initState();
-    _pressCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 120),
-    );
-    _scaleAnim = Tween<double>(begin: 1.0, end: 0.96).animate(
-      CurvedAnimation(parent: _pressCtrl, curve: Curves.easeInOut),
-    );
-  }
-
-  @override
-  void dispose() {
-    _pressCtrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return GestureDetector(
-      onTapDown: (_) => _pressCtrl.forward(),
-      onTapUp: (_) {
-        _pressCtrl.reverse();
-        widget.onTap();
-      },
-      onTapCancel: () => _pressCtrl.reverse(),
+      onTapDown: (_) => _ctrl.forward(),
+      onTapUp: (_) { _ctrl.reverse(); widget.onTap(); },
+      onTapCancel: () => _ctrl.reverse(),
       child: AnimatedBuilder(
-        animation: _scaleAnim,
-        builder: (ctx, child) => Transform.scale(scale: _scaleAnim.value, child: child),
+        animation: _scale,
+        builder: (ctx, child) => Transform.scale(scale: _scale.value, child: child),
         child: Container(
           width: double.infinity,
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
+            color: widget.cardColor,
             borderRadius: BorderRadius.circular(28),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.white.withValues(alpha: 0.12),
-                Colors.white.withValues(alpha: 0.04),
-              ],
-            ),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.18),
-              width: 1.5,
-            ),
+            border: Border.all(color: widget.borderColor, width: 2),
             boxShadow: [
               BoxShadow(
-                color: widget.accentColor.withValues(alpha: 0.25),
-                blurRadius: 30,
-                offset: const Offset(0, 10),
-              ),
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.2),
+                color: widget.accentColor.withValues(alpha: 0.12),
                 blurRadius: 20,
-                offset: const Offset(0, 6),
+                offset: const Offset(0, 8),
               ),
             ],
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Row(
-              children: [
-                // Emoji in gradient circle
-                Container(
-                  width: 72,
-                  height: 72,
-                  decoration: BoxDecoration(
-                    gradient: widget.gradient,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: widget.accentColor.withValues(alpha: 0.4),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: Center(
-                    child: Text(
-                      widget.emoji,
-                      style: const TextStyle(fontSize: 34),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Icon
+              Container(
+                width: 68,
+                height: 68,
+                decoration: BoxDecoration(
+                  gradient: widget.iconBg,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: widget.accentColor.withValues(alpha: 0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
                     ),
-                  ),
+                  ],
                 ),
-                const SizedBox(width: 20),
+                child: Center(
+                  child: Text(widget.icon, style: const TextStyle(fontSize: 32)),
+                ),
+              ),
+              const SizedBox(width: 16),
 
-                // Text content
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.title,
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
+              // Content
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.title,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      widget.subtitle,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 13,
+                        color: AppTheme.textSecondary,
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: widget.badges.map((b) => Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppTheme.surface,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: widget.accentColor.withValues(alpha: 0.2)),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        widget.subtitle,
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 13,
-                          color: Colors.white.withValues(alpha: 0.65),
-                          height: 1.5,
+                        child: Text(
+                          '${b.$1} ${b.$2}',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.textSecondary,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 4,
-                        children: widget.badges.map((b) => Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.15),
-                            ),
-                          ),
-                          child: Text(
-                            b,
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white.withValues(alpha: 0.85),
-                            ),
-                          ),
-                        )).toList(),
-                      ),
-                    ],
-                  ),
+                      )).toList(),
+                    ),
+                  ],
                 ),
+              ),
 
-                // Arrow
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    gradient: widget.gradient,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    color: Colors.white,
-                    size: 16,
-                  ),
+              // Arrow button
+              const SizedBox(width: 8),
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: widget.arrowColor,
+                  shape: BoxShape.circle,
                 ),
-              ],
-            ),
+                child: const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
+              ),
+            ],
           ),
         ),
       ),
