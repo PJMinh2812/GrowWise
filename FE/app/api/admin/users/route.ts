@@ -26,6 +26,24 @@ async function verifyAdmin(request: NextRequest): Promise<string | null> {
   return null
 }
 
+// POST: mời user mới qua email
+export async function POST(request: NextRequest) {
+  const adminId = await verifyAdmin(request)
+  if (!adminId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  const { email, role = 'staff' } = await request.json()
+  if (!email) return NextResponse.json({ error: 'Email bắt buộc' }, { status: 400 })
+
+  const admin = createAdminClient()
+  const { data, error } = await admin.auth.admin.inviteUserByEmail(email)
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Tạo admin_profile ngay khi invite
+  await admin.from('admin_profiles').upsert({ id: data.user.id, email, role, is_banned: false })
+
+  return NextResponse.json({ ok: true })
+}
+
 export async function GET(request: NextRequest) {
   const adminId = await verifyAdmin(request)
   if (!adminId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
