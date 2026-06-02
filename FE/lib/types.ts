@@ -22,6 +22,7 @@ export interface Profile {
   email: string
   role: 'admin' | 'staff'
   is_banned: boolean
+  access_granted: boolean
   created_at: string
 }
 

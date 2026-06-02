@@ -34,7 +34,7 @@ export async function middleware(request: NextRequest) {
     const admin = createAdminClient()
     const { data: profile } = await admin
       .from('admin_profiles')
-      .select('role, is_banned')
+      .select('role, is_banned, access_granted')
       .eq('id', user.id)
       .single()
 
@@ -43,10 +43,11 @@ export async function middleware(request: NextRequest) {
 
     // Bootstrap: tự tạo profile cho admin đầu tiên nếu chưa có
     if (!profile && isAdminEmail) {
-      await admin.from('admin_profiles').insert({ id: user.id, email: user.email, role: 'admin' })
+      await admin.from('admin_profiles').insert({ id: user.id, email: user.email, role: 'admin', access_granted: true })
     }
 
-    const role: string | null = profile?.role ?? (isAdminEmail ? 'admin' : null)
+    const hasAccess = profile?.access_granted || isAdminEmail
+    const role: string | null = hasAccess ? (profile?.role ?? 'admin') : null
 
     if (!role) {
       await supabase.auth.signOut()

@@ -10,7 +10,7 @@ interface UserRow {
   email: string
   created_at: string
   last_sign_in_at: string | null
-  profile: { role: 'admin' | 'staff'; is_banned: boolean } | null
+  profile: { role: 'admin' | 'staff'; is_banned: boolean; access_granted: boolean } | null
 }
 
 export default function AdminUsersPage() {
@@ -56,7 +56,7 @@ export default function AdminUsersPage() {
   }
 
   async function grantAccess(u: UserRow) {
-    await updateUser(u.id, { email: u.email, role: 'staff', is_banned: false })
+    await updateUser(u.id, { email: u.email, role: 'staff', is_banned: false, access_granted: true })
   }
 
   async function handleInvite(e: React.FormEvent) {
@@ -155,11 +155,11 @@ export default function AdminUsersPage() {
                     <tr key={u.id} className={u.profile?.is_banned ? 'bg-red-50' : ''}>
                       <td className="px-4 py-3 text-gray-900 font-medium">{u.email}</td>
                       <td className="px-4 py-3">
-                        {u.profile ? (
+                        {u.profile?.access_granted ? (
                           <select
                             value={u.profile.role}
                             disabled={busy === u.id}
-                            onChange={e => updateUser(u.id, { email: u.email, role: e.target.value, is_banned: u.profile!.is_banned })}
+                            onChange={e => updateUser(u.id, { email: u.email, role: e.target.value, is_banned: u.profile!.is_banned, access_granted: true })}
                             className="border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-violet-500 disabled:opacity-50"
                           >
                             <option value="staff">Staff</option>
@@ -195,6 +195,7 @@ export default function AdminUsersPage() {
                             email: u.email,
                             role: u.profile?.role ?? 'staff',
                             is_banned: !(u.profile?.is_banned ?? false),
+                            access_granted: u.profile?.access_granted ?? false,
                           })}
                           disabled={busy === u.id}
                           className={`text-xs px-3 py-1.5 rounded-lg font-medium transition disabled:opacity-50 ${
