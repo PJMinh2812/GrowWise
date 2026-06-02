@@ -7,11 +7,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'providers/app_state.dart';
 import 'screens/splash_screen.dart';
 import 'theme/app_theme.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await dotenv.load(fileName: '.env');
+  await Firebase.initializeApp();
 
   try {
     await Supabase.initialize(
@@ -72,10 +74,9 @@ class GrowWiseApp extends StatelessWidget {
       theme: AppTheme.rootTheme(),
       builder: (context, child) => MediaQuery(
         data: MediaQuery.of(context).copyWith(
-          textScaler: MediaQuery.of(context).textScaler.clamp(
-            minScaleFactor: 1.0,
-            maxScaleFactor: 1.15,
-          ),
+          textScaler: MediaQuery.of(
+            context,
+          ).textScaler.clamp(minScaleFactor: 1.0, maxScaleFactor: 1.15),
         ),
         child: child!,
       ),
