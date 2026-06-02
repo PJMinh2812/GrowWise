@@ -17,7 +17,7 @@ async function verifyAdmin(request: NextRequest): Promise<string | null> {
   if (!user) return null
 
   const admin = createAdminClient()
-  const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).single()
+  const { data: profile } = await admin.from('admin_profiles').select('role').eq('id', user.id).single()
 
   const adminEmails = (process.env.ADMIN_EMAILS ?? '').split(',').map(e => e.trim())
   const isAdminEmail = adminEmails.includes(user.email ?? '')
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
   const { data: { users }, error } = await admin.auth.admin.listUsers({ perPage: 1000 })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  const { data: profiles } = await admin.from('profiles').select('*')
+  const { data: profiles } = await admin.from('admin_profiles').select('*')
 
   const result = users.map(u => ({
     id: u.id,

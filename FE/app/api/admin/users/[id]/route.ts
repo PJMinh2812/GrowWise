@@ -17,7 +17,7 @@ async function verifyAdmin(request: NextRequest): Promise<string | null> {
   if (!user) return null
 
   const admin = createAdminClient()
-  const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).single()
+  const { data: profile } = await admin.from('admin_profiles').select('role').eq('id', user.id).single()
 
   const adminEmails = (process.env.ADMIN_EMAILS ?? '').split(',').map(e => e.trim())
   const isAdminEmail = adminEmails.includes(user.email ?? '')
@@ -41,7 +41,7 @@ export async function PATCH(
   const admin = createAdminClient()
 
   // Upsert profile
-  const { error } = await admin.from('profiles').upsert({ id, ...body })
+  const { error } = await admin.from('admin_profiles').upsert({ id, ...body })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   return NextResponse.json({ ok: true })
