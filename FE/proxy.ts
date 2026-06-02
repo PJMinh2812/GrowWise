@@ -19,7 +19,6 @@ export async function proxy(request: NextRequest) {
     }
   )
 
-  // getSession đọc từ cookie cục bộ — không cần network call
   const { data: { session } } = await supabase.auth.getSession()
   const isLoginPage = request.nextUrl.pathname === '/login'
 
@@ -31,40 +30,38 @@ export async function proxy(request: NextRequest) {
   }
 
   if (session) {
+    const adminEmails = (process.env.ADMIN_EMAILS ?? '').split(',').map(e => e.trim())
+    const isAdminEmail = adminEmails.includes(session.user.email ?? '')
+
+    // Admin trong ADMIN_EMAILS → bypass DB hoàn toàn
+    if (isAdminEmail) {
+      response.cookies.set('x-user-role', 'admin', { httpOnly: false, sameSite: 'lax', path: '/' })
+      return response
+    }
+
+    // Các user khác → check admin_profiles
     try {
-      const cachedRole = request.cookies.get('x-user-role')?.value
+      const { data: profile } = await supabase
+        .from('admin_profiles')
+        .select('role, is_banned, access_granted')
+        .eq('id', session.user.id)
+        .single()
 
-      if (cachedRole) {
-        if (request.nextUrl.pathname.startsWith('/admin') && cachedRole !== 'admin') {
-          return NextResponse.redirect(new URL('/lessons', request.url))
-        }
-        response.cookies.set('x-user-role', cachedRole, { httpOnly: false, sameSite: 'lax', path: '/' })
-      } else {
-        const { data: profile } = await supabase
-          .from('admin_profiles')
-          .select('role, is_banned, access_granted')
-          .eq('id', session.user.id)
-          .single()
-
-        const adminEmails = (process.env.ADMIN_EMAILS ?? '').split(',').map(e => e.trim())
-        const isAdminEmail = adminEmails.includes(session.user.email ?? '')
-
-        const hasAccess = profile?.access_granted || isAdminEmail
-        const role: string | null = hasAccess ? (profile?.role ?? 'admin') : null
-
-        if (!role || profile?.is_banned) {
-          await supabase.auth.signOut()
-          return NextResponse.redirect(new URL(`/login?error=${profile?.is_banned ? 'banned' : 'unauthorized'}`, request.url))
-        }
-
-        if (request.nextUrl.pathname.startsWith('/admin') && role !== 'admin') {
-          return NextResponse.redirect(new URL('/lessons', request.url))
-        }
-
-        response.cookies.set('x-user-role', role, { httpOnly: false, sameSite: 'lax', path: '/' })
+      if (!profile?.access_granted || profile?.is_banned) {
+        await supabase.auth.signOut()
+        return NextResponse.redirect(new URL(
+          `/login?error=${profile?.is_banned ? 'banned' : 'unauthorized'}`,
+          request.url
+        ))
       }
+
+      if (request.nextUrl.pathname.startsWith('/admin') && profile.role !== 'admin') {
+        return NextResponse.redirect(new URL('/lessons', request.url))
+      }
+
+      response.cookies.set('x-user-role', profile.role, { httpOnly: false, sameSite: 'lax', path: '/' })
     } catch {
-      // Nếu có lỗi (vd: DB không kết nối được), cho qua để tránh redirect loop
+      // Lỗi DB → cho qua, tránh redirect loop
     }
   }
 
