@@ -17,23 +17,22 @@ class ChildLearnScreen extends StatefulWidget {
 class _ChildLearnScreenState extends State<ChildLearnScreen> {
   String? _selectedCategory;
 
-  List<String> get _categories {
-    final cats = demoChildLessons.map((l) => l.category).toSet().toList();
+  List<String> _categories(List<VideoLesson> lessons) {
+    final cats = lessons.map((l) => l.category).toSet().toList();
     return ['Tất cả', ...cats];
   }
 
-  List<VideoLesson> get _filteredLessons {
-    if (_selectedCategory == null || _selectedCategory == 'Tất cả') {
-      return demoChildLessons;
-    }
-    return demoChildLessons.where((l) => l.category == _selectedCategory).toList();
+  List<VideoLesson> _filteredLessons(List<VideoLesson> lessons) {
+    if (_selectedCategory == null || _selectedCategory == 'Tất cả') return lessons;
+    return lessons.where((l) => l.category == _selectedCategory).toList();
   }
 
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
+    final lessons = app.childLessons;
     final completed = app.completedLessonCount;
-    final total = demoChildLessons.length;
+    final total = lessons.length;
 
     return Scaffold(
       backgroundColor: AppTheme.surfaceBright,
@@ -60,7 +59,7 @@ class _ChildLearnScreenState extends State<ChildLearnScreen> {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-              children: _categories.map((cat) {
+              children: _categories(lessons).map((cat) {
                 final selected = (_selectedCategory ?? 'Tất cả') == cat;
                 return GestureDetector(
                   onTap: () => setState(() => _selectedCategory = cat),
@@ -87,7 +86,7 @@ class _ChildLearnScreenState extends State<ChildLearnScreen> {
           const SizedBox(height: 16),
 
           // Lesson list
-          ..._filteredLessons.asMap().entries.map((entry) {
+          ..._filteredLessons(lessons).asMap().entries.map((entry) {
             final lesson = entry.value;
             final isCompleted = app.isLessonCompleted(lesson.id);
             return _LessonCard(
@@ -97,7 +96,7 @@ class _ChildLearnScreenState extends State<ChildLearnScreen> {
                 context,
                 MaterialPageRoute(builder: (_) => VideoLessonScreen(lesson: lesson)),
               ),
-            ).animate(delay: Duration(milliseconds: 150 + entry.key * 80)).fadeIn().slideY(begin: 0.1);
+            ).animate(delay: Duration(milliseconds: 150 + entry.key.toInt() * 80)).fadeIn().slideY(begin: 0.1);
           }),
         ],
       ),

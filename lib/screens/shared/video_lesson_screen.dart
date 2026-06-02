@@ -22,6 +22,7 @@ class _VideoLessonScreenState extends State<VideoLessonScreen> {
   late YoutubePlayerController _vc;
   final FlutterTts _tts = FlutterTts();
   late StreamSubscription<Object> _positionSub;
+  late StreamSubscription<YoutubePlayerValue> _playerStateSub;
   bool _ttsAvailable = true;
   final Set<int> _shownQuizIndexes = {};
   VideoQuiz? _activeQuiz;
@@ -36,10 +37,22 @@ class _VideoLessonScreenState extends State<VideoLessonScreen> {
       autoPlay: false,
       params: const YoutubePlayerParams(showControls: true, showFullscreenButton: true),
     );
+    // Position-based fallback: trigger at 85% of hardcoded duration
+    final threshold85 = (widget.lesson.durationSeconds * 0.85).floor();
     _positionSub = _vc.videoStateStream.listen((state) {
+      if (_activeQuiz != null) {
+        if (_vc.value.playerState == PlayerState.playing) _vc.pauseVideo();
+        return;
+      }
       _onPosition(state.position);
-      if (state.position >= Duration(seconds: widget.lesson.durationSeconds - 2) &&
+      if (state.position >= Duration(seconds: threshold85) &&
           state.position > Duration.zero) {
+        _onVideoEnd();
+      }
+    });
+    // Primary trigger: YouTube player signals video ended
+    _playerStateSub = _vc.stream.listen((value) {
+      if (value.playerState == PlayerState.ended) {
         _onVideoEnd();
       }
     });
@@ -192,6 +205,7 @@ class _VideoLessonScreenState extends State<VideoLessonScreen> {
   @override
   void dispose() {
     _positionSub.cancel();
+    _playerStateSub.cancel();
     _vc.close();
     _tts.stop();
     super.dispose();
@@ -217,7 +231,20 @@ class _VideoLessonScreenState extends State<VideoLessonScreen> {
           children: [
             AspectRatio(
               aspectRatio: 16 / 9,
-              child: YoutubePlayer(controller: _vc),
+              child: Stack(
+                children: [
+                  YoutubePlayer(controller: _vc),
+                  if (_activeQuiz != null)
+                    Positioned.fill(
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () {},
+                        onPanDown: (_) {},
+                        child: Container(color: Colors.black45),
+                      ),
+                    ),
+                ],
+              ),
             ),
             if (_activeQuiz != null)
               Expanded(

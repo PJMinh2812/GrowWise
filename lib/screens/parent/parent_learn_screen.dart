@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../../models/video_lesson_model.dart';
+import '../../providers/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../shared/video_lesson_screen.dart';
 
@@ -15,20 +17,21 @@ class ParentLearnScreen extends StatefulWidget {
 class _ParentLearnScreenState extends State<ParentLearnScreen> {
   String? _selectedCategory;
 
-  List<String> get _categories {
-    final cats = demoParentLessons.map((l) => l.category).toSet().toList();
+  List<String> _categories(List<VideoLesson> lessons) {
+    final cats = lessons.map((l) => l.category).toSet().toList();
     return ['Tất cả', ...cats];
   }
 
-  List<VideoLesson> get _filteredLessons {
-    if (_selectedCategory == null || _selectedCategory == 'Tất cả') {
-      return demoParentLessons;
-    }
-    return demoParentLessons.where((l) => l.category == _selectedCategory).toList();
+  List<VideoLesson> _filteredLessons(List<VideoLesson> lessons) {
+    if (_selectedCategory == null || _selectedCategory == 'Tất cả') return lessons;
+    return lessons.where((l) => l.category == _selectedCategory).toList();
   }
 
   @override
   Widget build(BuildContext context) {
+    final app = context.watch<AppState>();
+    final lessons = app.parentLessons;
+
     return Scaffold(
       backgroundColor: AppTheme.surfaceBright,
       appBar: AppBar(
@@ -85,7 +88,7 @@ class _ParentLearnScreenState extends State<ParentLearnScreen> {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-              children: _categories.map((cat) {
+              children: _categories(lessons).map((cat) {
                 final selected = (_selectedCategory ?? 'Tất cả') == cat;
                 return GestureDetector(
                   onTap: () => setState(() => _selectedCategory = cat),
@@ -112,7 +115,7 @@ class _ParentLearnScreenState extends State<ParentLearnScreen> {
           const SizedBox(height: 16),
 
           // Lesson list
-          ..._filteredLessons.asMap().entries.map((entry) {
+          ..._filteredLessons(lessons).asMap().entries.map((entry) {
             final lesson = entry.value;
             return _ParentLessonCard(
               lesson: lesson,

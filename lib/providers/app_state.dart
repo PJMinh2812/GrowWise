@@ -1,7 +1,9 @@
 ﻿import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/task_model.dart';
+import '../models/video_lesson_model.dart';
 import '../services/supabase_service.dart';
 
 class AppState extends ChangeNotifier {
@@ -63,7 +65,11 @@ class AppState extends ChangeNotifier {
   Map<String, int> _categoryTaskCounts = {};
   TaskModel? _justApprovedTask;
   Set<String> _completedLessonIds = {};
+  List<VideoLesson> _lessons = [];
   String? _pendingNewBadge; // any newly earned badge (emoji + name)
+
+  static const _storage = FlutterSecureStorage();
+  static const _completedLessonsKey = 'completed_lesson_ids';
   Map<String, String> _customBadgeEmoji = {}; // achievementId → custom emoji
 
   // Dream items
@@ -90,6 +96,8 @@ class AppState extends ChangeNotifier {
       _seedDemoData();
       return;
     }
+    await _loadCompletedLessons();
+
     final user = SupabaseService.auth.currentUser;
     if (user == null) return;
 
@@ -168,7 +176,28 @@ class AppState extends ChangeNotifier {
         )
         .toList();
 
+    // Load lessons từ Supabase
+    final lessonRows = await SupabaseService.getLessons();
+    _lessons = lessonRows.map(_parseLessonFromJson).toList();
+
     notifyListeners();
+  }
+
+  VideoLesson _parseLessonFromJson(Map<String, dynamic> json) {
+    final quizRows = List<Map<String, dynamic>>.from(
+        (json['lesson_quizzes'] as List<dynamic>?) ?? []);
+    quizRows.sort((a, b) =>
+        (a['order_index'] as int? ?? 0).compareTo(b['order_index'] as int? ?? 0));
+
+    final quizzes = quizRows.map((q) {
+      final optionRows = List<Map<String, dynamic>>.from(
+          (q['quiz_options'] as List<dynamic>?) ?? []);
+      optionRows.sort((a, b) =>
+          (a['order_index'] as int? ?? 0).compareTo(b['order_index'] as int? ?? 0));
+      return VideoQuiz.fromJson(q, optionRows.map(QuizOption.fromJson).toList());
+    }).toList();
+
+    return VideoLesson.fromJson(json, quizzes);
   }
 
   // ── Getters ────────────────────────────────────────────────────────────────
@@ -197,6 +226,8 @@ class AppState extends ChangeNotifier {
   TaskModel? get justApprovedTask => _justApprovedTask;
   bool isLessonCompleted(String id) => _completedLessonIds.contains(id);
   int get completedLessonCount => _completedLessonIds.length;
+  List<VideoLesson> get childLessons => _lessons.where((l) => l.audience == 'child').toList();
+  List<VideoLesson> get parentLessons => _lessons.where((l) => l.audience == 'parent').toList();
   List<String> get badges => List.unmodifiable(_badges);
   bool get hasChild => _childId != null;
   List<Map<String, dynamic>> get dreamItemsList =>
@@ -681,10 +712,24 @@ class AppState extends ChangeNotifier {
   String getEmojiForBadge(String achievementId, String defaultEmoji) =>
       _customBadgeEmoji[achievementId] ?? defaultEmoji;
 
+  Future<void> _saveCompletedLessons() async {
+    final encoded = jsonEncode(_completedLessonIds.toList());
+    await _storage.write(key: _completedLessonsKey, value: encoded);
+  }
+
+  Future<void> _loadCompletedLessons() async {
+    final raw = await _storage.read(key: _completedLessonsKey);
+    if (raw != null) {
+      final list = jsonDecode(raw) as List<dynamic>;
+      _completedLessonIds = list.cast<String>().toSet();
+    }
+  }
+
   void markLessonCompleted(String lessonId) {
     if (_completedLessonIds.contains(lessonId)) return;
     _completedLessonIds.add(lessonId);
     _addXp(10);
+    _saveCompletedLessons();
     notifyListeners();
   }
 
@@ -948,6 +993,7 @@ class AppState extends ChangeNotifier {
 
     _recomputeCategoryTaskCounts();
     _completedLessonIds = {'cl-1'};
+    _lessons = [...demoChildLessons, ...demoParentLessons];
     notifyListeners();
   }
 

@@ -345,4 +345,20 @@ class SupabaseService {
     updates['updated_at'] = DateTime.now().toIso8601String();
     await client.from('user_settings').update(updates).eq('user_id', uid);
   }
+
+  // ── Lessons ───────────────────────────────────────────────────────────────
+
+  static Future<List<Map<String, dynamic>>> getLessons({String? audience}) async {
+    var query = client
+        .from('lessons')
+        .select('*, lesson_quizzes(*, quiz_options(*))')
+        .eq('is_published', true);
+
+    if (audience != null) {
+      query = query.eq('audience', audience);
+    }
+
+    final rows = await query.order('order_index');
+    return List<Map<String, dynamic>>.from(rows as List);
+  }
 }

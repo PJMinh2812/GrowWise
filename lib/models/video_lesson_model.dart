@@ -2,6 +2,11 @@ class QuizOption {
   final String text;
   final String emoji;
   const QuizOption({required this.text, required this.emoji});
+
+  factory QuizOption.fromJson(Map<String, dynamic> json) => QuizOption(
+        text: json['text'] as String,
+        emoji: json['emoji'] as String? ?? '📝',
+      );
 }
 
 class VideoQuiz {
@@ -17,6 +22,15 @@ class VideoQuiz {
     required this.correctIndex,
     required this.explanation,
   });
+
+  factory VideoQuiz.fromJson(Map<String, dynamic> json, List<QuizOption> options) =>
+      VideoQuiz(
+        triggerAt: json['trigger_at'] as int,
+        question: json['question'] as String,
+        correctIndex: json['correct_index'] as int,
+        explanation: json['explanation'] as String? ?? '',
+        options: options,
+      );
 }
 
 class VideoLesson {
@@ -40,6 +54,19 @@ class VideoLesson {
     required this.durationSeconds,
     required this.quizzes,
   });
+
+  factory VideoLesson.fromJson(Map<String, dynamic> json, List<VideoQuiz> quizzes) =>
+      VideoLesson(
+        id: json['id'] as String,
+        title: json['title'] as String,
+        description: json['description'] as String? ?? '',
+        youtubeId: json['youtube_id'] as String,
+        audience: json['audience'] as String,
+        category: json['category'] as String,
+        thumbnailEmoji: json['thumbnail_emoji'] as String? ?? '📚',
+        durationSeconds: json['duration_seconds'] as int? ?? 0,
+        quizzes: quizzes,
+      );
 }
 
 // ── Demo lesson data ──────────────────────────────────────────────────────────
