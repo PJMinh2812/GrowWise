@@ -59,14 +59,6 @@ export default function AdminUsersPage() {
     await updateUser(u.id, { email: u.email, role: 'staff', is_banned: false })
   }
 
-  async function deleteUser(id: string, email: string) {
-    if (!confirm(`Xóa tài khoản ${email}? Hành động này không thể hoàn tác.`)) return
-    setBusy(id)
-    await fetch(`/api/admin/users/${id}`, { method: 'DELETE' })
-    setUsers(prev => prev.filter(u => u.id !== id))
-    setBusy(null)
-  }
-
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault()
     setInviting(true)
@@ -155,7 +147,6 @@ export default function AdminUsersPage() {
                     <th className="text-left px-4 py-3 font-semibold text-gray-700">Vai trò</th>
                     <th className="text-left px-4 py-3 font-semibold text-gray-700">Trạng thái</th>
                     <th className="text-left px-4 py-3 font-semibold text-gray-700">Đăng nhập gần nhất</th>
-                    <th className="px-4 py-3"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -204,15 +195,6 @@ export default function AdminUsersPage() {
                         {u.last_sign_in_at
                           ? new Date(u.last_sign_in_at).toLocaleDateString('vi-VN')
                           : 'Chưa đăng nhập'}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <button
-                          onClick={() => deleteUser(u.id, u.email)}
-                          disabled={busy === u.id}
-                          className="text-xs px-3 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 font-medium transition disabled:opacity-50"
-                        >
-                          Xóa
-                        </button>
                       </td>
                     </tr>
                   ))}
