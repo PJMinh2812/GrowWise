@@ -81,7 +81,7 @@ export default function LessonForm({ initial, lessonId }: Props) {
                 className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border-2 text-sm font-semibold transition ${
                   form.audience === a
                     ? 'border-violet-500 bg-violet-50 text-violet-700'
-                    : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'
+                    : 'border-gray-200 bg-gray-50 text-gray-800 hover:border-gray-400'
                 }`}
               >
                 <span className="text-xl">{a === 'child' ? '👦' : '👨‍👩‍👧'}</span>

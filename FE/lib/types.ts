@@ -17,6 +17,14 @@ export interface LessonQuiz {
   quiz_options?: QuizOption[]
 }
 
+export interface Profile {
+  id: string
+  email: string
+  role: 'admin' | 'staff'
+  is_banned: boolean
+  created_at: string
+}
+
 export interface Lesson {
   id?: string
   title: string

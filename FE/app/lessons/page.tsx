@@ -6,11 +6,19 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import type { Lesson } from '@/lib/types'
 
+function getUserRole(): string {
+  if (typeof document === 'undefined') return ''
+  return document.cookie.split('; ').find(r => r.startsWith('x-user-role='))?.split('=')[1] ?? ''
+}
+
 export default function LessonsPage() {
   const router = useRouter()
   const [lessons, setLessons] = useState<Lesson[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'child' | 'parent'>('all')
+  const [role, setRole] = useState('')
+
+  useEffect(() => { setRole(getUserRole()) }, [])
 
   useEffect(() => { fetchLessons() }, [])
 
@@ -53,9 +61,13 @@ export default function LessonsPage() {
           <span className="text-2xl">🌱</span>
           <h1 className="text-lg font-bold text-gray-900">GrowWise Admin</h1>
         </div>
-        <button onClick={handleLogout} className="text-sm text-gray-500 hover:text-gray-700">
-          Đăng xuất
-        </button>
+        <div className="flex items-center gap-4">
+          <span className="text-sm font-semibold text-violet-700">Bài học</span>
+          {role === 'admin' && (
+            <Link href="/admin/users" className="text-sm text-gray-500 hover:text-gray-700">Người dùng</Link>
+          )}
+          <button onClick={handleLogout} className="text-sm text-gray-400 hover:text-gray-600">Đăng xuất</button>
+        </div>
       </header>
 
       <main className="max-w-5xl mx-auto px-6 py-8">
