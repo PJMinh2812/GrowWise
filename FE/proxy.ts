@@ -31,39 +31,40 @@ export async function proxy(request: NextRequest) {
   }
 
   if (session) {
-    // Đọc role từ cookie đã lưu trước đó (set sau khi login thành công)
-    const cachedRole = request.cookies.get('x-user-role')?.value
+    try {
+      const cachedRole = request.cookies.get('x-user-role')?.value
 
-    if (cachedRole) {
-      // Dùng cached role — không cần query DB
-      if (request.nextUrl.pathname.startsWith('/admin') && cachedRole !== 'admin') {
-        return NextResponse.redirect(new URL('/lessons', request.url))
+      if (cachedRole) {
+        if (request.nextUrl.pathname.startsWith('/admin') && cachedRole !== 'admin') {
+          return NextResponse.redirect(new URL('/lessons', request.url))
+        }
+        response.cookies.set('x-user-role', cachedRole, { httpOnly: false, sameSite: 'lax', path: '/' })
+      } else {
+        const { data: profile } = await supabase
+          .from('admin_profiles')
+          .select('role, is_banned, access_granted')
+          .eq('id', session.user.id)
+          .single()
+
+        const adminEmails = (process.env.ADMIN_EMAILS ?? '').split(',').map(e => e.trim())
+        const isAdminEmail = adminEmails.includes(session.user.email ?? '')
+
+        const hasAccess = profile?.access_granted || isAdminEmail
+        const role: string | null = hasAccess ? (profile?.role ?? 'admin') : null
+
+        if (!role || profile?.is_banned) {
+          await supabase.auth.signOut()
+          return NextResponse.redirect(new URL(`/login?error=${profile?.is_banned ? 'banned' : 'unauthorized'}`, request.url))
+        }
+
+        if (request.nextUrl.pathname.startsWith('/admin') && role !== 'admin') {
+          return NextResponse.redirect(new URL('/lessons', request.url))
+        }
+
+        response.cookies.set('x-user-role', role, { httpOnly: false, sameSite: 'lax', path: '/' })
       }
-      response.cookies.set('x-user-role', cachedRole, { httpOnly: false, sameSite: 'lax', path: '/' })
-    } else {
-      // Chỉ query DB khi chưa có cached role
-      const { data: profile } = await supabase
-        .from('admin_profiles')
-        .select('role, is_banned, access_granted')
-        .eq('id', session.user.id)
-        .single()
-
-      const adminEmails = (process.env.ADMIN_EMAILS ?? '').split(',').map(e => e.trim())
-      const isAdminEmail = adminEmails.includes(session.user.email ?? '')
-
-      const hasAccess = profile?.access_granted || isAdminEmail
-      const role: string | null = hasAccess ? (profile?.role ?? 'admin') : null
-
-      if (!role || profile?.is_banned) {
-        await supabase.auth.signOut()
-        return NextResponse.redirect(new URL(`/login?error=${profile?.is_banned ? 'banned' : 'unauthorized'}`, request.url))
-      }
-
-      if (request.nextUrl.pathname.startsWith('/admin') && role !== 'admin') {
-        return NextResponse.redirect(new URL('/lessons', request.url))
-      }
-
-      response.cookies.set('x-user-role', role, { httpOnly: false, sameSite: 'lax', path: '/' })
+    } catch {
+      // Nếu có lỗi (vd: DB không kết nối được), cho qua để tránh redirect loop
     }
   }
 
