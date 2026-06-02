@@ -19,45 +19,52 @@ export async function proxy(request: NextRequest) {
     }
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
+  // getSession đọc từ cookie cục bộ — không cần network call
+  const { data: { session } } = await supabase.auth.getSession()
   const isLoginPage = request.nextUrl.pathname === '/login'
 
-  if (!user && !isLoginPage) {
+  if (!session && !isLoginPage) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
-  if (user && isLoginPage) {
+  if (session && isLoginPage) {
     return NextResponse.redirect(new URL('/lessons', request.url))
   }
 
-  if (user) {
-    // Dùng SSR client (Edge-compatible) thay vì admin client
-    const { data: profile } = await supabase
-      .from('admin_profiles')
-      .select('role, is_banned, access_granted')
-      .eq('id', user.id)
-      .single()
+  if (session) {
+    // Đọc role từ cookie đã lưu trước đó (set sau khi login thành công)
+    const cachedRole = request.cookies.get('x-user-role')?.value
 
-    const adminEmails = (process.env.ADMIN_EMAILS ?? '').split(',').map(e => e.trim())
-    const isAdminEmail = adminEmails.includes(user.email ?? '')
+    if (cachedRole) {
+      // Dùng cached role — không cần query DB
+      if (request.nextUrl.pathname.startsWith('/admin') && cachedRole !== 'admin') {
+        return NextResponse.redirect(new URL('/lessons', request.url))
+      }
+      response.cookies.set('x-user-role', cachedRole, { httpOnly: false, sameSite: 'lax', path: '/' })
+    } else {
+      // Chỉ query DB khi chưa có cached role
+      const { data: profile } = await supabase
+        .from('admin_profiles')
+        .select('role, is_banned, access_granted')
+        .eq('id', session.user.id)
+        .single()
 
-    const hasAccess = profile?.access_granted || isAdminEmail
-    const role: string | null = hasAccess ? (profile?.role ?? 'admin') : null
+      const adminEmails = (process.env.ADMIN_EMAILS ?? '').split(',').map(e => e.trim())
+      const isAdminEmail = adminEmails.includes(session.user.email ?? '')
 
-    if (!role) {
-      await supabase.auth.signOut()
-      return NextResponse.redirect(new URL('/login?error=unauthorized', request.url))
+      const hasAccess = profile?.access_granted || isAdminEmail
+      const role: string | null = hasAccess ? (profile?.role ?? 'admin') : null
+
+      if (!role || profile?.is_banned) {
+        await supabase.auth.signOut()
+        return NextResponse.redirect(new URL(`/login?error=${profile?.is_banned ? 'banned' : 'unauthorized'}`, request.url))
+      }
+
+      if (request.nextUrl.pathname.startsWith('/admin') && role !== 'admin') {
+        return NextResponse.redirect(new URL('/lessons', request.url))
+      }
+
+      response.cookies.set('x-user-role', role, { httpOnly: false, sameSite: 'lax', path: '/' })
     }
-
-    if (profile?.is_banned) {
-      await supabase.auth.signOut()
-      return NextResponse.redirect(new URL('/login?error=banned', request.url))
-    }
-
-    if (request.nextUrl.pathname.startsWith('/admin') && role !== 'admin') {
-      return NextResponse.redirect(new URL('/lessons', request.url))
-    }
-
-    response.cookies.set('x-user-role', role, { httpOnly: false, sameSite: 'lax', path: '/' })
   }
 
   return response
