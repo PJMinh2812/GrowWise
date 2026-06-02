@@ -1,6 +1,5 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
-import { createAdminClient } from '@/lib/supabase-admin'
 
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next({ request })
@@ -31,8 +30,8 @@ export async function middleware(request: NextRequest) {
   }
 
   if (user) {
-    const admin = createAdminClient()
-    const { data: profile } = await admin
+    // Dùng SSR client (Edge-compatible) thay vì admin client
+    const { data: profile } = await supabase
       .from('admin_profiles')
       .select('role, is_banned, access_granted')
       .eq('id', user.id)
@@ -40,11 +39,6 @@ export async function middleware(request: NextRequest) {
 
     const adminEmails = (process.env.ADMIN_EMAILS ?? '').split(',').map(e => e.trim())
     const isAdminEmail = adminEmails.includes(user.email ?? '')
-
-    // Bootstrap: tự tạo profile cho admin đầu tiên nếu chưa có
-    if (!profile && isAdminEmail) {
-      await admin.from('admin_profiles').insert({ id: user.id, email: user.email, role: 'admin', access_granted: true })
-    }
 
     const hasAccess = profile?.access_granted || isAdminEmail
     const role: string | null = hasAccess ? (profile?.role ?? 'admin') : null
@@ -59,7 +53,6 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/login?error=banned', request.url))
     }
 
-    // Chỉ admin mới vào được /admin/*
     if (request.nextUrl.pathname.startsWith('/admin') && role !== 'admin') {
       return NextResponse.redirect(new URL('/lessons', request.url))
     }
