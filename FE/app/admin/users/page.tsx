@@ -147,6 +147,7 @@ export default function AdminUsersPage() {
                     <th className="text-left px-4 py-3 font-semibold text-gray-700">Vai trò</th>
                     <th className="text-left px-4 py-3 font-semibold text-gray-700">Trạng thái</th>
                     <th className="text-left px-4 py-3 font-semibold text-gray-700">Đăng nhập gần nhất</th>
+                    <th className="px-4 py-3"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -175,6 +176,20 @@ export default function AdminUsersPage() {
                         )}
                       </td>
                       <td className="px-4 py-3">
+                        <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
+                          u.profile?.is_banned
+                            ? 'bg-red-100 text-red-700'
+                            : 'bg-green-100 text-green-700'
+                        }`}>
+                          {u.profile?.is_banned ? 'Đã cấm' : 'Hoạt động'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-gray-500 text-xs">
+                        {u.last_sign_in_at
+                          ? new Date(u.last_sign_in_at).toLocaleDateString('vi-VN')
+                          : 'Chưa đăng nhập'}
+                      </td>
+                      <td className="px-4 py-3 text-right">
                         <button
                           onClick={() => updateUser(u.id, {
                             email: u.email,
@@ -182,19 +197,14 @@ export default function AdminUsersPage() {
                             is_banned: !(u.profile?.is_banned ?? false),
                           })}
                           disabled={busy === u.id}
-                          className={`text-xs px-3 py-1 rounded-full font-medium transition disabled:opacity-50 ${
+                          className={`text-xs px-3 py-1.5 rounded-lg font-medium transition disabled:opacity-50 ${
                             u.profile?.is_banned
-                              ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                              : 'bg-green-100 text-green-700 hover:bg-green-200'
+                              ? 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                              : 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200'
                           }`}
                         >
-                          {u.profile?.is_banned ? 'Đã cấm' : 'Hoạt động'}
+                          {u.profile?.is_banned ? 'Bỏ cấm' : 'Cấm'}
                         </button>
-                      </td>
-                      <td className="px-4 py-3 text-gray-500 text-xs">
-                        {u.last_sign_in_at
-                          ? new Date(u.last_sign_in_at).toLocaleDateString('vi-VN')
-                          : 'Chưa đăng nhập'}
                       </td>
                     </tr>
                   ))}
