@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseService {
@@ -40,7 +41,10 @@ class SupabaseService {
   static Future<void> signOut() => auth.signOut();
 
   static Future<void> resetPassword(String email) {
-    return auth.resetPasswordForEmail(email);
+    final redirectTo = kIsWeb
+        ? Uri.base.origin
+        : 'io.supabase.growwise://login-callback';
+    return auth.resetPasswordForEmail(email, redirectTo: redirectTo);
   }
 
   // ── Profile ───────────────────────────────────────────────────────────────
@@ -181,16 +185,57 @@ class SupabaseService {
     String taskId,
     String status, {
     String? parentNote,
+    String? proofImageUrl,
   }) async {
     final updates = <String, dynamic>{'status': status};
     if (status == 'submitted') {
       updates['submitted_at'] = DateTime.now().toIso8601String();
+      if (proofImageUrl != null) updates['proof_image_url'] = proofImageUrl;
     }
     if (status == 'approved' || status == 'rejected') {
       updates['reviewed_at'] = DateTime.now().toIso8601String();
     }
     if (parentNote != null) updates['parent_note'] = parentNote;
     await client.from('tasks').update(updates).eq('id', taskId);
+  }
+
+  /// Uploads a proof image (bytes) to Supabase Storage bucket 'task-proofs'.
+  /// Returns the public URL on success, or null on failure.
+  static Future<String?> uploadProofImage({
+    required String taskId,
+    required Uint8List imageBytes,
+  }) async {
+    // Refresh session to ensure the JWT token is valid (not expired)
+    try {
+      await auth.refreshSession();
+    } catch (_) {}
+
+    // Use currentSession (not currentUser) — more reliable auth check
+    final session = auth.currentSession;
+    if (session == null) {
+      debugPrint('[SupabaseStorage] No active session');
+      return null;
+    }
+    final uid = session.user.id;
+
+    try {
+      // Path is relative to the bucket — do NOT include bucket name here
+      final storagePath = '$uid/$taskId.jpg';
+      debugPrint('[SupabaseStorage] Uploading to: task-proofs/$storagePath');
+      debugPrint('[SupabaseStorage] User: ${session.user.email}, role: ${session.user.role}');
+
+      await client.storage.from('task-proofs').uploadBinary(
+        storagePath,
+        imageBytes,
+        fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: false),
+      );
+      final url = client.storage.from('task-proofs').getPublicUrl(storagePath);
+      debugPrint('[SupabaseStorage] Upload success: $url');
+      return url;
+    } catch (e) {
+      debugPrint('[SupabaseStorage] uploadProofImage failed: $e');
+      return null;
+    }
   }
 
   // ── Badges ────────────────────────────────────────────────────────────────
@@ -268,14 +313,17 @@ class SupabaseService {
     required String taskTitle,
     required String emoji,
     required String note,
+    String? proofImageUrl,
   }) async {
-    await client.from('memories').insert({
+    final data = <String, dynamic>{
       'family_id': familyId,
       'child_id': childId,
       'task_title': taskTitle,
       'emoji': emoji,
       'note': note,
-    });
+    };
+    if (proofImageUrl != null) data['proof_image_url'] = proofImageUrl;
+    await client.from('memories').insert(data);
   }
 
   // ── Settings ──────────────────────────────────────────────────────────────

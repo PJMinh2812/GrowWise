@@ -8,8 +8,12 @@ import '../../models/task_model.dart';
 import 'child_task_list.dart';
 import 'child_jars.dart';
 import 'child_dream_jar.dart';
+import 'micro_lesson_dialog.dart';
+import 'child_learn_screen.dart';
+import 'achievement_screen.dart';
 import '../login_screen.dart';
 import '../ai_chat_screen.dart';
+import '../../utils/age_group.dart';
 
 class ChildDashboard extends StatefulWidget {
   const ChildDashboard({super.key});
@@ -33,7 +37,8 @@ class _ChildDashboardState extends State<ChildDashboard> {
     0 => const _HomeTab(),
     1 => const ChildTaskList(),
     2 => const ChildJars(),
-    _ => const ChildDreamJar(),
+    3 => const ChildDreamJar(),
+    _ => const ChildLearnScreen(),
   };
 
   @override
@@ -46,7 +51,7 @@ class _ChildDashboardState extends State<ChildDashboard> {
         backgroundColor: AppTheme.surfaceBright,
         appBar: _buildAppBar(),
         body: Stack(
-          children: List.generate(4, (i) {
+          children: List.generate(5, (i) {
             if (!_built.contains(i)) return const SizedBox.shrink();
             return TickerMode(
               enabled: _tab == i,
@@ -190,6 +195,7 @@ class _ChildDashboardState extends State<ChildDashboard> {
             _buildNavItem(1, Icons.assignment, Icons.assignment_outlined, 'Nhiệm vụ'),
             _buildNavItem(2, Icons.savings, Icons.savings_outlined, '3 Hũ'),
             _buildNavItem(3, Icons.stars, Icons.stars_outlined, 'Ước mơ'),
+            _buildNavItem(4, Icons.school, Icons.school_outlined, 'Học'),
           ],
         ),
       ),
@@ -245,6 +251,37 @@ class _HomeTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
+
+    // Show micro-lesson dialog when parent approves a task
+    if (app.justApprovedTask != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) return;
+        final task = context.read<AppState>().justApprovedTask;
+        if (task == null) return;
+        context.read<AppState>().consumeJustApprovedTask();
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) => MicroLessonDialog(
+            taskTitle: task.title,
+            category: task.category,
+            taskId: task.id,
+          ),
+        );
+      });
+    }
+
+    // Badge celebration popup
+    if (app.pendingNewBadge != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) return;
+        final badge = context.read<AppState>().pendingNewBadge;
+        if (badge == null) return;
+        context.read<AppState>().consumeNewBadge();
+        _showBadgePopup(context, badge);
+      });
+    }
+
     final pending = [...app.pendingTasks, ...app.submittedTasks];
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
@@ -335,7 +372,8 @@ class _HeroCard extends StatelessWidget {
                     Text(
                       app.childName.isEmpty ? 'Bé yêu' : app.childName,
                       style: GoogleFonts.plusJakartaSans(
-                        fontSize: 30, fontWeight: FontWeight.w900,
+                        fontSize: app.childAge.ageGroup == AgeGroup.young ? 34 : 30,
+                        fontWeight: FontWeight.w900,
                         color: Colors.white, height: 1,
                       ),
                     ),
@@ -392,21 +430,26 @@ class _HeroCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 16),
-              Container(
-                width: 88,
-                height: 88,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(28),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 2),
-                ),
-                child: Center(
-                  child: Text(
-                    app.childAvatarEmoji.isNotEmpty ? app.childAvatarEmoji : '👦',
-                    style: const TextStyle(fontSize: 50),
+              Builder(builder: (context) {
+                final isYoung = app.childAge.ageGroup == AgeGroup.young;
+                final size = isYoung ? 96.0 : 88.0;
+                final emojiSize = isYoung ? 58.0 : 50.0;
+                return Container(
+                  width: size,
+                  height: size,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(28),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 2),
                   ),
-                ),
-              ),
+                  child: Center(
+                    child: Text(
+                      app.childAvatarEmoji.isNotEmpty ? app.childAvatarEmoji : '👦',
+                      style: TextStyle(fontSize: emojiSize),
+                    ),
+                  ),
+                );
+              }),
             ],
           ),
           const SizedBox(height: 18),
@@ -466,7 +509,10 @@ class _QuickStats extends StatelessWidget {
           const SizedBox(width: 10),
           _StatChip('📋', '$pendingCount việc\ncần làm', AppTheme.vibrantPrimary, AppTheme.primaryFixed),
           const SizedBox(width: 10),
-          _StatChip('🏅', '${app.badges.length} huy\nhiệu', AppTheme.vibrantSecondary, AppTheme.secondaryFixed),
+          GestureDetector(
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AchievementScreen())),
+            child: _StatChip('🏅', '${app.badges.length} huy\nhiệu', AppTheme.vibrantSecondary, AppTheme.secondaryFixed),
+          ),
           const SizedBox(width: 10),
           _StatChip('🏆', '${app.approvedTasks.length} việc\nhoàn thành', AppTheme.vibrantTertiary, AppTheme.tertiaryFixed),
         ],
@@ -635,22 +681,25 @@ class _EmptyTaskCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: AppTheme.surfaceContainerHigh, width: 2),
       ),
-      child: Column(
-        children: [
-          const Text('🎉', style: TextStyle(fontSize: 48)),
-          const SizedBox(height: 8),
-          Text(
-            'Không có việc gì cần làm!',
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 16, fontWeight: FontWeight.w700, color: AppTheme.textPrimary,
+      child: Builder(builder: (context) {
+        final isYoung = context.watch<AppState>().childAge.ageGroup == AgeGroup.young;
+        return Column(
+          children: [
+            Text('🎉', style: TextStyle(fontSize: isYoung ? 64.0 : 48.0)),
+            const SizedBox(height: 8),
+            Text(
+              isYoung ? 'Chưa có việc hôm nay! 🎉' : 'Không có việc gì cần làm!',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 16, fontWeight: FontWeight.w700, color: AppTheme.textPrimary,
+              ),
             ),
-          ),
-          Text(
-            'Bố/Mẹ chưa giao việc hôm nay',
-            style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppTheme.outline),
-          ),
-        ],
-      ),
+            Text(
+              'Bố/Mẹ chưa giao việc hôm nay',
+              style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppTheme.outline),
+            ),
+          ],
+        );
+      }),
     );
   }
 }
@@ -692,16 +741,18 @@ class _HomeTaskCard extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
+      child: Builder(builder: (context) {
+        final isYoung = context.watch<AppState>().childAge.ageGroup == AgeGroup.young;
+        return Row(
         children: [
           Container(
-            width: 50,
-            height: 50,
+            width: isYoung ? 60.0 : 50.0,
+            height: isYoung ? 60.0 : 50.0,
             decoration: BoxDecoration(
               color: style.$1,
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Center(child: Text(task.icon, style: const TextStyle(fontSize: 26))),
+            child: Center(child: Text(task.icon, style: TextStyle(fontSize: isYoung ? 32.0 : 26.0))),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -740,7 +791,8 @@ class _HomeTaskCard extends StatelessWidget {
             ),
           ),
         ],
-      ),
+        );
+      }),
     );
   }
 }
@@ -858,5 +910,103 @@ class _JarMini extends StatelessWidget {
       ),
     );
   }
+}
+
+// ── Badge celebration popup (top-level) ───────────────────────────────────────
+
+void _showBadgePopup(BuildContext context, String badge) {
+  final parts = badge.split(' ');
+  final emoji = parts.first;
+  final name = parts.sublist(1).join(' ');
+
+  showDialog(
+    context: context,
+    barrierColor: Colors.black.withValues(alpha: 0.6),
+    builder: (ctx) => Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(emoji, style: const TextStyle(fontSize: 72))
+                .animate()
+                .scale(
+                  begin: const Offset(0.1, 0.1),
+                  duration: 700.ms,
+                  curve: Curves.elasticOut,
+                )
+                .fadeIn(duration: 300.ms),
+            const SizedBox(height: 8),
+            Text(
+              'Huy hiệu mới!',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 13, fontWeight: FontWeight.w600,
+                color: AppTheme.vibrantSecondary,
+                letterSpacing: 1.2,
+              ),
+            ).animate(delay: 200.ms).fadeIn(),
+            const SizedBox(height: 4),
+            Text(
+              name,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 22, fontWeight: FontWeight.w800, color: AppTheme.textPrimary,
+              ),
+            ).animate(delay: 300.ms).fadeIn().slideY(begin: 0.2),
+            const SizedBox(height: 8),
+            Text(
+              'Con thật tuyệt vời! 🎊',
+              style: GoogleFonts.plusJakartaSans(fontSize: 14, color: AppTheme.textSecondary),
+            ).animate(delay: 400.ms).fadeIn(),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const AchievementScreen()),
+                      );
+                    },
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppTheme.vibrantPrimary),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: Text(
+                      'Xem tất cả',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontWeight: FontWeight.w600, color: AppTheme.vibrantPrimary,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppTheme.vibrantPrimary,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: Text(
+                      'Tuyệt! 🎉',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontWeight: FontWeight.w700, color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 }
 

@@ -5,7 +5,8 @@ import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../theme/app_theme.dart';
 import 'login_screen.dart';
-import 'onboarding_screen.dart';
+import 'setup_screen.dart';
+import 'reset_password_screen.dart';
 import 'role_selection.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -26,10 +27,13 @@ class _SplashScreenState extends State<SplashScreen> {
     if (!mounted) return;
     final appState = context.read<AppState>();
     Widget destination;
-    if (!appState.hasSeenOnboarding) {
-      destination = const OnboardingScreen();
+    if (appState.hasPendingPasswordRecovery) {
+      appState.clearPasswordRecovery();
+      destination = const ResetPasswordScreen();
     } else if (appState.isLoggedIn) {
-      destination = const RoleSelectionScreen();
+      destination = appState.hasChild
+          ? const RoleSelectionScreen()
+          : const SetupScreen();
     } else {
       destination = const LoginScreen();
     }

@@ -1,4 +1,7 @@
+import 'dart:convert';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_state.dart';
@@ -69,14 +72,18 @@ class ParentTaskDetail extends StatelessWidget {
 
               // Status-specific content
               if (task.status == TaskStatus.submitted) ...[
-                _ProofSection(),
+                _ProofSection(
+                  taskId: task.id,
+                  submittedAt: task.submittedAt,
+                  proofImageUrl: task.proofImageUrl,
+                ),
                 const SizedBox(height: 20),
                 _PraiseSection(),
                 const SizedBox(height: 28),
                 _ActionButtons(task: task),
               ],
 
-              if (task.status == TaskStatus.approved)
+              if (task.status == TaskStatus.approved) ...[
                 _StatusBanner(
                   emoji: '✅',
                   title: 'Đã duyệt!',
@@ -84,6 +91,33 @@ class ParentTaskDetail extends StatelessWidget {
                   color: AppTheme.green,
                   bgColor: AppTheme.greenLight,
                 ),
+                const SizedBox(height: 8),
+                Consumer<AppState>(
+                  builder: (context, app, _) {
+                    final current = app.tasks.firstWhere(
+                      (t) => t.id == task.id,
+                      orElse: () => task,
+                    );
+                    final isSaved = current.isTemplate;
+                    return TextButton.icon(
+                      onPressed: () => app.toggleTemplate(task.id),
+                      icon: Icon(
+                        isSaved ? Icons.star : Icons.star_border,
+                        size: 18,
+                        color: isSaved ? AppTheme.vibrantSecondary : AppTheme.outline,
+                      ),
+                      label: Text(
+                        isSaved ? 'Đã lưu làm mẫu' : 'Lưu làm mẫu',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: isSaved ? AppTheme.vibrantSecondary : AppTheme.outline,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
 
               if (task.status == TaskStatus.rejected)
                 _StatusBanner(
@@ -159,8 +193,68 @@ class _TaskHero extends StatelessWidget {
 }
 
 class _ProofSection extends StatelessWidget {
+  final String taskId;
+  final DateTime? submittedAt;
+  final String? proofImageUrl;
+  const _ProofSection({required this.taskId, this.submittedAt, this.proofImageUrl});
+
+  Widget _noPhotoPlaceholder() => Container(
+    height: 180,
+    width: double.infinity,
+    decoration: BoxDecoration(
+      color: AppTheme.bg,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: AppTheme.border),
+    ),
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Icon(Icons.image_not_supported_outlined, size: 44, color: AppTheme.textHint),
+        const SizedBox(height: 8),
+        Text(
+          'Con chưa nộp ảnh bằng chứng',
+          style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppTheme.textHint),
+        ),
+      ],
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
+    // context.watch → rebuilds automatically when bytes arrive after submission
+    final proofBytes = context.watch<AppState>().getTaskProofBytes(taskId);
+
+    Widget buildImage() {
+      // Priority 1: in-memory bytes — instant display this session
+      if (proofBytes != null) {
+        return Image.memory(proofBytes, height: 220, width: double.infinity,
+          fit: BoxFit.cover, errorBuilder: (_, _, _) => _noPhotoPlaceholder());
+      }
+      if (proofImageUrl != null && proofImageUrl!.isNotEmpty) {
+        // Priority 2: base64 data URL stored in DB
+        if (proofImageUrl!.startsWith('data:')) {
+          try {
+            final bytes = base64Decode(proofImageUrl!.split(',').last);
+            return Image.memory(bytes, height: 220, width: double.infinity,
+              fit: BoxFit.cover, errorBuilder: (_, _, _) => _noPhotoPlaceholder());
+          } catch (_) {}
+        }
+        // Priority 3: HTTPS URL (Supabase Storage)
+        return CachedNetworkImage(
+          imageUrl: proofImageUrl!,
+          height: 220,
+          width: double.infinity,
+          fit: BoxFit.cover,
+          placeholder: (_, _) => const SizedBox(
+            height: 220,
+            child: Center(child: CircularProgressIndicator()),
+          ),
+          errorWidget: (_, _, _) => _noPhotoPlaceholder(),
+        );
+      }
+      return _noPhotoPlaceholder();
+    }
+
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -197,36 +291,15 @@ class _ProofSection extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          Container(
-            height: 180,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: AppTheme.bg,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppTheme.border),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(
-                  Icons.image_outlined,
-                  size: 44,
-                  color: AppTheme.textHint,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '📸 Ảnh con chụp khi hoàn thành',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 13,
-                    color: AppTheme.textHint,
-                  ),
-                ),
-              ],
-            ),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: buildImage(),
           ),
           const SizedBox(height: 10),
           Text(
-            'Đã nộp hôm nay lúc 15:30',
+            submittedAt != null
+                ? 'Đã nộp lúc ${submittedAt!.hour.toString().padLeft(2, '0')}:${submittedAt!.minute.toString().padLeft(2, '0')} ngày ${submittedAt!.day}/${submittedAt!.month}'
+                : 'Đã nộp chờ duyệt',
             style: GoogleFonts.plusJakartaSans(
               fontSize: 12,
               color: AppTheme.textHint,
@@ -496,29 +569,43 @@ class _ActionButtons extends StatelessWidget {
       context: outerCtx,
       builder: (dialogCtx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
+        content: Stack(
+          clipBehavior: Clip.none,
           children: [
-            const Text('🎉', style: TextStyle(fontSize: 56)),
-            const SizedBox(height: 14),
-            Text(
-              'Tuyệt vời!',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                color: AppTheme.textPrimary,
-              ),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('🎉', style: TextStyle(fontSize: 56))
+                    .animate()
+                    .scale(
+                      begin: const Offset(0.2, 0.2),
+                      duration: 600.ms,
+                      curve: Curves.elasticOut,
+                    )
+                    .fadeIn(duration: 300.ms),
+                const SizedBox(height: 14),
+                Text(
+                  'Tuyệt vời!',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Đã duyệt và cộng ${task.coinReward} Xu cho ${outerCtx.read<AppState>().childName}! 🎉',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 14,
+                    color: AppTheme.textSecondary,
+                    height: 1.5,
+                  ),
+                ).animate(delay: 200.ms).slideY(begin: 0.3).fadeIn(),
+              ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Đã duyệt và cộng ${task.coinReward} Xu cho ${outerCtx.read<AppState>().childName}! 🎉',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 14,
-                color: AppTheme.textSecondary,
-                height: 1.5,
-              ),
-            ),
+            // Confetti particles
+            ..._confettiParticles(),
           ],
         ),
         actions: [
@@ -530,10 +617,17 @@ class _ActionButtons extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
               ),
               child: FilledButton(
-                onPressed: () {
-                  outerCtx.read<AppState>().approveTask(task.id);
+                onPressed: () async {
+                  await outerCtx.read<AppState>().approveTask(task.id);
+                  if (!dialogCtx.mounted) return;
                   Navigator.pop(dialogCtx);
-                  Navigator.pop(outerCtx);
+                  if (!outerCtx.mounted) return;
+                  final badge = outerCtx.read<AppState>().pendingStreakBadge;
+                  if (badge != null) {
+                    outerCtx.read<AppState>().consumeStreakBadge();
+                    await _showStreakCelebrationDialog(outerCtx, badge);
+                  }
+                  if (outerCtx.mounted) Navigator.pop(outerCtx);
                 },
                 style: FilledButton.styleFrom(
                   backgroundColor: Colors.transparent,
@@ -549,6 +643,100 @@ class _ActionButtons extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
                   ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _confettiParticles() {
+    const colors = [
+      Color(0xFFFBBF24),
+      Color(0xFF34D399),
+      Color(0xFF60A5FA),
+      Color(0xFFF472B6),
+      Color(0xFFA78BFA),
+      Color(0xFFFB923C),
+    ];
+    return List.generate(6, (i) {
+      return Positioned(
+        left: 10.0 + i * 28.0,
+        top: -10,
+        child: Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(
+            color: colors[i % colors.length],
+            shape: BoxShape.circle,
+          ),
+        )
+            .animate(delay: (i * 50).ms)
+            .moveY(begin: -20, end: 60, duration: 700.ms, curve: Curves.easeIn)
+            .fadeOut(delay: 400.ms, duration: 300.ms),
+      );
+    });
+  }
+
+  Future<void> _showStreakCelebrationDialog(
+      BuildContext ctx, String badge) async {
+    await showDialog(
+      context: ctx,
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              badge.split(' ').first,
+              style: const TextStyle(fontSize: 72),
+            )
+                .animate()
+                .scale(
+                  begin: const Offset(0.1, 0.1),
+                  duration: 700.ms,
+                  curve: Curves.elasticOut,
+                )
+                .fadeIn(duration: 300.ms),
+            const SizedBox(height: 12),
+            Text(
+              badge.split(' ').sublist(1).join(' '),
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: AppTheme.textPrimary,
+              ),
+            ).animate(delay: 300.ms).fadeIn().slideY(begin: 0.2),
+            const SizedBox(height: 8),
+            Text(
+              'Con đã duy trì thói quen tốt! 🎊',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 14,
+                color: AppTheme.textSecondary,
+              ),
+            ).animate(delay: 400.ms).fadeIn(),
+          ],
+        ),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: () => Navigator.pop(dialogCtx),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppTheme.vibrantPrimary,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              child: Text(
+                'Tuyệt vời! 🎉',
+                style: GoogleFonts.plusJakartaSans(
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
                 ),
               ),
             ),

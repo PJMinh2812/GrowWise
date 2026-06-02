@@ -1,10 +1,13 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../models/task_model.dart';
+import '../../utils/age_group.dart';
 
 class ChildTaskList extends StatefulWidget {
   const ChildTaskList({super.key});
@@ -13,7 +16,8 @@ class ChildTaskList extends StatefulWidget {
   State<ChildTaskList> createState() => _ChildTaskListState();
 }
 
-class _ChildTaskListState extends State<ChildTaskList> with SingleTickerProviderStateMixin {
+class _ChildTaskListState extends State<ChildTaskList>
+    with SingleTickerProviderStateMixin {
   late TabController _tabCtrl;
 
   @override
@@ -69,7 +73,7 @@ class _ChildTaskListState extends State<ChildTaskList> with SingleTickerProvider
             color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
-          )
+          ),
         ],
       ),
       child: Column(
@@ -104,7 +108,9 @@ class _ChildTaskListState extends State<ChildTaskList> with SingleTickerProvider
               GestureDetector(
                 onTap: () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Chỉ Bố/Mẹ mới có thể thêm nhiệm vụ mới!')),
+                    const SnackBar(
+                      content: Text('Chỉ Bố/Mẹ mới có thể thêm nhiệm vụ mới!'),
+                    ),
                   );
                 },
                 child: Container(
@@ -117,10 +123,13 @@ class _ChildTaskListState extends State<ChildTaskList> with SingleTickerProvider
                       BoxShadow(
                         color: AppTheme.onPrimaryFixedVariant,
                         offset: Offset(0, 4),
-                      )
+                      ),
                     ],
                   ),
-                  child: const Icon(Icons.add, color: AppTheme.onTertiaryContainer),
+                  child: const Icon(
+                    Icons.add,
+                    color: AppTheme.onTertiaryContainer,
+                  ),
                 ),
               ),
             ],
@@ -139,13 +148,23 @@ class _ChildTaskListState extends State<ChildTaskList> with SingleTickerProvider
                 color: AppTheme.surfaceContainerLowest,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
                 ],
               ),
               labelColor: AppTheme.vibrantPrimary,
               unselectedLabelColor: AppTheme.outline,
-              labelStyle: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 14),
-              unselectedLabelStyle: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, fontSize: 14),
+              labelStyle: GoogleFonts.plusJakartaSans(
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+              ),
+              unselectedLabelStyle: GoogleFonts.plusJakartaSans(
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
               tabs: [
                 Tab(text: 'Cần làm ($todoCount)'),
                 Tab(text: 'Đã xong ($doneCount)'),
@@ -181,7 +200,7 @@ class _TaskSection extends StatelessWidget {
                   color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
-                )
+                ),
               ],
             ),
             child: Column(
@@ -200,7 +219,9 @@ class _TaskSection extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  showAction ? 'Không có việc gì cần làm!' : 'Chưa hoàn thành việc nào',
+                  showAction
+                      ? 'Không có việc gì cần làm!'
+                      : 'Chưa hoàn thành việc nào',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 24,
@@ -210,7 +231,9 @@ class _TaskSection extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  showAction ? 'Bố/Mẹ chưa giao việc gì hôm nay' : 'Hãy hoàn thành nhiệm vụ để tích lũy Xu nhé!',
+                  showAction
+                      ? 'Bố/Mẹ chưa giao việc gì hôm nay'
+                      : 'Hãy hoàn thành nhiệm vụ để tích lũy Xu nhé!',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 16,
@@ -232,7 +255,7 @@ class _TaskSection extends StatelessWidget {
                           BoxShadow(
                             color: AppTheme.onPrimaryFixedVariant,
                             offset: Offset(0, 4),
-                          )
+                          ),
                         ],
                       ),
                       child: Row(
@@ -263,10 +286,11 @@ class _TaskSection extends StatelessWidget {
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 24, 16, 100),
       itemCount: tasks.length,
-      itemBuilder: (context, i) => _TaskCardItem(
-        task: tasks[i],
-        showAction: showAction,
-      ).animate(delay: Duration(milliseconds: i * 50)).fadeIn().slideY(begin: 0.1),
+      itemBuilder: (context, i) =>
+          _TaskCardItem(task: tasks[i], showAction: showAction)
+              .animate(delay: Duration(milliseconds: i * 50))
+              .fadeIn()
+              .slideY(begin: 0.1),
     );
   }
 }
@@ -279,9 +303,11 @@ class _TaskCardItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = task.status == TaskStatus.pending 
-        ? AppTheme.vibrantPrimary 
-        : (task.status == TaskStatus.submitted ? AppTheme.vibrantSecondary : AppTheme.vibrantTertiary);
+    final statusColor = task.status == TaskStatus.pending
+        ? AppTheme.vibrantPrimary
+        : (task.status == TaskStatus.submitted
+              ? AppTheme.vibrantSecondary
+              : AppTheme.vibrantTertiary);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -319,18 +345,41 @@ class _TaskCardItem extends StatelessWidget {
                         color: AppTheme.textPrimary,
                       ),
                     ),
-                    Text(
-                      task.category,
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 14,
-                        color: AppTheme.outline,
-                      ),
+                    Row(
+                      children: [
+                        Text(
+                          task.category,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 13,
+                            color: AppTheme.outline,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppTheme.surfaceContainerHigh,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            taskDifficultyLabel(task.coinReward),
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.textSecondary,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: AppTheme.secondaryFixed,
                   borderRadius: BorderRadius.circular(16),
@@ -349,12 +398,12 @@ class _TaskCardItem extends StatelessWidget {
           if (showAction && task.status == TaskStatus.pending) ...[
             const SizedBox(height: 16),
             GestureDetector(
-              onTap: () {
-                context.read<AppState>().submitTask(task.id);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Đã báo cáo! Đợi Bố/Mẹ duyệt nhé 🎉')),
-                );
-              },
+              onTap: () => showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (_) => _SubmitProofSheet(task: task),
+              ),
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 12),
@@ -363,15 +412,24 @@ class _TaskCardItem extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: AppTheme.vibrantPrimary, width: 2),
                 ),
-                child: Center(
-                  child: Text(
-                    'Đã làm xong — Báo cáo',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.camera_alt_outlined,
                       color: AppTheme.vibrantPrimary,
+                      size: 18,
                     ),
-                  ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Đã làm xong — Nộp bằng chứng',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.vibrantPrimary,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -381,8 +439,12 @@ class _TaskCardItem extends StatelessWidget {
             Row(
               children: [
                 const SizedBox(
-                  width: 16, height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.vibrantSecondary),
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppTheme.vibrantSecondary,
+                  ),
                 ),
                 const SizedBox(width: 8),
                 Text(
@@ -397,6 +459,266 @@ class _TaskCardItem extends StatelessWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+// ── Submit Proof Bottom Sheet ─────────────────────────────────────────────────
+
+class _SubmitProofSheet extends StatefulWidget {
+  final TaskModel task;
+  const _SubmitProofSheet({required this.task});
+
+  @override
+  State<_SubmitProofSheet> createState() => _SubmitProofSheetState();
+}
+
+class _SubmitProofSheetState extends State<_SubmitProofSheet> {
+  Uint8List? _photoBytes;
+  bool _isSubmitting = false;
+  final _picker = ImagePicker();
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final picked = await _picker.pickImage(
+        source: source,
+        imageQuality: 75,
+        maxWidth: 1280,
+      );
+      if (picked != null) {
+        final bytes = await picked.readAsBytes();
+        setState(() => _photoBytes = bytes);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Không thể chọn ảnh: ${e.toString()}')),
+      );
+    }
+  }
+
+  Future<void> _submit() async {
+    if (_photoBytes == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Vui lòng chụp hoặc chọn ảnh bằng chứng trước khi nộp!',
+          ),
+        ),
+      );
+      return;
+    }
+    setState(() => _isSubmitting = true);
+    try {
+      await context.read<AppState>().submitTask(
+        widget.task.id,
+        proofImageBytes: _photoBytes,
+      );
+      if (!mounted) return;
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('📸 Đã nộp bài! Đợi Bố/Mẹ duyệt nhé 🎉'),
+          backgroundColor: AppTheme.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lỗi: ${e.toString()}'),
+          backgroundColor: AppTheme.coral,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 40),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppTheme.outlineVariant,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Nộp bằng chứng hoàn thành',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              widget.task.title,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 13,
+                color: AppTheme.outline,
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Photo preview
+            GestureDetector(
+              onTap: () => _pickImage(ImageSource.gallery),
+              child: Container(
+                height: 180,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryFixed,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: _photoBytes != null
+                        ? AppTheme.green
+                        : AppTheme.vibrantPrimary.withValues(alpha: 0.35),
+                    width: 2,
+                  ),
+                ),
+                child: _photoBytes != null
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(18),
+                        child: Image.memory(_photoBytes!, fit: BoxFit.cover),
+                      )
+                    : Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.add_a_photo_outlined,
+                            size: 44,
+                            color: AppTheme.vibrantPrimary,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Chụp hoặc chọn ảnh bằng chứng',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.vibrantPrimary,
+                            ),
+                          ),
+                          Text(
+                            '(Bắt buộc)',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12,
+                              color: AppTheme.outline,
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Camera / Gallery buttons
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _pickImage(ImageSource.camera),
+                    icon: const Icon(Icons.camera_alt_outlined, size: 18),
+                    label: Text(
+                      'Chụp ảnh',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      side: const BorderSide(color: AppTheme.vibrantPrimary),
+                      foregroundColor: AppTheme.vibrantPrimary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _pickImage(ImageSource.gallery),
+                    icon: const Icon(Icons.photo_library_outlined, size: 18),
+                    label: Text(
+                      'Thư viện',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      side: const BorderSide(color: AppTheme.vibrantPrimary),
+                      foregroundColor: AppTheme.vibrantPrimary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Submit button
+            SizedBox(
+              width: double.infinity,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: AppTheme.gradientGreen,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: AppTheme.shadowMd(AppTheme.green),
+                ),
+                child: FilledButton.icon(
+                  onPressed: _isSubmitting ? null : _submit,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  icon: _isSubmitting
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.check_rounded, color: Colors.white),
+                  label: Text(
+                    _isSubmitting ? 'Đang nộp...' : 'Nộp bài cho Bố/Mẹ duyệt',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

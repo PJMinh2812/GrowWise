@@ -9,6 +9,7 @@ import '../theme/app_theme.dart';
 import '../utils/validators.dart';
 import 'register_screen.dart';
 import 'forgot_password_screen.dart';
+import 'setup_screen.dart';
 import 'role_selection.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -33,7 +34,9 @@ class _LoginScreenState extends State<LoginScreen> {
     final appState = context.read<AppState>();
     if (!appState.isDemoMode) {
       _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((data) {
-        if (data.event == AuthChangeEvent.signedIn && mounted) {
+        // Only handle OAuth sign-in (Google, etc.) — email/password is handled by _login()
+        final provider = data.session?.user.appMetadata['provider'] as String?;
+        if (data.event == AuthChangeEvent.signedIn && provider != 'email' && mounted) {
           appState.initializeAfterOAuth().then((_) {
             if (mounted) {
               Navigator.pushReplacement(
@@ -59,14 +62,18 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
     try {
-      await context.read<AppState>().login(
-            email: _emailCtrl.text.trim(),
-            password: _passCtrl.text,
-          );
+      final appState = context.read<AppState>();
+      await appState.login(
+        email: _emailCtrl.text.trim(),
+        password: _passCtrl.text,
+      );
       if (!mounted) return;
+      final dest = appState.hasChild
+          ? const RoleSelectionScreen()
+          : const SetupScreen();
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const RoleSelectionScreen()),
+        MaterialPageRoute(builder: (_) => dest),
       );
     } catch (e) {
       if (!mounted) return;
@@ -92,23 +99,8 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void _demoLogin() {
-    context.read<AppState>().activateDemo();
-    Navigator.pushReplacement(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (ctx, a1, a2) => const RoleSelectionScreen(),
-        transitionsBuilder: (ctx, a1, a2, child) =>
-            FadeTransition(opacity: a1, child: child),
-        transitionDuration: const Duration(milliseconds: 400),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final isDemoMode = context.watch<AppState>().isDemoMode;
-
     return Scaffold(
       backgroundColor: AppTheme.surfaceBright,
       body: SafeArea(
@@ -169,83 +161,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
 
               const SizedBox(height: 40),
-
-              // Demo banner (always visible)
-              if (true) ...[
-                GestureDetector(
-                  onTap: _demoLogin,
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryFixed,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: AppTheme.primaryFixedDim, width: 2),
-                    ),
-                    child: Row(
-                      children: [
-                        const Text('🚀', style: TextStyle(fontSize: 24)),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Dùng thử Demo',
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 14,
-                                  color: AppTheme.textPrimary,
-                                ),
-                              ),
-                              Text(
-                                'Khám phá ngay với dữ liệu mẫu',
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 12,
-                                  color: AppTheme.textSecondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: AppTheme.vibrantPrimary,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            'Vào ngay →',
-                            style: GoogleFonts.plusJakartaSans(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 12,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ).animate(delay: 300.ms).fadeIn(duration: 400.ms).slideY(begin: 0.2, end: 0),
-                const SizedBox(height: 20),
-                Row(
-                  children: [
-                    const Expanded(child: Divider()),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Text(
-                        'hoặc đăng nhập',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 12,
-                          color: AppTheme.textHint,
-                        ),
-                      ),
-                    ),
-                    const Expanded(child: Divider()),
-                  ],
-                ),
-                const SizedBox(height: 20),
-              ],
 
               // Form card
               Container(
@@ -385,7 +300,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       // Google button
                       GestureDetector(
-                        onTap: isDemoMode ? null : _loginWithGoogle,
+                        onTap: _loginWithGoogle,
                         child: Container(
                           width: double.infinity,
                           height: 52,
@@ -393,9 +308,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             color: AppTheme.surfaceBright,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: isDemoMode
-                                  ? AppTheme.surfaceContainerHigh
-                                  : AppTheme.outline,
+                              color: AppTheme.outline,
                               width: 2,
                             ),
                           ),
@@ -422,15 +335,11 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               const SizedBox(width: 10),
                               Text(
-                                isDemoMode
-                                    ? 'Google (chỉ Supabase mode)'
-                                    : 'Đăng nhập với Google',
+                                'Đăng nhập với Google',
                                 style: GoogleFonts.plusJakartaSans(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
-                                  color: isDemoMode
-                                      ? AppTheme.textHint
-                                      : AppTheme.textPrimary,
+                                  color: AppTheme.textPrimary,
                                 ),
                               ),
                             ],

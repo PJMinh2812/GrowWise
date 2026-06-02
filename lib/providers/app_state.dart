@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/task_model.dart';
 import '../services/supabase_service.dart';
@@ -7,6 +8,21 @@ class AppState extends ChangeNotifier {
   // Demo mode (active when .env uses placeholder values OR user explicitly activated)
   bool _forcedDemoMode = false;
   int _streakDays = 0;
+  DateTime? _lastStreakDate;
+  String? _pendingStreakBadge;
+
+  // Password recovery — set true khi app mở từ link reset password
+  bool _pendingPasswordRecovery = false;
+  bool get hasPendingPasswordRecovery => _pendingPasswordRecovery;
+
+  void onPasswordRecovery() {
+    _pendingPasswordRecovery = true;
+    notifyListeners();
+  }
+
+  void clearPasswordRecovery() {
+    _pendingPasswordRecovery = false;
+  }
 
   bool get isDemoMode {
     if (_forcedDemoMode) return true;
@@ -44,9 +60,19 @@ class AppState extends ChangeNotifier {
   int _xp = 0;
   int _xpToNextLevel = 100;
   List<String> _badges = [];
+  Map<String, int> _categoryTaskCounts = {};
+  TaskModel? _justApprovedTask;
+  Set<String> _completedLessonIds = {};
+  String? _pendingNewBadge; // any newly earned badge (emoji + name)
+  Map<String, String> _customBadgeEmoji = {}; // achievementId → custom emoji
 
   // Dream items
   List<Map<String, dynamic>> _dreamItems = [];
+
+  // Proof image bytes — keyed by taskId, kept in memory during session
+  final Map<String, Uint8List> _taskProofImages = {};
+
+  Uint8List? getTaskProofBytes(String taskId) => _taskProofImages[taskId];
 
   // Memory lane
   List<Map<String, String>> _memories = [];
@@ -104,6 +130,9 @@ class AppState extends ChangeNotifier {
       _shareJar = child['share_jar'] as int? ?? 0;
       _xp = child['xp'] as int? ?? 0;
       _xpToNextLevel = child['xp_to_next_level'] as int? ?? 100;
+      _streakDays = child['streak_days'] as int? ?? 0;
+      final lastStreakStr = child['last_streak_date'] as String?;
+      _lastStreakDate = lastStreakStr != null ? DateTime.tryParse(lastStreakStr) : null;
 
       // Load badges
       final badgeRows = await SupabaseService.getBadges(_childId!);
@@ -121,6 +150,7 @@ class AppState extends ChangeNotifier {
     // Load tasks
     final taskRows = await SupabaseService.getTasks(familyId: _familyId!);
     _tasks = taskRows.map((row) => TaskModel.fromJson(row)).toList();
+    _recomputeCategoryTaskCounts();
 
     // Load memories
     final memoryRows = await SupabaseService.getMemories(familyId: _familyId!);
@@ -131,6 +161,9 @@ class AppState extends ChangeNotifier {
             'task': row['task_title'] as String? ?? '',
             'emoji': row['emoji'] as String? ?? '⭐',
             'note': row['note'] as String? ?? '',
+            'taskId': '',
+            'category': '',
+            'proofImageUrl': row['proof_image_url'] as String? ?? '',
           },
         )
         .toList();
@@ -158,6 +191,12 @@ class AppState extends ChangeNotifier {
   int get xp => _xp;
   int get xpToNextLevel => _xpToNextLevel;
   int get streakDays => _streakDays;
+  String? get pendingStreakBadge => _pendingStreakBadge;
+  String? get pendingNewBadge => _pendingNewBadge;
+  Map<String, String> get customBadgeEmoji => Map.unmodifiable(_customBadgeEmoji);
+  TaskModel? get justApprovedTask => _justApprovedTask;
+  bool isLessonCompleted(String id) => _completedLessonIds.contains(id);
+  int get completedLessonCount => _completedLessonIds.length;
   List<String> get badges => List.unmodifiable(_badges);
   bool get hasChild => _childId != null;
   List<Map<String, dynamic>> get dreamItemsList =>
@@ -166,6 +205,8 @@ class AppState extends ChangeNotifier {
   String get bondingMessage => _bondingMessage;
   bool get notificationsEnabled => _notificationsEnabled;
 
+  List<TaskModel> get templateTasks =>
+      _tasks.where((t) => t.isTemplate).toList();
   List<TaskModel> get pendingTasks =>
       _tasks.where((t) => t.status == TaskStatus.pending).toList();
   List<TaskModel> get submittedTasks =>
@@ -294,13 +335,41 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> submitTask(String taskId) async {
+  Future<void> submitTask(String taskId, {Uint8List? proofImageBytes}) async {
     final index = _tasks.indexWhere((t) => t.id == taskId);
     if (index == -1) return;
-    _tasks[index] = _tasks[index].copyWith(status: TaskStatus.submitted);
+
+    String? proofImageUrl;
+    if (proofImageBytes != null) {
+      // Always keep bytes in memory for instant display this session
+      _taskProofImages[taskId] = proofImageBytes;
+
+      if (!isDemoMode) {
+        // Try Supabase Storage first
+        proofImageUrl = await SupabaseService.uploadProofImage(
+          taskId: taskId,
+          imageBytes: proofImageBytes,
+        );
+        // If Storage fails, fall back to base64 stored in DB
+        if (proofImageUrl == null) {
+          debugPrint('[AppState] Storage upload failed, falling back to base64');
+          proofImageUrl = 'data:image/jpeg;base64,${base64Encode(proofImageBytes)}';
+        }
+      }
+    }
+
+    _tasks[index] = _tasks[index].copyWith(
+      status: TaskStatus.submitted,
+      submittedAt: DateTime.now(),
+      proofImageUrl: proofImageUrl,
+    );
     notifyListeners();
     if (!isDemoMode) {
-      await SupabaseService.updateTaskStatus(taskId, 'submitted');
+      await SupabaseService.updateTaskStatus(
+        taskId,
+        'submitted',
+        proofImageUrl: proofImageUrl,
+      );
     }
     _addXp(10);
   }
@@ -321,9 +390,15 @@ class AppState extends ChangeNotifier {
     }
     _addCoins(task.coinReward);
     _addXp(15);
+    _incrementStreak();
+    _justApprovedTask = task;
+    _categoryTaskCounts[task.category] =
+        (_categoryTaskCounts[task.category] ?? 0) + 1;
+    _checkCategoryBadge(task.category);
 
     // Add memory
     if (_familyId != null && _childId != null) {
+      final proofUrl = task.proofImageUrl ?? '';
       if (!isDemoMode) {
         await SupabaseService.addMemory(
           familyId: _familyId!,
@@ -331,6 +406,7 @@ class AppState extends ChangeNotifier {
           taskTitle: task.title,
           emoji: task.icon,
           note: 'Hoàn thành xuất sắc!',
+          proofImageUrl: proofUrl.isEmpty ? null : proofUrl,
         );
       }
       _memories.insert(0, {
@@ -338,9 +414,28 @@ class AppState extends ChangeNotifier {
         'task': task.title,
         'emoji': task.icon,
         'note': 'Hoàn thành xuất sắc!',
+        'taskId': task.id,
+        'category': task.category,
+        'proofImageUrl': proofUrl,
+        'mood': '',
       });
     }
     notifyListeners();
+  }
+
+  void toggleTemplate(String taskId) {
+    final idx = _tasks.indexWhere((t) => t.id == taskId);
+    if (idx == -1) return;
+    _tasks[idx] = _tasks[idx].copyWith(isTemplate: !_tasks[idx].isTemplate);
+    notifyListeners();
+  }
+
+  void recordTaskMood(String taskId, String mood) {
+    final idx = _memories.indexWhere((m) => m['taskId'] == taskId);
+    if (idx != -1) {
+      _memories[idx] = {..._memories[idx], 'mood': mood};
+      notifyListeners();
+    }
   }
 
   Future<void> rejectTask(String taskId) async {
@@ -400,6 +495,7 @@ class AppState extends ChangeNotifier {
       if (_level == 10) newBadge = '👑 Level 10!';
       if (newBadge != null) {
         _badges.add(newBadge);
+        _pendingNewBadge = newBadge;
         if (_childId != null && !isDemoMode) {
           SupabaseService.addBadge(
             _childId!,
@@ -522,6 +618,117 @@ class AppState extends ChangeNotifier {
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
+  void _incrementStreak() {
+    final today = DateTime.now();
+    final todayDate = DateTime(today.year, today.month, today.day);
+
+    if (_lastStreakDate == null) {
+      _streakDays = 1;
+    } else {
+      final lastDate = DateTime(
+        _lastStreakDate!.year,
+        _lastStreakDate!.month,
+        _lastStreakDate!.day,
+      );
+      final diff = todayDate.difference(lastDate).inDays;
+      if (diff == 0) return; // already counted today
+      if (diff == 1) {
+        _streakDays++;
+      } else {
+        _streakDays = 1; // streak broken
+      }
+    }
+    _lastStreakDate = today;
+
+    // Check milestone badges (3, 7, 14, 30 days)
+    const milestones = {
+      3: '🔥 Chuỗi 3 ngày',
+      7: '⚡ Chuỗi 7 ngày',
+      14: '💫 Chuỗi 14 ngày',
+      30: '🏆 Chuỗi 30 ngày',
+    };
+    final badge = milestones[_streakDays];
+    if (badge != null && !_badges.contains(badge)) {
+      _badges.add(badge);
+      _pendingStreakBadge = badge;
+      _pendingNewBadge = badge;
+      if (!isDemoMode && _childId != null) {
+        final parts = badge.split(' ');
+        SupabaseService.addBadge(
+          _childId!,
+          parts.sublist(1).join(' '),
+          parts.first,
+        );
+      }
+    }
+  }
+
+  void consumeStreakBadge() {
+    _pendingStreakBadge = null;
+    notifyListeners();
+  }
+
+  void consumeNewBadge() {
+    _pendingNewBadge = null;
+    notifyListeners();
+  }
+
+  void setCustomBadgeEmoji(String achievementId, String emoji) {
+    _customBadgeEmoji[achievementId] = emoji;
+    notifyListeners();
+  }
+
+  String getEmojiForBadge(String achievementId, String defaultEmoji) =>
+      _customBadgeEmoji[achievementId] ?? defaultEmoji;
+
+  void markLessonCompleted(String lessonId) {
+    if (_completedLessonIds.contains(lessonId)) return;
+    _completedLessonIds.add(lessonId);
+    _addXp(10);
+    notifyListeners();
+  }
+
+  void consumeJustApprovedTask() {
+    _justApprovedTask = null;
+    notifyListeners();
+  }
+
+  static const _categoryBadgeThresholds = {
+    'Học tập':  {5: '📚 Mọt sách', 15: '🎓 Học giỏi'},
+    'Sức khỏe': {5: '💪 Năng động', 15: '🏅 Sức khỏe vàng'},
+    'Việc nhà': {5: '🧹 Siêng năng', 15: '🏠 Người giữ nhà'},
+    'Sáng tạo': {5: '🎨 Tài năng',  15: '✨ Nghệ sĩ'},
+  };
+
+  void _recomputeCategoryTaskCounts() {
+    _categoryTaskCounts = {};
+    for (final t in _tasks) {
+      if (t.status == TaskStatus.approved) {
+        _categoryTaskCounts[t.category] =
+            (_categoryTaskCounts[t.category] ?? 0) + 1;
+      }
+    }
+  }
+
+  void _checkCategoryBadge(String category) {
+    final count = _categoryTaskCounts[category] ?? 0;
+    final thresholds = _categoryBadgeThresholds[category];
+    if (thresholds == null) return;
+    final badge = thresholds[count];
+    if (badge != null && !_badges.contains(badge)) {
+      _badges.add(badge);
+      _pendingNewBadge = badge;
+      if (!isDemoMode && _childId != null) {
+        final parts = badge.split(' ');
+        SupabaseService.addBadge(
+          _childId!,
+          parts.sublist(1).join(' '),
+          parts.first,
+        );
+      }
+    }
+  }
+
   void _persistChildProfile() {
     if (_childId == null || isDemoMode) return;
     SupabaseService.updateChild(_childId!, {
@@ -532,6 +739,8 @@ class AppState extends ChangeNotifier {
       'share_jar': _shareJar,
       'xp': _xp,
       'xp_to_next_level': _xpToNextLevel,
+      'streak_days': _streakDays,
+      'last_streak_date': _lastStreakDate?.toIso8601String(),
     });
   }
 
@@ -553,6 +762,7 @@ class AppState extends ChangeNotifier {
     _xp = 78;
     _xpToNextLevel = 100;
     _streakDays = 7;
+    _lastStreakDate = DateTime.now().subtract(const Duration(days: 2));
     _badges = [
       '🏅 Khởi đầu',
       '🔥 3 ngày liên tiếp',
@@ -694,33 +904,50 @@ class AppState extends ChangeNotifier {
         'task': 'Tập thể dục buổi sáng',
         'emoji': '🏃',
         'note': 'Con tập rất chăm chỉ, bố rất tự hào!',
+        'taskId': 'demo-4',
+        'category': 'Sức khỏe',
+        'proofImageUrl': '',
       },
       {
         'date': _formatDate(now.subtract(const Duration(hours: 22)).toIso8601String()),
         'task': 'Gấp quần áo',
         'emoji': '👕',
         'note': 'Con gấp rất gọn gàng và cẩn thận!',
+        'taskId': 'demo-5',
+        'category': 'Việc nhà',
+        'proofImageUrl': '',
       },
       {
         'date': _formatDate(now.subtract(const Duration(days: 1, hours: 20)).toIso8601String()),
         'task': 'Học bài ôn tập Toán',
         'emoji': '✏️',
         'note': 'Con học bài rất nghiêm túc, chúc con thi tốt!',
+        'taskId': 'demo-6',
+        'category': 'Học tập',
+        'proofImageUrl': '',
       },
       {
         'date': _formatDate(now.subtract(const Duration(days: 2, hours: 16)).toIso8601String()),
         'task': 'Vẽ tranh tặng bà',
         'emoji': '🎨',
         'note': 'Bức tranh rất đẹp, bà rất vui khi nhận được!',
+        'taskId': 'demo-7',
+        'category': 'Sáng tạo',
+        'proofImageUrl': '',
       },
       {
         'date': _formatDate(now.subtract(const Duration(days: 3, hours: 18)).toIso8601String()),
         'task': 'Quét nhà và lau sàn',
         'emoji': '🧹',
         'note': 'Nhà sạch bóng, con thật siêng năng!',
+        'taskId': 'demo-8',
+        'category': 'Việc nhà',
+        'proofImageUrl': '',
       },
     ];
 
+    _recomputeCategoryTaskCounts();
+    _completedLessonIds = {'cl-1'};
     notifyListeners();
   }
 

@@ -129,7 +129,7 @@ class ParentSettings extends StatelessWidget {
                         const Icon(Icons.logout_rounded, color: Color(0xFFEF4444), size: 22),
                         const SizedBox(width: 10),
                         Text(
-                          'Log Out',
+                          'Đăng xuất',
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,

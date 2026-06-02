@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -16,12 +17,36 @@ void main() async {
     await Supabase.initialize(
       url: dotenv.env['SUPABASE_URL'] ?? 'https://placeholder.supabase.co',
       anonKey: dotenv.env['SUPABASE_ANON_KEY'] ?? 'placeholder_anon_key',
+      // detectSessionInUri: false → tắt tự xử lý URL trong initialize().
+      // Mình tự gọi getSessionFromUrl() SAU KHI đăng ký listener,
+      // đảm bảo bắt được event passwordRecovery đúng thứ tự.
+      authOptions: const FlutterAuthClientOptions(detectSessionInUri: false),
     );
   } catch (_) {
     // Demo mode — Supabase not configured, app runs with local seed data
   }
 
   final appState = AppState();
+
+  // 1. Đăng ký listener TRƯỚC khi xử lý URL
+  Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+    if (data.event == AuthChangeEvent.passwordRecovery) {
+      appState.onPasswordRecovery();
+    }
+  });
+
+  // 2. Bây giờ mới xử lý URL — event sẽ được listener bắt đúng thứ tự
+  if (kIsWeb) {
+    final uri = Uri.base;
+    final hasCode = uri.queryParameters.containsKey('code');
+    final hasFragment = uri.fragment.contains('access_token');
+    if (hasCode || hasFragment) {
+      try {
+        await Supabase.instance.client.auth.getSessionFromUrl(uri);
+      } catch (_) {}
+    }
+  }
+
   await appState.initialize();
 
   runApp(

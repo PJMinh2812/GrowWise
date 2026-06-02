@@ -14,6 +14,7 @@ class TaskModel {
   final DateTime? submittedAt;
   final DateTime? reviewedAt;
   final DateTime createdAt;
+  final bool isTemplate;
 
   const TaskModel({
     required this.id,
@@ -31,6 +32,7 @@ class TaskModel {
     this.submittedAt,
     this.reviewedAt,
     DateTime? createdAt,
+    this.isTemplate = false,
   }) : createdAt = createdAt ?? const _DefaultDateTime();
 
   factory TaskModel.fromJson(Map<String, dynamic> json) {
@@ -54,6 +56,7 @@ class TaskModel {
           ? DateTime.parse(json['reviewed_at'] as String)
           : null,
       createdAt: DateTime.parse(json['created_at'] as String),
+      isTemplate: json['is_template'] as bool? ?? false,
     );
   }
 
@@ -63,6 +66,7 @@ class TaskModel {
     String? parentNote,
     DateTime? submittedAt,
     DateTime? reviewedAt,
+    bool? isTemplate,
   }) {
     return TaskModel(
       id: id,
@@ -80,6 +84,7 @@ class TaskModel {
       submittedAt: submittedAt ?? this.submittedAt,
       reviewedAt: reviewedAt ?? this.reviewedAt,
       createdAt: createdAt,
+      isTemplate: isTemplate ?? this.isTemplate,
     );
   }
 }

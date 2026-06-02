@@ -6,6 +6,7 @@ import '../../providers/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../models/task_model.dart';
 import '../../utils/validators.dart';
+import '../../utils/age_group.dart';
 
 class ParentCreateTask extends StatefulWidget {
   const ParentCreateTask({super.key});
@@ -20,22 +21,43 @@ class _ParentCreateTaskState extends State<ParentCreateTask> {
   final _descCtrl = TextEditingController();
   bool _isSubmitting = false;
   int _coins = 15;
-  String _category = 'Housework';
+  String _category = 'Việc nhà';
 
-  static final _quickIdeas = [
-    {'title': 'Wash dishes', 'icon': Icons.local_laundry_service, 'coins': 15, 'cat': 'Housework', 'color': AppTheme.primaryFixed, 'onColor': AppTheme.onPrimaryFixed, 'borderColor': AppTheme.primaryFixedDim},
-    {'title': 'Sweep house', 'icon': Icons.cleaning_services, 'coins': 10, 'cat': 'Housework', 'color': AppTheme.secondaryFixed, 'onColor': AppTheme.onSecondaryFixed, 'borderColor': AppTheme.secondaryFixedDim},
-    {'title': 'Read books', 'icon': Icons.menu_book, 'coins': 20, 'cat': 'Study', 'color': AppTheme.tertiaryFixed, 'onColor': AppTheme.onTertiaryFixed, 'borderColor': AppTheme.tertiaryFixedDim},
-    {'title': 'Exercise', 'icon': Icons.fitness_center, 'coins': 15, 'cat': 'Health', 'color': AppTheme.errorContainer, 'onColor': AppTheme.onErrorContainer, 'borderColor': Color(0xFFFFB4AB)},
-    {'title': 'Water plants', 'icon': Icons.yard, 'coins': 10, 'cat': 'Housework', 'color': AppTheme.surfaceContainerHigh, 'onColor': AppTheme.vibrantPrimary, 'borderColor': AppTheme.outlineVariant},
-    {'title': 'Fold clothes', 'icon': Icons.checkroom, 'coins': 15, 'cat': 'Housework', 'color': AppTheme.primaryFixed, 'onColor': AppTheme.onPrimaryFixed, 'borderColor': AppTheme.primaryFixedDim},
+  static const _allQuickIdeas = [
+    // Việc nhà
+    {'title': 'Rửa bát', 'icon': Icons.local_laundry_service, 'coins': 15, 'cat': 'Việc nhà', 'color': AppTheme.primaryFixed, 'onColor': AppTheme.onPrimaryFixed, 'borderColor': AppTheme.primaryFixedDim, 'ages': ['young', 'middle', 'older']},
+    {'title': 'Quét nhà', 'icon': Icons.cleaning_services, 'coins': 10, 'cat': 'Việc nhà', 'color': AppTheme.secondaryFixed, 'onColor': AppTheme.onSecondaryFixed, 'borderColor': AppTheme.secondaryFixedDim, 'ages': ['young', 'middle', 'older']},
+    {'title': 'Tưới cây', 'icon': Icons.yard, 'coins': 10, 'cat': 'Việc nhà', 'color': AppTheme.surfaceContainerHigh, 'onColor': AppTheme.vibrantPrimary, 'borderColor': AppTheme.outlineVariant, 'ages': ['young', 'middle', 'older']},
+    {'title': 'Gấp quần áo', 'icon': Icons.checkroom, 'coins': 15, 'cat': 'Việc nhà', 'color': AppTheme.primaryFixed, 'onColor': AppTheme.onPrimaryFixed, 'borderColor': AppTheme.primaryFixedDim, 'ages': ['young', 'middle', 'older']},
+    {'title': 'Xếp đồ chơi', 'icon': Icons.toys, 'coins': 8, 'cat': 'Việc nhà', 'color': AppTheme.secondaryFixed, 'onColor': AppTheme.onSecondaryFixed, 'borderColor': AppTheme.secondaryFixedDim, 'ages': ['young', 'middle']},
+    {'title': 'Nấu ăn phụ bố mẹ', 'icon': Icons.restaurant, 'coins': 30, 'cat': 'Việc nhà', 'color': AppTheme.primaryFixed, 'onColor': AppTheme.onPrimaryFixed, 'borderColor': AppTheme.primaryFixedDim, 'ages': ['middle', 'older']},
+    // Học tập
+    {'title': 'Đọc sách', 'icon': Icons.menu_book, 'coins': 20, 'cat': 'Học tập', 'color': AppTheme.tertiaryFixed, 'onColor': AppTheme.onTertiaryFixed, 'borderColor': AppTheme.tertiaryFixedDim, 'ages': ['young', 'middle', 'older']},
+    {'title': 'Ôn bài', 'icon': Icons.school, 'coins': 20, 'cat': 'Học tập', 'color': AppTheme.tertiaryFixed, 'onColor': AppTheme.onTertiaryFixed, 'borderColor': AppTheme.tertiaryFixedDim, 'ages': ['young', 'middle', 'older']},
+    {'title': 'Học bảng cửu chương', 'icon': Icons.calculate, 'coins': 15, 'cat': 'Học tập', 'color': AppTheme.tertiaryFixed, 'onColor': AppTheme.onTertiaryFixed, 'borderColor': AppTheme.tertiaryFixedDim, 'ages': ['young']},
+    {'title': 'Lập kế hoạch học tập', 'icon': Icons.edit_calendar, 'coins': 35, 'cat': 'Học tập', 'color': AppTheme.tertiaryFixed, 'onColor': AppTheme.onTertiaryFixed, 'borderColor': AppTheme.tertiaryFixedDim, 'ages': ['older']},
+    // Sức khỏe
+    {'title': 'Tập thể dục', 'icon': Icons.fitness_center, 'coins': 15, 'cat': 'Sức khỏe', 'color': AppTheme.errorContainer, 'onColor': AppTheme.onErrorContainer, 'borderColor': Color(0xFFFFB4AB), 'ages': ['young', 'middle', 'older']},
+    {'title': 'Đánh răng 2 lần/ngày', 'icon': Icons.health_and_safety, 'coins': 8, 'cat': 'Sức khỏe', 'color': AppTheme.errorContainer, 'onColor': AppTheme.onErrorContainer, 'borderColor': Color(0xFFFFB4AB), 'ages': ['young']},
+    {'title': 'Tự nấu bữa sáng lành mạnh', 'icon': Icons.breakfast_dining, 'coins': 35, 'cat': 'Sức khỏe', 'color': AppTheme.errorContainer, 'onColor': AppTheme.onErrorContainer, 'borderColor': Color(0xFFFFB4AB), 'ages': ['older']},
+    // Sáng tạo
+    {'title': 'Vẽ tranh', 'icon': Icons.palette, 'coins': 15, 'cat': 'Sáng tạo', 'color': AppTheme.secondaryFixed, 'onColor': AppTheme.onSecondaryFixed, 'borderColor': AppTheme.secondaryFixedDim, 'ages': ['young', 'middle', 'older']},
+    {'title': 'Làm thiệp tặng ông bà', 'icon': Icons.card_giftcard, 'coins': 20, 'cat': 'Sáng tạo', 'color': AppTheme.secondaryFixed, 'onColor': AppTheme.onSecondaryFixed, 'borderColor': AppTheme.secondaryFixedDim, 'ages': ['young', 'middle', 'older']},
+    {'title': 'Viết nhật ký', 'icon': Icons.book, 'coins': 20, 'cat': 'Sáng tạo', 'color': AppTheme.secondaryFixed, 'onColor': AppTheme.onSecondaryFixed, 'borderColor': AppTheme.secondaryFixedDim, 'ages': ['middle', 'older']},
   ];
 
+  List<Map<String, Object>> get _filteredIdeas {
+    final group = context.read<AppState>().childAge.ageGroup.name;
+    return _allQuickIdeas
+        .where((idea) => (idea['ages'] as List).contains(group))
+        .toList();
+  }
+
   static final _categories = [
-    {'id': 'Housework', 'icon': Icons.home, 'color': AppTheme.vibrantPrimary, 'bgColor': AppTheme.primaryFixed, 'onColor': AppTheme.onPrimaryFixedVariant},
-    {'id': 'Study', 'icon': Icons.school, 'color': AppTheme.vibrantTertiary, 'bgColor': AppTheme.tertiaryFixed, 'onColor': AppTheme.onTertiaryFixedVariant},
-    {'id': 'Health', 'icon': Icons.favorite, 'color': Color(0xFF006B5F), 'bgColor': Color(0xFF78F8E4), 'onColor': Color(0xFF006B5F)},
-    {'id': 'Creativity', 'icon': Icons.palette, 'color': AppTheme.vibrantSecondary, 'bgColor': AppTheme.secondaryFixed, 'onColor': AppTheme.onSecondaryFixedVariant},
+    {'id': 'Việc nhà', 'icon': Icons.home, 'color': AppTheme.vibrantPrimary, 'bgColor': AppTheme.primaryFixed, 'onColor': AppTheme.onPrimaryFixedVariant},
+    {'id': 'Học tập', 'icon': Icons.school, 'color': AppTheme.vibrantTertiary, 'bgColor': AppTheme.tertiaryFixed, 'onColor': AppTheme.onTertiaryFixedVariant},
+    {'id': 'Sức khỏe', 'icon': Icons.favorite, 'color': Color(0xFF006B5F), 'bgColor': Color(0xFF78F8E4), 'onColor': Color(0xFF006B5F)},
+    {'id': 'Sáng tạo', 'icon': Icons.palette, 'color': AppTheme.vibrantSecondary, 'bgColor': AppTheme.secondaryFixed, 'onColor': AppTheme.onSecondaryFixedVariant},
   ];
 
   @override
@@ -59,6 +81,7 @@ class _ParentCreateTaskState extends State<ParentCreateTask> {
               children: [
                 _buildHeader(),
                 const SizedBox(height: 32),
+                _buildSavedTemplates(),
                 _buildQuickIdeas(),
                 const SizedBox(height: 32),
                 _buildCustomTaskForm(),
@@ -121,7 +144,7 @@ class _ParentCreateTaskState extends State<ParentCreateTask> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'New Mission!',
+          'Nhiệm vụ mới!',
           style: GoogleFonts.plusJakartaSans(
             fontSize: 32,
             fontWeight: FontWeight.w800,
@@ -130,7 +153,7 @@ class _ParentCreateTaskState extends State<ParentCreateTask> {
         ),
         const SizedBox(height: 4),
         Text(
-          'What adventure awaits today?',
+          'Hôm nay giao việc gì cho con?',
           style: GoogleFonts.plusJakartaSans(
             fontSize: 18,
             fontWeight: FontWeight.w500,
@@ -141,12 +164,77 @@ class _ParentCreateTaskState extends State<ParentCreateTask> {
     );
   }
 
+  Widget _buildSavedTemplates() {
+    return Consumer<AppState>(
+      builder: (context, app, _) {
+        final templates = app.templateTasks;
+        if (templates.isEmpty) return const SizedBox.shrink();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '⭐ Mẫu đã lưu',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 18, fontWeight: FontWeight.w700,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 10),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: templates.map((t) {
+                  return GestureDetector(
+                    onTap: () {
+                      _titleCtrl.text = t.title;
+                      _descCtrl.text = t.description;
+                      setState(() {
+                        _coins = t.coinReward;
+                        _category = t.category;
+                      });
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.only(right: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.secondaryFixed,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border(
+                          bottom: BorderSide(color: AppTheme.secondaryFixedDim, width: 3),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(t.icon, style: const TextStyle(fontSize: 16)),
+                          const SizedBox(width: 6),
+                          Text(
+                            t.title,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 13, fontWeight: FontWeight.w600,
+                              color: AppTheme.onSecondaryFixed,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
+        );
+      },
+    );
+  }
+
   Widget _buildQuickIdeas() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Quick Ideas',
+          'Ý tưởng nhanh',
           style: GoogleFonts.plusJakartaSans(
             fontSize: 24,
             fontWeight: FontWeight.w700,
@@ -157,7 +245,7 @@ class _ParentCreateTaskState extends State<ParentCreateTask> {
         Wrap(
           spacing: 12,
           runSpacing: 12,
-          children: _quickIdeas.map((idea) {
+          children: _filteredIdeas.map((idea) {
             return GestureDetector(
               onTap: () {
                 _titleCtrl.text = idea['title'] as String;
@@ -222,7 +310,7 @@ class _ParentCreateTaskState extends State<ParentCreateTask> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Create Custom Task',
+                  'Tạo nhiệm vụ tùy chỉnh',
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 24,
                     fontWeight: FontWeight.w700,
@@ -231,7 +319,7 @@ class _ParentCreateTaskState extends State<ParentCreateTask> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Task Name',
+                  'Tên nhiệm vụ',
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -244,7 +332,7 @@ class _ParentCreateTaskState extends State<ParentCreateTask> {
                   validator: Validators.taskTitle,
                   style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w500),
                   decoration: InputDecoration(
-                    hintText: 'e.g. Clean the magical castle',
+                    hintText: 'VD: Quét dọn phòng ngủ',
                     hintStyle: TextStyle(color: AppTheme.outlineVariant),
                     filled: true,
                     fillColor: AppTheme.surfaceContainerLow,
@@ -264,7 +352,7 @@ class _ParentCreateTaskState extends State<ParentCreateTask> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Description (Optional)',
+                  'Mô tả (Tùy chọn)',
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -277,7 +365,7 @@ class _ParentCreateTaskState extends State<ParentCreateTask> {
                   maxLines: 3,
                   style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w500),
                   decoration: InputDecoration(
-                    hintText: 'Any secret instructions?',
+                    hintText: 'Hướng dẫn thêm cho con...',
                     hintStyle: TextStyle(color: AppTheme.outlineVariant),
                     filled: true,
                     fillColor: AppTheme.surfaceContainerLow,
@@ -320,7 +408,7 @@ class _ParentCreateTaskState extends State<ParentCreateTask> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Category',
+          'Danh mục',
           style: GoogleFonts.plusJakartaSans(
             fontSize: 24,
             fontWeight: FontWeight.w700,
@@ -459,13 +547,26 @@ class _ParentCreateTaskState extends State<ParentCreateTask> {
                 trackHeight: 8,
                 thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12),
               ),
-              child: Slider(
-                value: _coins.toDouble(),
-                min: 5,
-                max: 50,
-                divisions: 9,
-                label: '$_coins Xu',
-                onChanged: (v) => setState(() => _coins = v.round()),
+              child: Builder(
+                builder: (context) {
+                  final range = ageGroupCoinRanges[
+                    context.watch<AppState>().childAge.ageGroup
+                  ]!;
+                  final clampedCoins = _coins.clamp(range.min, range.max);
+                  if (clampedCoins != _coins) {
+                    WidgetsBinding.instance.addPostFrameCallback(
+                      (_) => setState(() => _coins = clampedCoins),
+                    );
+                  }
+                  return Slider(
+                    value: clampedCoins.toDouble(),
+                    min: range.min.toDouble(),
+                    max: range.max.toDouble(),
+                    divisions: (range.max - range.min) ~/ 5,
+                    label: '$clampedCoins Xu',
+                    onChanged: (v) => setState(() => _coins = v.round()),
+                  );
+                },
               ),
             ),
           ],
@@ -518,7 +619,7 @@ class _ParentCreateTaskState extends State<ParentCreateTask> {
                       const Icon(Icons.send, color: Colors.white, size: 28),
                       const SizedBox(width: 12),
                       Text(
-                        'Send Task',
+                        'Giao việc',
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 24,
                           fontWeight: FontWeight.w700,
@@ -540,10 +641,10 @@ class _ParentCreateTaskState extends State<ParentCreateTask> {
       final appState = context.read<AppState>();
       
       const categoryIcons = {
-        'Housework': '🏠',
-        'Study': '📚',
-        'Health': '💪',
-        'Creativity': '🎨',
+        'Việc nhà': '🏠',
+        'Học tập': '📚',
+        'Sức khỏe': '💪',
+        'Sáng tạo': '🎨',
       };
       final String icon = categoryIcons[_category] ?? '📋';
 

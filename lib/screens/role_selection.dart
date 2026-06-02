@@ -115,7 +115,7 @@ class RoleSelectionScreen extends StatelessWidget {
               const SizedBox(height: 32),
 
               // Demo badge
-              Center(
+              if (appState.isDemoMode) Center(
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(

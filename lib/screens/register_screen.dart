@@ -7,7 +7,6 @@ import '../providers/app_state.dart';
 import '../theme/app_theme.dart';
 import '../utils/validators.dart';
 import 'login_screen.dart';
-import 'onboarding_screen.dart';
 import 'setup_screen.dart';
 import 'role_selection.dart';
 
@@ -30,7 +29,7 @@ class _RegisterScreenState extends State<RegisterScreen>
   bool _isLoading = false;
   bool _isGoogleLoading = false;
   bool _agreedToTerms = false;
-  late final StreamSubscription<AuthState> _authSub;
+  StreamSubscription<AuthState>? _authSub;
   late final AnimationController _animCtrl;
   late final Animation<double> _fadeAnim;
   late final Animation<Offset> _slideAnim;
@@ -51,34 +50,32 @@ class _RegisterScreenState extends State<RegisterScreen>
     ).animate(CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut));
     _animCtrl.forward();
 
-    _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((
-      data,
-    ) async {
-      if (!mounted) return;
-      if (data.event == AuthChangeEvent.signedIn) {
-        final appState = context.read<AppState>();
-        await appState.initializeAfterOAuth();
+    final appState = context.read<AppState>();
+    if (!appState.isDemoMode) {
+      _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((
+        data,
+      ) async {
         if (!mounted) return;
-        Widget dest;
-        if (!appState.hasSeenOnboarding) {
-          dest = const OnboardingScreen();
-        } else if (!appState.hasChild) {
-          dest = const SetupScreen();
-        } else {
-          dest = const RoleSelectionScreen();
+        if (data.event == AuthChangeEvent.signedIn) {
+          final appState = context.read<AppState>();
+          await appState.initializeAfterOAuth();
+          if (!mounted) return;
+          final dest = appState.hasChild
+              ? const RoleSelectionScreen()
+              : const SetupScreen();
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => dest),
+          );
         }
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => dest),
-        );
-      }
-    });
+      });
+    }
   }
 
   @override
   void dispose() {
     _animCtrl.dispose();
-    _authSub.cancel();
+    _authSub?.cancel();
     _nameCtrl.dispose();
     _emailCtrl.dispose();
     _passCtrl.dispose();
@@ -100,7 +97,11 @@ class _RegisterScreenState extends State<RegisterScreen>
         fullName: _nameCtrl.text.trim(),
       );
       if (!mounted) return;
-      _showEmailSentDialog();
+      // Nếu Supabase tắt email confirmation → user đã auto login,
+      // authSub listener sẽ tự navigate. Chỉ show dialog khi chưa login.
+      if (Supabase.instance.client.auth.currentUser == null) {
+        _showEmailSentDialog();
+      }
     } on AuthException catch (e) {
       if (!mounted) return;
       String msg;

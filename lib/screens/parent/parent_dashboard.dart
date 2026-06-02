@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_state.dart';
 import '../../theme/app_theme.dart';
@@ -9,6 +10,7 @@ import 'parent_task_detail.dart';
 import 'parent_create_task.dart';
 import 'parent_memory_lane.dart';
 import 'parent_settings.dart';
+import 'parent_learn_screen.dart';
 
 class ParentDashboard extends StatefulWidget {
   const ParentDashboard({super.key});
@@ -28,11 +30,12 @@ class _ParentDashboardState extends State<ParentDashboard> {
     });
   }
 
-  void _goToSettings() => _switchTab(2);
+  void _goToSettings() => _switchTab(3);
 
   Widget _tabWidget(int i) => switch (i) {
     0 => _HomeTab(onGoToSettings: _goToSettings),
     1 => const ParentMemoryLane(),
+    2 => const ParentLearnScreen(),
     _ => const ParentSettings(),
   };
 
@@ -43,7 +46,7 @@ class _ParentDashboardState extends State<ParentDashboard> {
       child: Scaffold(
         backgroundColor: AppTheme.surfaceBright,
         body: Stack(
-          children: List.generate(3, (i) {
+          children: List.generate(4, (i) {
             if (!_built.contains(i)) return const SizedBox.shrink();
             return TickerMode(
               enabled: _tab == i,
@@ -118,6 +121,7 @@ class _BottomNav extends StatelessWidget {
     const tabs = [
       (Icons.home_rounded, Icons.home_outlined, 'Home'),
       (Icons.auto_stories_rounded, Icons.auto_stories_outlined, 'Memories'),
+      (Icons.school_rounded, Icons.school_outlined, 'Học'),
       (Icons.settings_rounded, Icons.settings_outlined, 'Settings'),
     ];
     return Container(
@@ -226,6 +230,10 @@ class _HomeTab extends StatelessWidget {
 
         // Jar summary
         _JarSummaryRow(app: app).animate(delay: 160.ms).fadeIn().slideY(begin: 0.1),
+        const SizedBox(height: 16),
+
+        // Weekly summary
+        _WeeklySummaryCard(app: app).animate(delay: 220.ms).fadeIn().slideY(begin: 0.1),
 
         // Review Now
         if (app.submittedTasks.isNotEmpty) ...[
@@ -236,6 +244,13 @@ class _HomeTab extends StatelessWidget {
         // All Tasks
         const SizedBox(height: 28),
         _AllTasksSection(app: app).animate(delay: 320.ms).fadeIn().slideY(begin: 0.1),
+
+        // Approved Tasks (for template save)
+        if (app.approvedTasks.isNotEmpty) ...[
+          const SizedBox(height: 28),
+          _ApprovedTasksSection(tasks: app.approvedTasks)
+              .animate(delay: 380.ms).fadeIn().slideY(begin: 0.1),
+        ],
       ],
     );
   }
@@ -436,6 +451,136 @@ class _ChildProfileCard extends StatelessWidget {
   }
 }
 
+class _WeeklySummaryCard extends StatelessWidget {
+  final AppState app;
+  const _WeeklySummaryCard({required this.app});
+
+  @override
+  Widget build(BuildContext context) {
+    final weekAgo = DateTime.now().subtract(const Duration(days: 7));
+    final weekTasks = app.approvedTasks
+        .where((t) => t.reviewedAt != null && t.reviewedAt!.isAfter(weekAgo))
+        .toList();
+    final weekCoins = weekTasks.fold(0, (sum, t) => sum + t.coinReward);
+    final fmt = DateFormat('dd/MM');
+    final dateRange = '${fmt.format(weekAgo)} – ${fmt.format(DateTime.now())}';
+
+    // Top category this week
+    final catCounts = <String, int>{};
+    for (final t in weekTasks) {
+      catCounts[t.category] = (catCounts[t.category] ?? 0) + 1;
+    }
+    final topCat = catCounts.isEmpty
+        ? null
+        : catCounts.entries.reduce((a, b) => a.value >= b.value ? a : b).key;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppTheme.tertiaryFixed, AppTheme.secondaryFixed],
+        ),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text('📊', style: TextStyle(fontSize: 18)),
+              const SizedBox(width: 6),
+              Text(
+                'Tuần này',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 15, fontWeight: FontWeight.w800,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                dateRange,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 11, color: AppTheme.textSecondary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              _WeekStat('✅', '${weekTasks.length}', 'việc'),
+              const SizedBox(width: 12),
+              _WeekStat('🪙', '$weekCoins', 'xu'),
+              const SizedBox(width: 12),
+              _WeekStat('🔥', '${app.streakDays}', 'ngày'),
+            ],
+          ),
+          if (topCat != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Nhiều nhất: $topCat',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 12, color: AppTheme.textSecondary,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ] else ...[
+            const SizedBox(height: 8),
+            Text(
+              'Con chưa hoàn thành việc nào tuần này',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 12, color: AppTheme.textSecondary,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _WeekStat extends StatelessWidget {
+  final String emoji;
+  final String value;
+  final String label;
+  const _WeekStat(this.emoji, this.value, this.label);
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.6),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          children: [
+            Text(emoji, style: const TextStyle(fontSize: 18)),
+            Text(
+              value,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 16, fontWeight: FontWeight.w800,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+            Text(
+              label,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 10, color: AppTheme.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _JarSummaryRow extends StatelessWidget {
   final AppState app;
   const _JarSummaryRow({required this.app});
@@ -509,7 +654,7 @@ class _ReviewNowSection extends StatelessWidget {
           children: [
             const Icon(Icons.stars, color: AppTheme.secondaryContainer, size: 26),
             const SizedBox(width: 8),
-            Text('Review Now', style: GoogleFonts.plusJakartaSans(fontSize: 22, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
+            Text('Duyệt ngay', style: GoogleFonts.plusJakartaSans(fontSize: 22, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
           ],
         ),
         const SizedBox(height: 12),
@@ -584,7 +729,7 @@ class _AllTasksSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('All Tasks', style: GoogleFonts.plusJakartaSans(fontSize: 22, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
+        Text('Tất cả nhiệm vụ', style: GoogleFonts.plusJakartaSans(fontSize: 22, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
         const SizedBox(height: 12),
         if (tasks.isEmpty)
           Container(
@@ -614,6 +759,64 @@ class _AllTasksSection extends StatelessWidget {
                 .fadeIn(duration: 200.ms)
                 .slideY(begin: 0.05, end: 0),
           )),
+      ],
+    );
+  }
+}
+
+class _ApprovedTasksSection extends StatelessWidget {
+  final List<TaskModel> tasks;
+  const _ApprovedTasksSection({required this.tasks});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              '✅ Đã hoàn thành',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 22, fontWeight: FontWeight.w700, color: AppTheme.textPrimary,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+              decoration: BoxDecoration(
+                color: AppTheme.greenLight,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '${tasks.length}',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.green,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Text(
+          'Nhấn vào task để lưu làm mẫu ⭐',
+          style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppTheme.outline),
+        ),
+        const SizedBox(height: 12),
+        ...tasks.take(5).toList().asMap().entries.map((e) => Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: _TaskListItem(task: e.value)
+              .animate(delay: Duration(milliseconds: e.key * 40))
+              .fadeIn(duration: 200.ms)
+              .slideY(begin: 0.05, end: 0),
+        )),
+        if (tasks.length > 5)
+          Center(
+            child: Text(
+              '+ ${tasks.length - 5} task khác trong Memory Lane',
+              style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppTheme.outline),
+            ),
+          ),
       ],
     );
   }
