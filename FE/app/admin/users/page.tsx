@@ -175,21 +175,21 @@ export default function AdminUsersPage() {
                         )}
                       </td>
                       <td className="px-4 py-3">
-                        {u.profile ? (
-                          <button
-                            onClick={() => updateUser(u.id, { email: u.email, role: u.profile!.role, is_banned: !u.profile!.is_banned })}
-                            disabled={busy === u.id}
-                            className={`text-xs px-3 py-1 rounded-full font-medium transition disabled:opacity-50 ${
-                              u.profile.is_banned
-                                ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                                : 'bg-green-100 text-green-700 hover:bg-green-200'
-                            }`}
-                          >
-                            {u.profile.is_banned ? 'Đã cấm' : 'Hoạt động'}
-                          </button>
-                        ) : (
-                          <span className="text-xs text-gray-400">Chưa cấp quyền</span>
-                        )}
+                        <button
+                          onClick={() => updateUser(u.id, {
+                            email: u.email,
+                            role: u.profile?.role ?? 'staff',
+                            is_banned: !(u.profile?.is_banned ?? false),
+                          })}
+                          disabled={busy === u.id}
+                          className={`text-xs px-3 py-1 rounded-full font-medium transition disabled:opacity-50 ${
+                            u.profile?.is_banned
+                              ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                              : 'bg-green-100 text-green-700 hover:bg-green-200'
+                          }`}
+                        >
+                          {u.profile?.is_banned ? 'Đã cấm' : 'Hoạt động'}
+                        </button>
                       </td>
                       <td className="px-4 py-3 text-gray-500 text-xs">
                         {u.last_sign_in_at
