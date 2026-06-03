@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 
 class GeminiService {
   static const _endpoint =
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
   static String _buildSystemPrompt(Map<String, dynamic> ctx) {
     final name = ctx['childName'] as String;
@@ -55,25 +55,24 @@ Quy tắc:
     if (apiKey.isEmpty) return null;
 
     final contents = history
-        .map((m) => {
-              'role': m['role'],
-              'parts': [
-                {'text': m['text']}
-              ],
-            })
+        .map(
+          (m) => {
+            'role': m['role'],
+            'parts': [
+              {'text': m['text']},
+            ],
+          },
+        )
         .toList();
 
     final body = jsonEncode({
       'system_instruction': {
         'parts': [
-          {'text': _buildSystemPrompt(childContext)}
+          {'text': _buildSystemPrompt(childContext)},
         ],
       },
       'contents': contents,
-      'generationConfig': {
-        'temperature': 0.85,
-        'maxOutputTokens': 256,
-      },
+      'generationConfig': {'temperature': 0.85, 'maxOutputTokens': 256},
     });
 
     try {
@@ -92,8 +91,9 @@ Quy tắc:
         final json = jsonDecode(res.body) as Map<String, dynamic>;
         final candidates = json['candidates'] as List<dynamic>;
         if (candidates.isNotEmpty) {
-          final parts = (candidates.first['content']
-              as Map<String, dynamic>)['parts'] as List<dynamic>;
+          final parts =
+              (candidates.first['content'] as Map<String, dynamic>)['parts']
+                  as List<dynamic>;
           return (parts.first['text'] as String).trim();
         }
       }
@@ -102,6 +102,23 @@ Quy tắc:
     }
     return null;
   }
+
+  // Lọc thinking parts (gemini-2.5-flash trả về thought trước answer thật)
+  static String? _extractText(Map<String, dynamic> body) {
+    try {
+      final parts = (body['candidates'] as List).first['content']['parts'] as List;
+      final answer = parts.firstWhere(
+        (p) => (p as Map)['thought'] != true,
+        orElse: () => parts.first,
+      );
+      return (answer['text'] as String).trim();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Map<String, dynamic> _noThinkingConfig(Map<String, dynamic> base) =>
+      {...base, 'thinkingConfig': {'thinkingBudget': 0}};
 
   /// Gợi ý 4 nhiệm vụ cho phụ huynh dựa trên tuổi trẻ và danh mục.
   /// Returns list of {title, description, icon, coins} hoặc null nếu lỗi.
@@ -123,24 +140,27 @@ Quy tắc:
       'contents': [
         {'role': 'user', 'parts': [{'text': prompt}]},
       ],
-      'generationConfig': {'temperature': 0.8, 'maxOutputTokens': 512},
+      'generationConfig': _noThinkingConfig({'temperature': 0.8, 'maxOutputTokens': 512}),
     });
 
     try {
       final res = await http
           .post(Uri.parse('$_endpoint?key=$apiKey'),
               headers: {'Content-Type': 'application/json'}, body: body)
-          .timeout(const Duration(seconds: 15));
+          .timeout(const Duration(seconds: 20));
 
+      debugPrint('[Gemini.suggestTasks] status=${res.statusCode}');
       if (res.statusCode == 200) {
-        final json = jsonDecode(res.body) as Map<String, dynamic>;
-        final text = (((json['candidates'] as List).first['content']
-            as Map<String, dynamic>)['parts'] as List)
-            .first['text'] as String;
-        final match = RegExp(r'\[[\s\S]*?\]').firstMatch(text.trim());
-        if (match != null) {
-          return List<Map<String, dynamic>>.from(
-              jsonDecode(match.group(0)!) as List);
+        final decoded = jsonDecode(res.body) as Map<String, dynamic>;
+        final text = _extractText(decoded);
+        debugPrint('[Gemini.suggestTasks] text=$text');
+        if (text != null) {
+          // Greedy regex: lấy từ [ đầu tiên đến ] cuối cùng
+          final match = RegExp(r'\[[\s\S]*\]').firstMatch(text);
+          if (match != null) {
+            return List<Map<String, dynamic>>.from(
+                jsonDecode(match.group(0)!) as List);
+          }
         }
       }
     } catch (e) {
@@ -173,20 +193,19 @@ Quy tắc:
       'contents': [
         {'role': 'user', 'parts': [{'text': prompt}]},
       ],
-      'generationConfig': {'temperature': 0.9, 'maxOutputTokens': 150},
+      'generationConfig': _noThinkingConfig({'temperature': 0.9, 'maxOutputTokens': 150}),
     });
 
     try {
       final res = await http
           .post(Uri.parse('$_endpoint?key=$apiKey'),
               headers: {'Content-Type': 'application/json'}, body: body)
-          .timeout(const Duration(seconds: 10));
+          .timeout(const Duration(seconds: 15));
 
+      debugPrint('[Gemini.dreamCoach] status=${res.statusCode}');
       if (res.statusCode == 200) {
-        final json = jsonDecode(res.body) as Map<String, dynamic>;
-        final parts = (((json['candidates'] as List).first['content']
-            as Map<String, dynamic>)['parts'] as List);
-        return (parts.first['text'] as String).trim();
+        final decoded = jsonDecode(res.body) as Map<String, dynamic>;
+        return _extractText(decoded);
       }
     } catch (e) {
       debugPrint('[Gemini.dreamCoach] $e');
