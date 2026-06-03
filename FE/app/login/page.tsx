@@ -1,15 +1,28 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState(() => {
+    const e = searchParams.get("error");
+    if (e === "unauthorized") return "Tài khoản không có quyền truy cập.";
+    if (e === "banned") return "Tài khoản đã bị khóa.";
+    return "";
+  });
   const [loading, setLoading] = useState(false);
+
+  // Khi có ?error= → sign out client-side để xóa session cookie, tránh redirect loop
+  useEffect(() => {
+    if (searchParams.get("error")) {
+      createClient().auth.signOut();
+    }
+  }, [searchParams]);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
