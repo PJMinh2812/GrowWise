@@ -73,9 +73,10 @@ class _SetupScreenState extends State<SetupScreen>
       );
     } catch (e) {
       if (!mounted) return;
+      final s = context.read<AppState>().strings;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Lỗi: ${e.toString()}'),
+          content: Text('${s.errorPrefix}${e.toString()}'),
           backgroundColor: const Color(0xFFEF4444),
         ),
       );
@@ -86,6 +87,7 @@ class _SetupScreenState extends State<SetupScreen>
 
   @override
   Widget build(BuildContext context) {
+    final s = context.watch<AppState>().strings;
     return Scaffold(
       backgroundColor: AppTheme.bg,
       body: Stack(
@@ -120,7 +122,7 @@ class _SetupScreenState extends State<SetupScreen>
                       ),
                       const SizedBox(height: 14),
                       Text(
-                        'Thêm hồ sơ con',
+                        s.setupTitle,
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 26,
                           fontWeight: FontWeight.w800,
@@ -129,7 +131,7 @@ class _SetupScreenState extends State<SetupScreen>
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'Cùng con bắt đầu hành trình GrowWise!',
+                        s.setupSubtitle,
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 14,
                           color: Colors.white.withValues(alpha: 0.85),
@@ -187,7 +189,7 @@ class _SetupScreenState extends State<SetupScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // Avatar picker
-                          _FieldLabel('Chọn avatar cho con'),
+                          _FieldLabel(s.chooseAvatar),
                           const SizedBox(height: 12),
                           Wrap(
                             spacing: 10,
@@ -253,7 +255,7 @@ class _SetupScreenState extends State<SetupScreen>
                                     children: [
                                       Text(
                                         _nameCtrl.text.isEmpty
-                                            ? 'Tên con sẽ hiện ở đây'
+                                            ? s.childNameHint
                                             : _nameCtrl.text,
                                         style: GoogleFonts.plusJakartaSans(
                                           fontWeight: FontWeight.w700,
@@ -262,7 +264,7 @@ class _SetupScreenState extends State<SetupScreen>
                                         ),
                                       ),
                                       Text(
-                                        '${_ageCtrl.text.isEmpty ? '?' : _ageCtrl.text} tuổi',
+                                        s.ageDisplay(_ageCtrl.text.isEmpty ? 0 : int.tryParse(_ageCtrl.text) ?? 0),
                                         style: GoogleFonts.plusJakartaSans(
                                           fontSize: 13,
                                           color: AppTheme.textSecondary,
@@ -275,7 +277,7 @@ class _SetupScreenState extends State<SetupScreen>
                             ),
 
                           // Name field
-                          _FieldLabel('Tên con'),
+                          _FieldLabel(s.childNameLabel),
                           const SizedBox(height: 6),
                           TextFormField(
                             controller: _nameCtrl,
@@ -283,9 +285,9 @@ class _SetupScreenState extends State<SetupScreen>
                             validator: Validators.name,
                             autovalidateMode: AutovalidateMode.onUserInteraction,
                             onChanged: (_) => setState(() {}),
-                            decoration: const InputDecoration(
-                              hintText: 'VD: Tôm, Bống, Bi...',
-                              prefixIcon: Icon(
+                            decoration: InputDecoration(
+                              hintText: s.childNameHint,
+                              prefixIcon: const Icon(
                                 Icons.child_care_rounded,
                                 size: 20,
                                 color: AppTheme.textHint,
@@ -295,7 +297,7 @@ class _SetupScreenState extends State<SetupScreen>
                           const SizedBox(height: 18),
 
                           // Age field
-                          _FieldLabel('Tuổi con'),
+                          _FieldLabel(s.childAgeLabel),
                           const SizedBox(height: 6),
                           TextFormField(
                             controller: _ageCtrl,
@@ -303,9 +305,9 @@ class _SetupScreenState extends State<SetupScreen>
                             validator: Validators.age,
                             autovalidateMode: AutovalidateMode.onUserInteraction,
                             onChanged: (_) => setState(() {}),
-                            decoration: const InputDecoration(
-                              hintText: 'VD: 8',
-                              prefixIcon: Icon(
+                            decoration: InputDecoration(
+                              hintText: s.childAgeHint,
+                              prefixIcon: const Icon(
                                 Icons.cake_rounded,
                                 size: 20,
                                 color: AppTheme.textHint,
@@ -345,7 +347,7 @@ class _SetupScreenState extends State<SetupScreen>
                                         style: TextStyle(fontSize: 20),
                                       ),
                                 label: Text(
-                                  'Bắt đầu hành trình!',
+                                  s.startJourney,
                                   style: GoogleFonts.plusJakartaSans(
                                     fontWeight: FontWeight.w700,
                                     fontSize: 16,

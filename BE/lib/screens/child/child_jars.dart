@@ -12,6 +12,7 @@ class ChildJars extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<AppState>(
       builder: (context, app, child) {
+        final s = app.strings;
         final totalCoins = app.totalCoins;
         final spend = app.spendJar;
         final save = app.saveJar;
@@ -28,13 +29,13 @@ class ChildJars extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildHeader(totalCoins),
+                _buildHeader(totalCoins, s),
                 const SizedBox(height: 32),
-                _buildOverviewRings(spend, save, share, spendPct, savePct, sharePct),
+                _buildOverviewRings(spend, save, share, spendPct, savePct, sharePct, s),
                 const SizedBox(height: 24),
-                _buildAllocationBar(spendPct, savePct, sharePct),
+                _buildAllocationBar(spendPct, savePct, sharePct, s),
                 const SizedBox(height: 32),
-                _buildDetailCards(spend, save, share, spendPct, savePct, sharePct),
+                _buildDetailCards(spend, save, share, spendPct, savePct, sharePct, s),
               ],
             ),
           ),
@@ -43,12 +44,12 @@ class ChildJars extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(int totalCoins) {
+  Widget _buildHeader(int totalCoins, dynamic s) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Hũ tiền',
+          s.jarsTitle,
           style: GoogleFonts.plusJakartaSans(
             fontSize: 32,
             fontWeight: FontWeight.w800,
@@ -59,14 +60,14 @@ class ChildJars extends StatelessWidget {
         Row(
           children: [
             Text(
-              'Tổng cộng ',
+              '${s.totalLabel} ',
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 18,
                 color: AppTheme.outline,
               ),
             ),
             Text(
-              '$totalCoins xu',
+              '$totalCoins ${s.coins}',
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
@@ -79,19 +80,19 @@ class ChildJars extends StatelessWidget {
     );
   }
 
-  Widget _buildOverviewRings(int spend, int save, int share, double spendPct, double savePct, double sharePct) {
+  Widget _buildOverviewRings(int spend, int save, int share, double spendPct, double savePct, double sharePct, dynamic s) {
     return Row(
       children: [
-        Expanded(child: _RingCard(title: 'Tiêu dùng', value: spend, pct: spendPct, icon: '💰', color: AppTheme.vibrantPrimary, bgColor: AppTheme.primaryFixed)),
+        Expanded(child: _RingCard(title: s.jarSpend, value: spend, pct: spendPct, icon: '💰', color: AppTheme.vibrantPrimary, bgColor: AppTheme.primaryFixed)),
         const SizedBox(width: 12),
-        Expanded(child: _RingCard(title: 'Tiết kiệm', value: save, pct: savePct, icon: '🏦', color: AppTheme.vibrantSecondary, bgColor: AppTheme.secondaryFixed)),
+        Expanded(child: _RingCard(title: s.jarSave, value: save, pct: savePct, icon: '🏦', color: AppTheme.vibrantSecondary, bgColor: AppTheme.secondaryFixed)),
         const SizedBox(width: 12),
-        Expanded(child: _RingCard(title: 'Sẻ chia', value: share, pct: sharePct, icon: '🤝', color: AppTheme.errorContainer, bgColor: const Color(0xFFFFDAD6))),
+        Expanded(child: _RingCard(title: s.jarShare, value: share, pct: sharePct, icon: '🤝', color: AppTheme.errorContainer, bgColor: const Color(0xFFFFDAD6))),
       ],
     );
   }
 
-  Widget _buildAllocationBar(double spendPct, double savePct, double sharePct) {
+  Widget _buildAllocationBar(double spendPct, double savePct, double sharePct, dynamic s) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -103,7 +104,7 @@ class ChildJars extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Phân bổ',
+            s.allocationLabel,
             style: GoogleFonts.plusJakartaSans(
               fontSize: 14,
               fontWeight: FontWeight.w600,
@@ -130,9 +131,9 @@ class ChildJars extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _LegendItem(color: AppTheme.vibrantPrimary, label: 'Tiêu dùng'),
-              _LegendItem(color: AppTheme.vibrantSecondary, label: 'Tiết kiệm'),
-              _LegendItem(color: const Color(0xFFBA1A1A), label: 'Sẻ chia'),
+              _LegendItem(color: AppTheme.vibrantPrimary, label: s.jarSpend),
+              _LegendItem(color: AppTheme.vibrantSecondary, label: s.jarSave),
+              _LegendItem(color: const Color(0xFFBA1A1A), label: s.jarShare),
             ],
           ),
         ],
@@ -140,12 +141,12 @@ class ChildJars extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailCards(int spend, int save, int share, double spendPct, double savePct, double sharePct) {
+  Widget _buildDetailCards(int spend, int save, int share, double spendPct, double savePct, double sharePct, dynamic s) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Chi tiết',
+          s.detailsLabel,
           style: GoogleFonts.plusJakartaSans(
             fontSize: 24,
             fontWeight: FontWeight.w700,
@@ -154,7 +155,7 @@ class ChildJars extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         _DetailCard(
-          title: 'Tiêu dùng',
+          title: s.jarSpend,
           value: spend,
           pct: spendPct,
           icon: '💰',
@@ -164,7 +165,7 @@ class ChildJars extends StatelessWidget {
         ).animate().fadeIn().slideY(begin: 0.1),
         const SizedBox(height: 16),
         _DetailCard(
-          title: 'Tiết kiệm',
+          title: s.jarSave,
           value: save,
           pct: savePct,
           icon: '🏦',
@@ -174,7 +175,7 @@ class ChildJars extends StatelessWidget {
         ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1),
         const SizedBox(height: 16),
         _DetailCard(
-          title: 'Sẻ chia',
+          title: s.jarShare,
           value: share,
           pct: sharePct,
           icon: '🤝',
@@ -206,6 +207,7 @@ class _RingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.watch<AppState>().strings;
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
       decoration: BoxDecoration(
@@ -260,7 +262,7 @@ class _RingCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            '$value xu',
+            '$value ${s.coins}',
             style: GoogleFonts.plusJakartaSans(
               fontSize: 18,
               fontWeight: FontWeight.w800,
@@ -333,6 +335,7 @@ class _DetailCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.watch<AppState>().strings;
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -377,7 +380,7 @@ class _DetailCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '${(pct * 100).toInt()}% tổng xu',
+                      '${(pct * 100).toInt()}% ${s.totalLabel}',
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
@@ -399,7 +402,7 @@ class _DetailCard extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    'xu',
+                    s.coins,
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,

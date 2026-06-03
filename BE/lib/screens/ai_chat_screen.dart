@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
+import '../services/gemini_service.dart';
 import '../theme/app_theme.dart';
 
 class AiChatScreen extends StatefulWidget {
@@ -19,37 +20,39 @@ class _AiChatScreenState extends State<AiChatScreen> {
   final List<_Msg> _msgs = [];
   bool _typing = false;
 
-  static const _replies = {
-    'nhiệm vụ': 'Con có 2 nhiệm vụ cần làm hôm nay: "Đọc sách 30 phút" và "Tưới cây ban công". Hãy cố lên, con sẽ kiếm được 40 xu nếu hoàn thành cả hai! 💪',
-    'xu': 'Con hiện có 850 xu trong hũ tiền. Con đang tiết kiệm rất tốt! Hũ Tiết kiệm của con đã có 255 xu rồi đó 🎉',
-    'ước mơ': 'Con đang tiết kiệm để mua Lego Technic! Con đã có 850/1000 xu rồi, chỉ cần thêm 150 xu nữa thôi. Cố lên nào! 🧱',
-    'level': 'Con đang ở Level 5 Explorer và có 78/100 XP. Chỉ cần hoàn thành thêm 1-2 nhiệm vụ nữa là lên Level 6 rồi! ⭐',
-    'huy hiệu': 'Con đã có 6 huy hiệu: 🏅 Khởi đầu, 🔥 3 ngày liên tiếp, 🌟 Level 5!, 📚 Mọt sách, 🏆 Hoàn thành 20 việc, 💪 Sức khỏe tốt. Bộ sưu tập đẹp đấy!',
-    'chào': 'Xin chào ${""} ! Mình là trợ lý AI của GrowWise. Mình có thể giúp con theo dõi nhiệm vụ, xem số xu, và nhiều thứ thú vị khác! 🌱',
-    'giỏi': 'Con đang làm rất tốt! Tuần này con đã hoàn thành 5 nhiệm vụ và kiếm được 110 xu. Bố/Mẹ rất tự hào về con! 💛',
-    'mệt': 'Nghỉ ngơi một chút là ổn thôi con ơi! Nhưng đừng quên còn 2 nhiệm vụ chờ con nhé. Sau khi nghỉ ngơi xong, con sẽ làm được thôi! 😊',
-    'buồn': 'Con buồn à? Mình ở đây để lắng nghe con nè. Nhớ rằng bố/mẹ luôn yêu con và tự hào về con dù kết quả thế nào! ❤️',
-    'tiết kiệm': 'Tiết kiệm là thói quen rất tốt! Hũ Tiết kiệm của con đang có 255 xu (30% tổng xu). Con đang tiết kiệm để mua Lego Technic. Mục tiêu gần rồi! 🏦',
-    'bố': 'Bố có nhắn tin cho con là: "Minh ơi, hôm nay con làm rất tốt! Bố rất tự hào về con 💛"',
-    'mẹ': 'Mẹ muốn nhắn với con: Con hãy cố gắng hoàn thành bài tập hôm nay nhé, mẹ tin con làm được! 🌸',
+  // Fallback responses khi Gemini API chưa cấu hình hoặc lỗi mạng
+  static const _fallbackReplies = {
+    'nhiệm vụ': 'Con hãy vào tab Nhiệm vụ để xem danh sách hôm nay nhé! Hoàn thành nhiệm vụ sẽ kiếm được nhiều xu lắm đó 💪',
+    'xu': 'Con có thể xem số xu và hũ tiền chi tiết ở tab Hũ tiền nhé! 💰',
+    'ước mơ': 'Ước mơ của con đang được tiết kiệm dần từng ngày rồi đó 🌟 Tiếp tục cố gắng nhé!',
+    'level': 'Con đang tiến bộ rất tốt! Hoàn thành thêm nhiệm vụ để tăng XP và lên level nào 🚀',
+    'huy hiệu': 'Con đã có nhiều huy hiệu đẹp rồi đó! Vào tab Thành tích để xem bộ sưu tập nhé 🏅',
+    'chào': 'Xin chào! Mình là Wisy, trợ lý của GrowWise 🌱 Mình có thể giúp gì cho con hôm nay?',
+    'giỏi': 'Con đang làm rất tốt! Bố/Mẹ rất tự hào về con đó 💛',
+    'mệt': 'Nghỉ ngơi một chút là ổn thôi con ơi! Sau khi nghỉ xong lại tiếp tục nhé 😊',
+    'buồn': 'Con buồn à? Mình ở đây lắng nghe con nè. Bố/Mẹ luôn yêu con! ❤️',
+    'tiết kiệm': 'Tiết kiệm là thói quen rất tốt! Mỗi ngày để dành một ít, ước mơ sẽ thành hiện thực thôi 🏦',
+    'bố': 'Bố/Mẹ có thể nhắn tin cho con trong ứng dụng đó. Hỏi bố/mẹ nhé! 💌',
+    'mẹ': 'Bố/Mẹ có thể nhắn tin cho con trong ứng dụng đó. Hỏi bố/mẹ nhé! 💌',
   };
 
-  static const _defaults = [
-    'Hôm nay con có 2 nhiệm vụ cần hoàn thành. Con có muốn xem chi tiết không? 📋',
-    'Con đang tiết kiệm rất tốt! Chỉ còn 150 xu nữa là mua được Lego Technic rồi! 🧱',
-    'Bố/Mẹ vừa giao thêm nhiệm vụ mới cho con. Vào tab Nhiệm vụ để xem nhé! 🎯',
-    'Con đã kiếm được 850 xu tổng cộng. Thật tuyệt vời! Tiếp tục phát huy nhé! 💪',
+  static const _fallbackDefaults = [
+    'Con hãy hoàn thành các nhiệm vụ hôm nay để kiếm xu nhé! 📋',
+    'Tiết kiệm mỗi ngày, ước mơ sẽ thành hiện thực sớm thôi! 🌟',
+    'Con đang làm rất tốt! Tiếp tục phát huy nhé 💪',
+    'Hỏi mình bất cứ điều gì về xu, nhiệm vụ hay ước mơ nhé! 🌱',
   ];
 
-  int _defaultIdx = 0;
+  int _fallbackIdx = 0;
 
   @override
   void initState() {
     super.initState();
     final app = context.read<AppState>();
+    final s = app.strings;
     final name = app.childName.isNotEmpty ? app.childName : 'bạn nhỏ';
     _msgs.add(_Msg(
-      text: 'Xin chào $name! Mình là trợ lý AI của GrowWise 🌱\nMình có thể giúp con:\n• Xem nhiệm vụ hôm nay\n• Kiểm tra số xu và hũ tiền\n• Theo dõi ước mơ\n• Nghe lời nhắn từ bố/mẹ\n\nCon muốn hỏi gì không?',
+      text: s.aiGreeting(name),
       isAi: true,
     ));
   }
@@ -61,9 +64,9 @@ class _AiChatScreenState extends State<AiChatScreen> {
     super.dispose();
   }
 
-  void _send() {
+  Future<void> _send() async {
     final text = _ctrl.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty || _typing) return;
     setState(() {
       _msgs.add(_Msg(text: text, isAi: false));
       _typing = true;
@@ -71,25 +74,58 @@ class _AiChatScreenState extends State<AiChatScreen> {
     _ctrl.clear();
     _scrollDown();
 
-    final lower = text.toLowerCase();
-    String? reply;
-    for (final entry in _replies.entries) {
-      if (lower.contains(entry.key)) {
-        reply = entry.value;
-        break;
-      }
-    }
-    reply ??= _defaults[_defaultIdx % _defaults.length];
-    _defaultIdx++;
+    final app = context.read<AppState>();
+    final childContext = {
+      'childName': app.childName.isNotEmpty ? app.childName : 'bạn nhỏ',
+      'childAge': app.childAge,
+      'totalCoins': app.totalCoins,
+      'spendJar': app.spendJar,
+      'saveJar': app.saveJar,
+      'shareJar': app.shareJar,
+      'level': app.level,
+      'xp': app.xp,
+      'xpToNextLevel': app.xpToNextLevel,
+      'streakDays': app.streakDays,
+      'pendingTaskTitles': app.pendingTasks.map((t) => t.title).toList(),
+      'dreamNames':
+          app.dreamItemsList.map((d) => d['name'] as String? ?? '').toList(),
+      'bondingMessage': app.bondingMessage,
+      'badges': app.badges,
+    };
 
-    Timer(const Duration(milliseconds: 1200), () {
-      if (!mounted) return;
-      setState(() {
-        _typing = false;
-        _msgs.add(_Msg(text: reply!, isAi: true));
-      });
-      _scrollDown();
+    // Build history: skip greeting (index 0), keep last 10 messages
+    final allHistory = _msgs.skip(1).map((m) => {
+          'role': m.isAi ? 'model' : 'user',
+          'text': m.text,
+        }).toList();
+    final history = allHistory.length > 10
+        ? allHistory.sublist(allHistory.length - 10)
+        : allHistory;
+
+    String? reply = await GeminiService.send(
+      history: history,
+      childContext: childContext,
+    );
+
+    // Fallback to rule-based when API key not set or network error
+    if (reply == null) {
+      final lower = text.toLowerCase();
+      for (final entry in _fallbackReplies.entries) {
+        if (lower.contains(entry.key)) {
+          reply = entry.value;
+          break;
+        }
+      }
+      reply ??= _fallbackDefaults[_fallbackIdx % _fallbackDefaults.length];
+      _fallbackIdx++;
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _typing = false;
+      _msgs.add(_Msg(text: reply!, isAi: true));
     });
+    _scrollDown();
   }
 
   void _sendQuick(String text) {
@@ -111,6 +147,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.watch<AppState>().strings;
     return Scaffold(
       backgroundColor: AppTheme.surfaceBright,
       appBar: AppBar(
@@ -157,7 +194,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      'Đang hoạt động',
+                      s.aiOnline,
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 11,
                         color: AppTheme.textHint,
@@ -184,10 +221,10 @@ class _AiChatScreenState extends State<AiChatScreen> {
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  _QuickChip('📋 Nhiệm vụ hôm nay', () => _sendQuick('Nhiệm vụ hôm nay của con là gì?')),
-                  _QuickChip('💰 Số xu của con', () => _sendQuick('Con có bao nhiêu xu?')),
-                  _QuickChip('🧱 Ước mơ', () => _sendQuick('Con đang tiết kiệm ước mơ gì?')),
-                  _QuickChip('💌 Lời nhắn bố', () => _sendQuick('Bố có nhắn gì cho con không?')),
+                  _QuickChip(s.aiQuickTasks, () => _sendQuick('Nhiệm vụ hôm nay của con là gì?')),
+                  _QuickChip(s.aiQuickCoins, () => _sendQuick('Con có bao nhiêu xu?')),
+                  _QuickChip(s.aiQuickDreams, () => _sendQuick('Con đang tiết kiệm ước mơ gì?')),
+                  _QuickChip(s.aiQuickMessage, () => _sendQuick('Bố có nhắn gì cho con không?')),
                 ],
               ),
             ),
@@ -236,7 +273,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
                           color: AppTheme.textPrimary,
                         ),
                         decoration: InputDecoration(
-                          hintText: 'Nhắn tin với AI...',
+                          hintText: s.aiInputHint,
                           hintStyle: GoogleFonts.plusJakartaSans(
                             fontSize: 14,
                             color: AppTheme.textHint,

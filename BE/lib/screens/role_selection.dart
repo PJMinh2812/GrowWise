@@ -33,6 +33,7 @@ class RoleSelectionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
+    final s = appState.strings;
 
     return Scaffold(
       backgroundColor: AppTheme.surfaceBright,
@@ -46,7 +47,7 @@ class RoleSelectionScreen extends StatelessWidget {
 
               // Header
               Text(
-                'Xin chào! 👋',
+                s.hiGreeting,
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 15,
                   color: AppTheme.textSecondary,
@@ -57,7 +58,7 @@ class RoleSelectionScreen extends StatelessWidget {
               const SizedBox(height: 6),
 
               Text(
-                'Bạn là ai?',
+                s.whoAreYou,
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 36,
                   fontWeight: FontWeight.w900,
@@ -69,7 +70,7 @@ class RoleSelectionScreen extends StatelessWidget {
               const SizedBox(height: 8),
 
               Text(
-                'Chọn vai trò để tiếp tục vào ứng dụng',
+                s.chooseRole,
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 14,
                   color: AppTheme.textHint,
@@ -84,13 +85,17 @@ class RoleSelectionScreen extends StatelessWidget {
                 iconBg: const LinearGradient(
                   colors: [Color(0xFF818CF8), Color(0xFF5B5BD6)],
                 ),
-                title: 'Phụ huynh',
-                subtitle: 'Giao việc, theo dõi tiến độ\nvà khen thưởng con',
+                title: s.parent,
+                subtitle: s.parentSubtitle,
                 cardColor: AppTheme.indigoLight,
                 borderColor: AppTheme.indigo.withValues(alpha: 0.2),
                 accentColor: AppTheme.indigo,
                 arrowColor: AppTheme.indigo,
-                badges: const [('📋', 'Giao việc'), ('📊', 'Thống kê'), ('🤖', 'AI Bonding')],
+                badges: [
+                  ('📋', s.badgeCreateTask),
+                  ('📊', s.badgeStats),
+                  ('🤖', s.badgeAI),
+                ],
                 onTap: () => _goParent(context),
               ).animate(delay: 280.ms).fadeIn(duration: 500.ms).slideY(begin: 0.2, end: 0, curve: Curves.easeOutCubic),
 
@@ -102,13 +107,17 @@ class RoleSelectionScreen extends StatelessWidget {
                 iconBg: const LinearGradient(
                   colors: [Color(0xFF4ADE80), Color(0xFF1E8F4F)],
                 ),
-                title: appState.childName.isEmpty ? 'Bé yêu' : appState.childName,
-                subtitle: 'Làm nhiệm vụ, tích xu\nvà thực hiện ước mơ!',
+                title: appState.childName.isEmpty ? s.parent : appState.childName,
+                subtitle: s.childSubtitle,
                 cardColor: AppTheme.greenLight,
                 borderColor: AppTheme.green.withValues(alpha: 0.2),
                 accentColor: AppTheme.green,
                 arrowColor: AppTheme.green,
-                badges: const [('🏆', 'Nhiệm vụ'), ('🏦', '3 Hũ'), ('⭐', 'Ước mơ')],
+                badges: [
+                  ('🏆', s.badgeTasks),
+                  ('🏦', s.badge3Jars),
+                  ('⭐', s.badgeDreams),
+                ],
                 onTap: () => _goChild(context),
               ).animate(delay: 400.ms).fadeIn(duration: 500.ms).slideY(begin: 0.2, end: 0, curve: Curves.easeOutCubic),
 
@@ -128,7 +137,7 @@ class RoleSelectionScreen extends StatelessWidget {
                       const Icon(Icons.lock_outline, size: 14, color: AppTheme.textHint),
                       const SizedBox(width: 6),
                       Text(
-                        'Demo Mode — Dữ liệu mẫu',
+                        s.demoMode,
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 12,
                           color: AppTheme.textHint,

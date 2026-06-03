@@ -4,17 +4,26 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase";
 import type { LessonQuiz, QuizOption } from "@/lib/types";
 
+const OPTION_EMOJIS = ["✅", "❌", "🤔", "💡"];
+
+function makeOptions(count: number, existing?: QuizOption[]): QuizOption[] {
+  return Array.from({ length: count }, (_, i) => ({
+    ...(existing?.[i] ?? {}),
+    text: existing?.[i]?.text ?? "",
+    emoji: existing?.[i]?.emoji ?? OPTION_EMOJIS[i] ?? "🔘",
+    order_index: i,
+  }));
+}
+
 const EMPTY_QUIZ: Omit<LessonQuiz, "id" | "lesson_id"> = {
   trigger_at: 0,
   question: "",
+  question_type: "single",
   correct_index: 0,
+  correct_indices: [],
   explanation: "",
   order_index: 0,
-  quiz_options: [
-    { text: "", emoji: "✅", order_index: 0 },
-    { text: "", emoji: "❌", order_index: 1 },
-    { text: "", emoji: "🤔", order_index: 2 },
-  ],
+  quiz_options: makeOptions(4),
 };
 
 export default function QuizEditor({ lessonId }: { lessonId: string }) {
@@ -36,8 +45,10 @@ export default function QuizEditor({ lessonId }: { lessonId: string }) {
     setQuizzes(
       (data ?? []).map((q) => ({
         ...q,
+        question_type: q.question_type ?? "single",
+        correct_indices: q.correct_indices ?? [],
         quiz_options: [...(q.quiz_options ?? [])].sort(
-          (a, b) => a.order_index - b.order_index,
+          (a: QuizOption, b: QuizOption) => a.order_index - b.order_index,
         ),
       })),
     );
@@ -50,7 +61,7 @@ export default function QuizEditor({ lessonId }: { lessonId: string }) {
       {
         ...EMPTY_QUIZ,
         order_index: prev.length,
-        quiz_options: EMPTY_QUIZ.quiz_options!.map((o) => ({ ...o })),
+        quiz_options: makeOptions(4),
       } as LessonQuiz,
     ]);
   }
@@ -78,63 +89,66 @@ export default function QuizEditor({ lessonId }: { lessonId: string }) {
     );
   }
 
+  function changeOptionCount(quizIndex: number, count: number) {
+    setQuizzes((prev) =>
+      prev.map((q, i) => {
+        if (i !== quizIndex) return q;
+        const newOpts = makeOptions(count, q.quiz_options);
+        // Clamp correct_index if out of range
+        const ci = Math.min(q.correct_index, count - 1);
+        const cis = (q.correct_indices ?? []).filter((idx) => idx < count);
+        return { ...q, quiz_options: newOpts, correct_index: ci, correct_indices: cis };
+      }),
+    );
+  }
+
+  function toggleMultiCorrect(quizIndex: number, optIndex: number, checked: boolean) {
+    setQuizzes((prev) =>
+      prev.map((q, i) => {
+        if (i !== quizIndex) return q;
+        const prev_indices = q.correct_indices ?? [];
+        const next = checked
+          ? [...prev_indices, optIndex].sort((a, b) => a - b)
+          : prev_indices.filter((x) => x !== optIndex);
+        return { ...q, correct_indices: next };
+      }),
+    );
+  }
+
   async function saveQuiz(index: number) {
     const quiz = quizzes[index];
     setSaving(`${index}`);
     const supabase = createClient();
 
+    const quizPayload = {
+      trigger_at: quiz.trigger_at,
+      question: quiz.question,
+      question_type: quiz.question_type ?? "single",
+      correct_index: quiz.correct_index,
+      correct_indices: quiz.correct_indices ?? [],
+      explanation: quiz.explanation,
+      order_index: quiz.order_index,
+    };
+
     if (quiz.id) {
-      // Update existing quiz
       await supabase
         .from("lesson_quizzes")
-        .update({
-          trigger_at: quiz.trigger_at,
-          question: quiz.question,
-          correct_index: quiz.correct_index,
-          explanation: quiz.explanation,
-          order_index: quiz.order_index,
-        })
+        .update(quizPayload)
         .eq("id", quiz.id);
 
-      // Upsert options
+      // Delete all existing options then re-insert to avoid stale duplicates
+      await supabase.from("quiz_options").delete().eq("quiz_id", quiz.id);
       const options = (quiz.quiz_options ?? []).map((o, j) => ({
-        ...o,
         quiz_id: quiz.id,
+        text: o.text,
+        emoji: o.emoji,
         order_index: j,
       }));
-      for (const opt of options) {
-        if (opt.id) {
-          await supabase
-            .from("quiz_options")
-            .update({
-              text: opt.text,
-              emoji: opt.emoji,
-              order_index: opt.order_index,
-            })
-            .eq("id", opt.id);
-        } else {
-          await supabase
-            .from("quiz_options")
-            .insert({
-              quiz_id: quiz.id,
-              text: opt.text,
-              emoji: opt.emoji,
-              order_index: opt.order_index,
-            });
-        }
-      }
+      await supabase.from("quiz_options").insert(options);
     } else {
-      // Insert new quiz
       const { data: newQuiz } = await supabase
         .from("lesson_quizzes")
-        .insert({
-          lesson_id: lessonId,
-          trigger_at: quiz.trigger_at,
-          question: quiz.question,
-          correct_index: quiz.correct_index,
-          explanation: quiz.explanation,
-          order_index: quiz.order_index,
-        })
+        .insert({ lesson_id: lessonId, ...quizPayload })
         .select()
         .single();
 
@@ -146,13 +160,12 @@ export default function QuizEditor({ lessonId }: { lessonId: string }) {
           order_index: j,
         }));
         await supabase.from("quiz_options").insert(options);
-        setQuizzes((prev) =>
-          prev.map((q, i) => (i === index ? { ...q, id: newQuiz.id } : q)),
-        );
       }
     }
 
     setSaving(null);
+    // Refresh to get DB-assigned IDs — prevents duplicate inserts on re-save
+    await fetchQuizzes();
   }
 
   async function deleteQuiz(index: number) {
@@ -184,136 +197,196 @@ export default function QuizEditor({ lessonId }: { lessonId: string }) {
 
       {quizzes.length === 0 && (
         <p className="text-sm text-gray-400 text-center py-6">
-          Chưa có câu hỏi nào. Thêm câu hỏi để học sinh tương tác trong lúc xem
-          video.
+          Chưa có câu hỏi nào. Thêm câu hỏi để học sinh tương tác trong lúc xem video.
         </p>
       )}
 
       <div className="space-y-6">
-        {quizzes.map((quiz, qi) => (
-          <div
-            key={quiz.id ?? `new-${qi}`}
-            className="border border-gray-100 rounded-xl p-4 space-y-3"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700">
-                Câu hỏi {qi + 1}
-              </span>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => saveQuiz(qi)}
-                  disabled={saving === `${qi}`}
-                  className="text-xs bg-green-50 text-green-700 px-3 py-1 rounded-lg font-medium hover:bg-green-100 disabled:opacity-50 transition"
-                >
-                  {saving === `${qi}` ? "Đang lưu..." : "Lưu"}
-                </button>
-                <button
-                  onClick={() => deleteQuiz(qi)}
-                  className="text-xs bg-red-50 text-red-600 px-3 py-1 rounded-lg font-medium hover:bg-red-100 transition"
-                >
-                  Xóa
-                </button>
-              </div>
-            </div>
+        {quizzes.map((quiz, qi) => {
+          const optCount = quiz.quiz_options?.length ?? 4;
+          const isMulti = (quiz.question_type ?? "single") === "multi";
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs text-gray-500 mb-1 block">
-                  Hiện lúc (giây)
-                </label>
-                <input
-                  type="number"
-                  value={quiz.trigger_at}
-                  onChange={(e) =>
-                    updateQuiz(qi, "trigger_at", parseInt(e.target.value) || 0)
-                  }
-                  className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 text-black placeholder-black"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-gray-500 mb-1 block">
-                  Đáp án đúng (số thứ tự, bắt đầu từ 0)
-                </label>
-                <input
-                  type="number"
-                  value={quiz.correct_index}
-                  min={0}
-                  max={(quiz.quiz_options?.length ?? 1) - 1}
-                  onChange={(e) =>
-                    updateQuiz(
-                      qi,
-                      "correct_index",
-                      parseInt(e.target.value) || 0,
-                    )
-                  }
-                  className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 text-black placeholder-black"
-                />
-              </div>
-              <div className="col-span-2">
-                <label className="text-xs text-gray-500 mb-1 block">
-                  Câu hỏi
-                </label>
-                <input
-                  value={quiz.question}
-                  onChange={(e) => updateQuiz(qi, "question", e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 text-black placeholder-black"
-                  placeholder="Nhập câu hỏi..."
-                />
-              </div>
-              <div className="col-span-2">
-                <label className="text-xs text-gray-500 mb-1 block">
-                  Giải thích sau khi trả lời
-                </label>
-                <input
-                  value={quiz.explanation}
-                  onChange={(e) =>
-                    updateQuiz(qi, "explanation", e.target.value)
-                  }
-                  className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 text-black placeholder-black"
-                  placeholder="Giải thích đáp án đúng..."
-                />
-              </div>
-            </div>
-
-            {/* Options */}
-            <div>
-              <label className="text-xs text-gray-500 mb-2 block">
-                Các lựa chọn
-              </label>
-              <div className="space-y-2">
-                {(quiz.quiz_options ?? []).map((opt, oi) => (
-                  <div
-                    key={oi}
-                    className={`flex gap-2 items-center p-2 rounded-lg ${oi === quiz.correct_index ? "bg-green-50 border border-green-200" : "bg-gray-50"}`}
+          return (
+            <div
+              key={quiz.id ?? `new-${qi}`}
+              className="border border-gray-100 rounded-xl p-4 space-y-4"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-gray-700">
+                  Câu hỏi {qi + 1}
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => saveQuiz(qi)}
+                    disabled={saving === `${qi}`}
+                    className="text-xs bg-green-50 text-green-700 px-3 py-1 rounded-lg font-medium hover:bg-green-100 disabled:opacity-50 transition"
                   >
-                    <span className="text-xs text-gray-400 w-4">{oi}.</span>
-                    <input
-                      value={opt.emoji}
-                      onChange={(e) =>
-                        updateOption(qi, oi, "emoji", e.target.value)
-                      }
-                      className="w-12 border border-gray-200 rounded px-2 py-1 text-sm text-center focus:outline-none focus:ring-2 focus:ring-violet-500 text-black placeholder-black"
-                      placeholder="🔢"
-                    />
-                    <input
-                      value={opt.text}
-                      onChange={(e) =>
-                        updateOption(qi, oi, "text", e.target.value)
-                      }
-                      className="flex-1 border border-gray-200 rounded-lg px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 text-black placeholder-black"
-                      placeholder={`Lựa chọn ${oi + 1}...`}
-                    />
-                    {oi === quiz.correct_index && (
-                      <span className="text-xs text-green-600 font-medium">
-                        ✓ Đúng
-                      </span>
-                    )}
+                    {saving === `${qi}` ? "Đang lưu..." : "Lưu"}
+                  </button>
+                  <button
+                    onClick={() => deleteQuiz(qi)}
+                    className="text-xs bg-red-50 text-red-600 px-3 py-1 rounded-lg font-medium hover:bg-red-100 transition"
+                  >
+                    Xóa
+                  </button>
+                </div>
+              </div>
+
+              {/* Question type + option count */}
+              <div className="flex flex-wrap gap-4">
+                <div>
+                  <p className="text-xs text-gray-500 mb-1.5">Loại câu hỏi</p>
+                  <div className="flex gap-1.5">
+                    {(["single", "multi"] as const).map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => updateQuiz(qi, "question_type", t)}
+                        className={`text-xs px-3 py-1.5 rounded-lg font-medium transition ${
+                          (quiz.question_type ?? "single") === t
+                            ? "bg-violet-600 text-white"
+                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                        }`}
+                      >
+                        {t === "single" ? "Chọn 1 đáp án" : "Chọn nhiều đáp án"}
+                      </button>
+                    ))}
                   </div>
-                ))}
+                </div>
+
+                <div>
+                  <p className="text-xs text-gray-500 mb-1.5">Số lượng đáp án (2–10)</p>
+                  <input
+                    type="number"
+                    min={2}
+                    max={10}
+                    value={optCount}
+                    onChange={(e) => {
+                      const n = Math.min(10, Math.max(2, parseInt(e.target.value) || 2));
+                      changeOptionCount(qi, n);
+                    }}
+                    className="w-20 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 text-black"
+                  />
+                </div>
+              </div>
+
+              {/* Trigger + Question + Explanation */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">
+                    Hiện lúc (giây)
+                  </label>
+                  <input
+                    type="number"
+                    value={quiz.trigger_at}
+                    onChange={(e) =>
+                      updateQuiz(qi, "trigger_at", parseInt(e.target.value) || 0)
+                    }
+                    className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 text-black"
+                  />
+                </div>
+
+                <div className="col-span-2 sm:col-span-1">
+                  <label className="text-xs text-gray-500 mb-1 block">Câu hỏi</label>
+                  <input
+                    value={quiz.question}
+                    onChange={(e) => updateQuiz(qi, "question", e.target.value)}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 text-black"
+                    placeholder="Nhập câu hỏi..."
+                  />
+                </div>
+
+                <div className="col-span-2">
+                  <label className="text-xs text-gray-500 mb-1 block">
+                    Giải thích sau khi trả lời
+                  </label>
+                  <input
+                    value={quiz.explanation}
+                    onChange={(e) => updateQuiz(qi, "explanation", e.target.value)}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 text-black"
+                    placeholder="Giải thích đáp án đúng..."
+                  />
+                </div>
+              </div>
+
+              {/* Options */}
+              <div>
+                <label className="text-xs text-gray-500 mb-2 block">
+                  Đáp án —{" "}
+                  <span className="text-violet-600 font-medium">
+                    {isMulti
+                      ? "tích vào các ô vuông để chọn nhiều đáp án đúng"
+                      : "chọn nút tròn để đánh dấu đáp án đúng"}
+                  </span>
+                </label>
+                <div className="space-y-2">
+                  {(quiz.quiz_options ?? []).map((opt, oi) => {
+                    const isSingleCorrect = !isMulti && oi === quiz.correct_index;
+                    const isMultiCorrect =
+                      isMulti && (quiz.correct_indices ?? []).includes(oi);
+                    const isCorrect = isSingleCorrect || isMultiCorrect;
+
+                    return (
+                      <div
+                        key={oi}
+                        className={`flex gap-2 items-center p-2 rounded-lg border transition ${
+                          isCorrect
+                            ? "bg-green-50 border-green-300"
+                            : "bg-gray-50 border-transparent"
+                        }`}
+                      >
+                        {/* Correct marker */}
+                        {isMulti ? (
+                          <input
+                            type="checkbox"
+                            checked={isMultiCorrect}
+                            onChange={(e) =>
+                              toggleMultiCorrect(qi, oi, e.target.checked)
+                            }
+                            className="accent-violet-600 w-4 h-4 flex-shrink-0"
+                          />
+                        ) : (
+                          <input
+                            type="radio"
+                            name={`correct-${quiz.id ?? qi}`}
+                            checked={isSingleCorrect}
+                            onChange={() => updateQuiz(qi, "correct_index", oi)}
+                            className="accent-violet-600 w-4 h-4 flex-shrink-0"
+                          />
+                        )}
+
+                        <span className="text-xs text-gray-400 w-4 flex-shrink-0">
+                          {oi + 1}.
+                        </span>
+
+                        <input
+                          value={opt.emoji}
+                          onChange={(e) => updateOption(qi, oi, "emoji", e.target.value)}
+                          className="w-12 border border-gray-200 rounded px-2 py-1 text-sm text-center focus:outline-none focus:ring-2 focus:ring-violet-500 text-black"
+                          placeholder="🔢"
+                        />
+
+                        <input
+                          value={opt.text}
+                          onChange={(e) => updateOption(qi, oi, "text", e.target.value)}
+                          className="flex-1 border border-gray-200 rounded-lg px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 text-black"
+                          placeholder={`Lựa chọn ${oi + 1}...`}
+                        />
+
+                        {isCorrect && (
+                          <span className="text-xs text-green-600 font-semibold flex-shrink-0">
+                            ✓ Đúng
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

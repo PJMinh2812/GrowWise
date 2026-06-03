@@ -2,6 +2,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../l10n/app_strings.dart';
 import '../models/task_model.dart';
 import '../models/video_lesson_model.dart';
 import '../services/supabase_service.dart';
@@ -74,6 +75,8 @@ class AppState extends ChangeNotifier {
 
   // Dream items
   List<Map<String, dynamic>> _dreamItems = [];
+  List<Map<String, dynamic>> _dreamPurchaseRequests = [];
+  final Set<String> _approvedDreamIds = {};
 
   // Proof image bytes — keyed by taskId, kept in memory during session
   final Map<String, Uint8List> _taskProofImages = {};
@@ -88,6 +91,9 @@ class AppState extends ChangeNotifier {
 
   // Notifications preference
   bool _notificationsEnabled = true;
+
+  // Locale
+  String _locale = 'vi';
 
   // ── Initialize ─────────────────────────────────────────────────────────────
 
@@ -117,6 +123,7 @@ class AppState extends ChangeNotifier {
       _bondingMessage = settings['bonding_message'] as String? ?? '';
       _notificationsEnabled =
           settings['notifications_enabled'] as bool? ?? true;
+      _locale = settings['locale'] as String? ?? 'vi';
     }
 
     // Load family
@@ -232,9 +239,14 @@ class AppState extends ChangeNotifier {
   bool get hasChild => _childId != null;
   List<Map<String, dynamic>> get dreamItemsList =>
       List.unmodifiable(_dreamItems);
+  List<Map<String, dynamic>> get dreamPurchaseRequests =>
+      List.unmodifiable(_dreamPurchaseRequests);
+  Set<String> get approvedDreamIds => Set.unmodifiable(_approvedDreamIds);
   List<Map<String, String>> get memories => List.unmodifiable(_memories);
   String get bondingMessage => _bondingMessage;
   bool get notificationsEnabled => _notificationsEnabled;
+  String get locale => _locale;
+  AppStrings get strings => AppStrings.of(_locale);
 
   List<TaskModel> get templateTasks =>
       _tasks.where((t) => t.isTemplate).toList();
@@ -302,6 +314,8 @@ class AppState extends ChangeNotifier {
     _xpToNextLevel = 100;
     _badges = [];
     _dreamItems = [];
+    _dreamPurchaseRequests = [];
+    _approvedDreamIds.clear();
     _memories = [];
     _bondingMessage = '';
     _notificationsEnabled = true;
@@ -619,6 +633,14 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  Future<void> setLocale(String locale) async {
+    _locale = locale;
+    notifyListeners();
+    if (!isDemoMode) {
+      await SupabaseService.updateSettings({'locale': locale});
+    }
+  }
+
   // ── Dream Jar mark purchased ───────────────────────────────────────────────
 
   Future<void> markDreamPurchased(int index) async {
@@ -643,6 +665,97 @@ class AppState extends ChangeNotifier {
     if (dreamId != null && !isDemoMode) {
       await SupabaseService.markDreamPurchased(dreamId);
     }
+    _persistChildProfile();
+    notifyListeners();
+  }
+
+  // ── Dream Purchase Request (child xin → parent duyệt) ────────────────────
+
+  void requestDreamPurchase(int index) {
+    if (index < 0 || index >= _dreamItems.length) return;
+    final item = _dreamItems[index];
+    if (item['is_purchased'] as bool? ?? false) return;
+    if ((_totalCoins) < (item['price'] as int)) return;
+    final id = item['id'] as String? ?? 'dream-$index';
+    if (_dreamPurchaseRequests.any((r) => r['id'] == id)) return;
+    _dreamPurchaseRequests.add({
+      'id': id,
+      'dreamIndex': index,
+      'name': item['name'],
+      'price': item['price'],
+      'icon': item['icon'],
+    });
+    notifyListeners();
+  }
+
+  void approveDreamPurchase(String dreamId) {
+    _dreamPurchaseRequests.removeWhere((r) => r['id'] == dreamId);
+    _approvedDreamIds.add(dreamId);
+    notifyListeners();
+  }
+
+  void rejectDreamPurchase(String dreamId) {
+    _dreamPurchaseRequests.removeWhere((r) => r['id'] == dreamId);
+    _approvedDreamIds.remove(dreamId);
+    notifyListeners();
+  }
+
+  Future<void> confirmDreamPurchase(int index, {Uint8List? proofBytes}) async {
+    if (index < 0 || index >= _dreamItems.length) return;
+    final item = _dreamItems[index];
+    final dreamId = item['id'] as String? ?? 'dream-$index';
+    final name = item['name'] as String? ?? '';
+    final icon = item['icon'] as String? ?? '⭐';
+    final price = item['price'] as int? ?? 0;
+
+    _approvedDreamIds.remove(dreamId);
+
+    // Deduct coins (ignore coin check since parent already approved)
+    _totalCoins = (_totalCoins - price).clamp(0, _totalCoins);
+    final fromSave = (price * 0.4).round().clamp(0, _saveJar);
+    final fromShare = (price * 0.2).round().clamp(0, _shareJar);
+    final fromSpend = (price - fromSave - fromShare).clamp(0, _spendJar);
+    _saveJar -= fromSave;
+    _shareJar -= fromShare;
+    _spendJar -= fromSpend;
+    _dreamItems[index] = {...item, 'is_purchased': true, 'progress': 1.0};
+    _updateDreamProgress();
+
+    // Handle proof image
+    String? proofUrl;
+    if (proofBytes != null) {
+      _taskProofImages[dreamId] = proofBytes;
+      if (!isDemoMode) {
+        proofUrl = await SupabaseService.uploadProofImage(taskId: dreamId, imageBytes: proofBytes);
+        proofUrl ??= 'data:image/jpeg;base64,${base64Encode(proofBytes)}';
+      }
+    }
+
+    // Save to memories
+    if (_familyId != null && _childId != null) {
+      if (!isDemoMode) {
+        await SupabaseService.addMemory(
+          familyId: _familyId!,
+          childId: _childId!,
+          taskTitle: 'Mua $name',
+          emoji: icon,
+          note: 'Con đã thực hiện được ước mơ: $name! 🎉',
+          proofImageUrl: proofUrl?.isNotEmpty == true ? proofUrl : null,
+        );
+        await SupabaseService.markDreamPurchased(dreamId);
+      }
+      _memories.insert(0, {
+        'date': _formatDate(DateTime.now().toIso8601String()),
+        'task': 'Mua $name',
+        'emoji': icon,
+        'note': 'Con đã thực hiện được ước mơ: $name! 🎉',
+        'taskId': dreamId,
+        'category': 'Ước mơ',
+        'proofImageUrl': proofUrl ?? '',
+        'mood': 'happy',
+      });
+    }
+
     _persistChildProfile();
     notifyListeners();
   }

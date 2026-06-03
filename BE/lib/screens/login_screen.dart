@@ -77,9 +77,10 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     } catch (e) {
       if (!mounted) return;
+      final s = context.read<AppState>().strings;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Sai email hoặc mật khẩu: ${e.toString()}'),
+          content: Text('${s.wrongCredentials}${e.toString()}'),
           backgroundColor: AppTheme.coral,
         ),
       );
@@ -93,14 +94,16 @@ class _LoginScreenState extends State<LoginScreen> {
       await context.read<AppState>().loginWithGoogle();
     } catch (e) {
       if (!mounted) return;
+      final s = context.read<AppState>().strings;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Google lỗi: ${e.toString()}')),
+        SnackBar(content: Text('${s.googleError}${e.toString()}')),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final s = context.watch<AppState>().strings;
     return Scaffold(
       backgroundColor: AppTheme.surfaceBright,
       body: SafeArea(
@@ -149,7 +152,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         .slideY(begin: 0.2, end: 0),
                     const SizedBox(height: 4),
                     Text(
-                      'Chào mừng trở lại!',
+                      s.welcomeBack,
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
@@ -183,7 +186,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Email',
+                        s.emailLabel,
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -207,7 +210,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'Mật khẩu',
+                        s.passwordLabel,
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -248,7 +251,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 builder: (_) => const ForgotPasswordScreen()),
                           ),
                           child: Text(
-                            'Quên mật khẩu?',
+                            s.forgotPassword,
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 13,
                               color: AppTheme.vibrantPrimary,
@@ -286,7 +289,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                   )
                                 : Text(
-                                    'Đăng nhập',
+                                    s.signIn,
                                     style: GoogleFonts.plusJakartaSans(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w700,
@@ -335,7 +338,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               const SizedBox(width: 10),
                               Text(
-                                'Đăng nhập với Google',
+                                s.signInGoogle,
                                 style: GoogleFonts.plusJakartaSans(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
@@ -367,9 +370,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         color: AppTheme.textSecondary,
                       ),
                       children: [
-                        const TextSpan(text: 'Chưa có tài khoản? '),
+                        TextSpan(text: s.noAccount),
                         TextSpan(
-                          text: 'Đăng ký',
+                          text: s.signUp,
                           style: GoogleFonts.plusJakartaSans(
                             color: AppTheme.vibrantPrimary,
                             fontWeight: FontWeight.w700,

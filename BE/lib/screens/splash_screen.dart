@@ -50,6 +50,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.watch<AppState>().strings;
     return Scaffold(
       backgroundColor: const Color(0xFF0F2027),
       body: Center(
@@ -107,7 +108,7 @@ class _SplashScreenState extends State<SplashScreen> {
             const SizedBox(height: 8),
 
             Text(
-              'Giáo dục tài chính cho trẻ em',
+              s.splashSubtitle,
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 14,
                 color: Colors.white.withValues(alpha: 0.5),

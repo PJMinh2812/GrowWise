@@ -12,6 +12,7 @@ class AchievementScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
+    final s = app.strings;
     final unlockedBadges = app.badges.toSet();
 
     // Group by category
@@ -21,10 +22,10 @@ class AchievementScreen extends StatelessWidget {
     }
 
     final categoryLabels = {
-      AchievementCategory.streak: ('🔥', 'Chuỗi ngày'),
-      AchievementCategory.category: ('📋', 'Theo chủ đề'),
-      AchievementCategory.level: ('⭐', 'Cấp độ'),
-      AchievementCategory.special: ('🎖️', 'Đặc biệt'),
+      AchievementCategory.streak:   ('🔥', s.categoryStreak),
+      AchievementCategory.category: ('📋', s.categoryBadge),
+      AchievementCategory.level:    ('⭐', s.categoryLevel),
+      AchievementCategory.special:  ('🎖️', s.categorySpecial),
     };
 
     return Scaffold(
@@ -33,7 +34,7 @@ class AchievementScreen extends StatelessWidget {
         backgroundColor: AppTheme.surface,
         elevation: 0,
         title: Text(
-          'Bảng thành tích',
+          s.achievementsTitle,
           style: GoogleFonts.plusJakartaSans(
             fontSize: 20, fontWeight: FontWeight.w800, color: AppTheme.textPrimary,
           ),
@@ -50,6 +51,7 @@ class AchievementScreen extends StatelessWidget {
           _SummaryHeader(
             earned: _countEarned(unlockedBadges),
             total: allAchievements.length,
+            s: s,
           ).animate().fadeIn().slideY(begin: 0.1),
           const SizedBox(height: 20),
 
@@ -62,7 +64,7 @@ class AchievementScreen extends StatelessWidget {
               achievements: entry.value,
               unlockedBadges: unlockedBadges,
               customEmoji: app.customBadgeEmoji,
-              onEditEmoji: (a) => _showEmojiPicker(context, a, app),
+              onEditEmoji: (a) => _showEmojiPicker(context, a, app, s),
             ).animate().fadeIn().slideY(begin: 0.1);
           }),
         ],
@@ -75,12 +77,11 @@ class AchievementScreen extends StatelessWidget {
   }
 
   static bool _isUnlocked(Achievement a, Set<String> badges) {
-    // Check if any badge string matches this achievement
     return badgeToAchievementId.entries
         .any((e) => e.value == a.id && badges.any((b) => b.contains(e.key.split(' ').last)));
   }
 
-  void _showEmojiPicker(BuildContext context, Achievement achievement, AppState app) {
+  void _showEmojiPicker(BuildContext context, Achievement achievement, AppState app, dynamic s) {
     final controller = TextEditingController(
       text: app.customBadgeEmoji[achievement.id] ?? achievement.defaultEmoji,
     );
@@ -89,14 +90,14 @@ class AchievementScreen extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: Text(
-          'Đổi hình ảnh "${achievement.name}"',
+          s.changeEmojiTitle(achievement.name),
           style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 16),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Nhập emoji mới (1 ký tự):',
+              s.changeEmojiInstruction,
               style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppTheme.textSecondary),
             ),
             const SizedBox(height: 12),
@@ -114,7 +115,7 @@ class AchievementScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Mặc định: ${achievement.defaultEmoji}',
+              s.defaultEmojiLabel(achievement.defaultEmoji),
               style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppTheme.outline),
             ),
           ],
@@ -125,7 +126,7 @@ class AchievementScreen extends StatelessWidget {
               app.setCustomBadgeEmoji(achievement.id, achievement.defaultEmoji);
               Navigator.pop(ctx);
             },
-            child: Text('Đặt lại', style: GoogleFonts.plusJakartaSans(color: AppTheme.outline)),
+            child: Text(s.resetEmoji, style: GoogleFonts.plusJakartaSans(color: AppTheme.outline)),
           ),
           FilledButton(
             onPressed: () {
@@ -139,7 +140,7 @@ class AchievementScreen extends StatelessWidget {
               backgroundColor: AppTheme.vibrantPrimary,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: Text('Lưu', style: GoogleFonts.plusJakartaSans(color: Colors.white, fontWeight: FontWeight.w700)),
+            child: Text(s.save, style: GoogleFonts.plusJakartaSans(color: Colors.white, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -157,7 +158,8 @@ bool _isUnlocked(Achievement a, Set<String> badges) {
 class _SummaryHeader extends StatelessWidget {
   final int earned;
   final int total;
-  const _SummaryHeader({required this.earned, required this.total});
+  final dynamic s;
+  const _SummaryHeader({required this.earned, required this.total, required this.s});
 
   @override
   Widget build(BuildContext context) {
@@ -183,13 +185,13 @@ class _SummaryHeader extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '$earned / $total thành tích',
+                    s.achievementCount(earned, total),
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 22, fontWeight: FontWeight.w800, color: Colors.white,
                     ),
                   ),
                   Text(
-                    'đã đạt được',
+                    s.unlocked,
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 14, color: Colors.white.withValues(alpha: 0.7),
                     ),
@@ -303,9 +305,10 @@ class _AchievementTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.watch<AppState>().strings;
     return GestureDetector(
       onLongPress: onLongPress,
-      onTap: () => _showDetail(context),
+      onTap: () => _showDetail(context, s),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         padding: const EdgeInsets.all(12),
@@ -352,7 +355,7 @@ class _AchievementTile extends StatelessWidget {
             if (unlocked && onLongPress != null) ...[
               const SizedBox(height: 2),
               Text(
-                'Giữ để đổi',
+                s.holdToChange,
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 9, color: AppTheme.outline,
                 ),
@@ -364,7 +367,7 @@ class _AchievementTile extends StatelessWidget {
     );
   }
 
-  void _showDetail(BuildContext context) {
+  void _showDetail(BuildContext context, dynamic s) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -405,7 +408,7 @@ class _AchievementTile extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                unlocked ? '✅ Đã đạt được' : '🔒 Chưa đạt được',
+                unlocked ? s.unlocked : s.locked,
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 13, fontWeight: FontWeight.w700,
                   color: unlocked ? const Color(0xFF16A34A) : AppTheme.outline,

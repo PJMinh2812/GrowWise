@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../providers/app_state.dart';
 import '../services/supabase_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/validators.dart';
@@ -54,9 +56,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
       _animCtrl.forward(from: 0);
     } catch (e) {
       if (!mounted) return;
+      final s = context.read<AppState>().strings;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Lỗi: ${e.toString()}'),
+          content: Text('${s.errorPrefix}${e.toString()}'),
           backgroundColor: const Color(0xFFEF4444),
         ),
       );
@@ -67,6 +70,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
 
   @override
   Widget build(BuildContext context) {
+    final s = context.watch<AppState>().strings;
     return Scaffold(
       backgroundColor: AppTheme.bg,
       body: Stack(
@@ -102,7 +106,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      _emailSent ? 'Đã gửi email!' : 'Quên mật khẩu?',
+                      _emailSent ? s.emailSentTitle : s.forgotTitle,
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 26,
                         fontWeight: FontWeight.w800,
@@ -111,9 +115,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      _emailSent
-                          ? 'Kiểm tra hộp thư của bạn'
-                          : 'Chúng tôi sẽ giúp bạn lấy lại',
+                      _emailSent ? s.checkInbox : s.forgotSubtitle,
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 14,
                         color: Colors.white.withValues(alpha: 0.85),
@@ -154,8 +156,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                       boxShadow: AppTheme.shadowMd(AppTheme.green),
                     ),
                     child: _emailSent
-                        ? _buildSuccess()
-                        : _buildForm(),
+                        ? _buildSuccess(s)
+                        : _buildForm(s),
                   ),
                 ),
               ),
@@ -166,14 +168,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     );
   }
 
-  Widget _buildForm() {
+  Widget _buildForm(dynamic s) {
     return Form(
       key: _formKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Nhập email đã đăng ký để nhận link đặt lại mật khẩu.',
+            s.forgotInstruction,
             style: GoogleFonts.plusJakartaSans(
               fontSize: 14,
               color: AppTheme.textSecondary,
@@ -182,7 +184,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
-          _Label('Email'),
+          _Label(s.emailLabel),
           const SizedBox(height: 6),
           TextFormField(
             controller: _emailCtrl,
@@ -226,7 +228,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                       )
                     : const Icon(Icons.send_rounded, color: Colors.white),
                 label: Text(
-                  'Gửi link đặt lại mật khẩu',
+                  s.sendResetLink,
                   style: GoogleFonts.plusJakartaSans(
                     fontWeight: FontWeight.w700,
                     fontSize: 15,
@@ -241,7 +243,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
             child: TextButton(
               onPressed: () => Navigator.pop(context),
               child: Text(
-                '← Quay lại đăng nhập',
+                s.backToLogin,
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -255,7 +257,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
     );
   }
 
-  Widget _buildSuccess() {
+  Widget _buildSuccess(dynamic s) {
     return Column(
       children: [
         Container(
@@ -272,7 +274,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
         ),
         const SizedBox(height: 20),
         Text(
-          'Email đã được gửi!',
+          s.emailSentTitle,
           style: GoogleFonts.plusJakartaSans(
             fontSize: 20,
             fontWeight: FontWeight.w800,
@@ -281,7 +283,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
         ),
         const SizedBox(height: 12),
         Text(
-          'Chúng tôi đã gửi link đặt lại mật khẩu đến email của bạn.\n\nVui lòng kiểm tra hộp thư (bao gồm cả thư rác) và làm theo hướng dẫn.',
+          s.emailSentMsg,
           textAlign: TextAlign.center,
           style: GoogleFonts.plusJakartaSans(
             fontSize: 14,
@@ -309,7 +311,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
                 ),
               ),
               child: Text(
-                'Quay lại đăng nhập',
+                s.backToLoginBtn,
                 style: GoogleFonts.plusJakartaSans(
                   fontWeight: FontWeight.w700,
                   fontSize: 15,
@@ -326,7 +328,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
             _animCtrl.forward(from: 0);
           },
           child: Text(
-            'Gửi lại email',
+            s.sendResetLink,
             style: GoogleFonts.plusJakartaSans(
               fontSize: 14,
               fontWeight: FontWeight.w600,
