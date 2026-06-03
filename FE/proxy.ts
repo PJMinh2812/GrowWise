@@ -44,7 +44,7 @@ async function resolveRole(
   }
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const response = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -81,10 +81,8 @@ export async function middleware(request: NextRequest) {
   const { role, isBanned } = await resolveRole(user.id, user.email ?? '')
 
   // Không có quyền hoặc bị ban → cho ở lại login (không redirect ra /lessons)
-  // Login page sẽ tự sign out client-side khi có ?error= param
   if (!role || isBanned) {
     if (isLoginPage) {
-      // Ở trang login rồi, không redirect nữa → tránh loop
       return response
     }
     const errorParam = isBanned ? 'banned' : 'unauthorized'
