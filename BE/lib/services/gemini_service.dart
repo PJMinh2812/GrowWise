@@ -102,4 +102,95 @@ Quy tắc:
     }
     return null;
   }
+
+  /// Gợi ý 4 nhiệm vụ cho phụ huynh dựa trên tuổi trẻ và danh mục.
+  /// Returns list of {title, description, icon, coins} hoặc null nếu lỗi.
+  static Future<List<Map<String, dynamic>>?> suggestTasks({
+    required int childAge,
+    required String category,
+  }) async {
+    final apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
+    if (apiKey.isEmpty) return null;
+
+    final prompt =
+        'Gợi ý 4 nhiệm vụ cho trẻ $childAge tuổi, danh mục "$category". '
+        'Trả về JSON array KHÔNG có markdown, KHÔNG có giải thích:\n'
+        '[{"title":"...","description":"...","icon":"emoji","coins":số}]\n'
+        'Quy tắc: coins từ 5–50 tùy độ khó, description dưới 20 từ tiếng Việt, '
+        'icon là 1 emoji phù hợp.';
+
+    final body = jsonEncode({
+      'contents': [
+        {'role': 'user', 'parts': [{'text': prompt}]},
+      ],
+      'generationConfig': {'temperature': 0.8, 'maxOutputTokens': 512},
+    });
+
+    try {
+      final res = await http
+          .post(Uri.parse('$_endpoint?key=$apiKey'),
+              headers: {'Content-Type': 'application/json'}, body: body)
+          .timeout(const Duration(seconds: 15));
+
+      if (res.statusCode == 200) {
+        final json = jsonDecode(res.body) as Map<String, dynamic>;
+        final text = (((json['candidates'] as List).first['content']
+            as Map<String, dynamic>)['parts'] as List)
+            .first['text'] as String;
+        final match = RegExp(r'\[[\s\S]*?\]').firstMatch(text.trim());
+        if (match != null) {
+          return List<Map<String, dynamic>>.from(
+              jsonDecode(match.group(0)!) as List);
+        }
+      }
+    } catch (e) {
+      debugPrint('[Gemini.suggestTasks] $e');
+    }
+    return null;
+  }
+
+  /// Lời khuyến khích từ Wisy cho ước mơ đang tiết kiệm.
+  static Future<String?> dreamCoach({
+    required String childName,
+    required String dreamName,
+    required int dreamPrice,
+    required int currentCoins,
+  }) async {
+    final apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
+    if (apiKey.isEmpty) return null;
+
+    final percent = dreamPrice > 0
+        ? (currentCoins / dreamPrice * 100).clamp(0.0, 100.0).toStringAsFixed(0)
+        : '0';
+
+    final prompt =
+        'Bạn là Wisy 🌱 của GrowWise. Viết 2–3 câu khuyến khích $childName '
+        'đang tiết kiệm để mua "$dreamName" (giá $dreamPrice xu). '
+        'Hiện tại $childName có $currentCoins xu ($percent% tiến độ). '
+        'Ngắn gọn, vui vẻ, thân thiện với trẻ em. Dùng 1–2 emoji.';
+
+    final body = jsonEncode({
+      'contents': [
+        {'role': 'user', 'parts': [{'text': prompt}]},
+      ],
+      'generationConfig': {'temperature': 0.9, 'maxOutputTokens': 150},
+    });
+
+    try {
+      final res = await http
+          .post(Uri.parse('$_endpoint?key=$apiKey'),
+              headers: {'Content-Type': 'application/json'}, body: body)
+          .timeout(const Duration(seconds: 10));
+
+      if (res.statusCode == 200) {
+        final json = jsonDecode(res.body) as Map<String, dynamic>;
+        final parts = (((json['candidates'] as List).first['content']
+            as Map<String, dynamic>)['parts'] as List);
+        return (parts.first['text'] as String).trim();
+      }
+    } catch (e) {
+      debugPrint('[Gemini.dreamCoach] $e');
+    }
+    return null;
+  }
 }
