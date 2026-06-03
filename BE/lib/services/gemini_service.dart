@@ -120,6 +120,56 @@ Quy tắc:
   static Map<String, dynamic> _noThinkingConfig(Map<String, dynamic> base) =>
       {...base, 'thinkingConfig': {'thinkingBudget': 0}};
 
+  /// Báo cáo tiến trình tuần cho phụ huynh.
+  static Future<String?> weeklyReport({
+    required String childName,
+    required int totalApproved,
+    required int streakDays,
+    required Map<String, int> categoryTaskCounts,
+    required int totalCoins,
+    required List<String> dreamNames,
+  }) async {
+    final apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
+    if (apiKey.isEmpty) return null;
+
+    final cats = categoryTaskCounts.entries
+        .where((e) => e.value > 0)
+        .map((e) => '${e.key}: ${e.value} nhiệm vụ')
+        .join(', ');
+
+    final dreamStr = dreamNames.isNotEmpty ? 'Ước mơ: ${dreamNames.join(', ')}.' : '';
+
+    final prompt =
+        'Bạn là Wisy 🌱 của GrowWise. Viết báo cáo tiến trình ngắn gọn cho phụ huynh '
+        'về bé $childName. Dữ liệu: hoàn thành $totalApproved nhiệm vụ, '
+        'streak $streakDays ngày, tổng $totalCoins xu. '
+        '${cats.isNotEmpty ? "Phân loại: $cats." : ""} $dreamStr\n'
+        'Viết 3–4 câu tiếng Việt: tóm tắt thành tích + 1 lời khuyên cho phụ huynh '
+        'tuần tới. Dùng 1–2 emoji.';
+
+    final body = jsonEncode({
+      'contents': [
+        {'role': 'user', 'parts': [{'text': prompt}]},
+      ],
+      'generationConfig': _noThinkingConfig({'temperature': 0.85, 'maxOutputTokens': 200}),
+    });
+
+    try {
+      final res = await http
+          .post(Uri.parse('$_endpoint?key=$apiKey'),
+              headers: {'Content-Type': 'application/json'}, body: body)
+          .timeout(const Duration(seconds: 15));
+
+      if (res.statusCode == 200) {
+        final decoded = jsonDecode(res.body) as Map<String, dynamic>;
+        return _extractText(decoded);
+      }
+    } catch (e) {
+      debugPrint('[Gemini.weeklyReport] $e');
+    }
+    return null;
+  }
+
   /// Gợi ý 4 nhiệm vụ cho phụ huynh dựa trên tuổi trẻ và danh mục.
   /// Returns list of {title, description, icon, coins} hoặc null nếu lỗi.
   static Future<List<Map<String, dynamic>>?> suggestTasks({

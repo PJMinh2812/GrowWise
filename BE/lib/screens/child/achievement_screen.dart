@@ -55,6 +55,16 @@ class AchievementScreen extends StatelessWidget {
           ).animate().fadeIn().slideY(begin: 0.1),
           const SizedBox(height: 20),
 
+          // Streak calendar
+          _StreakCalendar(
+            streakDays: app.streakDays,
+            approvedDates: app.approvedTasks
+                .where((t) => t.reviewedAt != null)
+                .map((t) => DateUtils.dateOnly(t.reviewedAt!))
+                .toSet(),
+          ).animate(delay: 60.ms).fadeIn().slideY(begin: 0.1),
+          const SizedBox(height: 20),
+
           // Each category
           ...grouped.entries.map((entry) {
             final (emoji, label) = categoryLabels[entry.key]!;
@@ -418,6 +428,133 @@ class _AchievementTile extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+
+// ── Streak Calendar ───────────────────────────────────────────────────────────
+
+class _StreakCalendar extends StatelessWidget {
+  final int streakDays;
+  final Set<DateTime> approvedDates;
+  const _StreakCalendar({required this.streakDays, required this.approvedDates});
+
+  @override
+  Widget build(BuildContext context) {
+    final today = DateUtils.dateOnly(DateTime.now());
+    // Show last 35 days (5 weeks)
+    final days = List.generate(35, (i) => today.subtract(Duration(days: 34 - i)));
+    final weekDayLabels = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppTheme.surfaceContainerHigh, width: 2),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text('🔥', style: TextStyle(fontSize: 20)),
+              const SizedBox(width: 8),
+              Text(
+                'Chuỗi $streakDays ngày',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 15, fontWeight: FontWeight.w800,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '5 tuần gần nhất',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 11, color: AppTheme.outline,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Day-of-week labels
+          Row(
+            children: weekDayLabels.map((d) => Expanded(
+              child: Text(d,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 10, fontWeight: FontWeight.w600,
+                  color: AppTheme.outline,
+                )),
+            )).toList(),
+          ),
+          const SizedBox(height: 6),
+          // Calendar grid
+          ...List.generate(5, (week) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(
+                children: List.generate(7, (dow) {
+                  final day = days[week * 7 + dow];
+                  final isToday = day == today;
+                  final hasTask = approvedDates.contains(day);
+                  final isFuture = day.isAfter(today);
+
+                  return Expanded(
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 2),
+                      height: 30,
+                      decoration: BoxDecoration(
+                        color: isFuture
+                            ? AppTheme.surfaceContainerHigh.withValues(alpha: 0.3)
+                            : hasTask
+                                ? AppTheme.vibrantPrimary
+                                : AppTheme.surfaceContainerHigh,
+                        borderRadius: BorderRadius.circular(8),
+                        border: isToday
+                            ? Border.all(color: AppTheme.vibrantSecondary, width: 2)
+                            : null,
+                      ),
+                      child: hasTask
+                          ? const Center(
+                              child: Text('✓', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                            )
+                          : null,
+                    ),
+                  );
+                }),
+              ),
+            );
+          }),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              _Legend(color: AppTheme.vibrantPrimary, label: 'Có nhiệm vụ'),
+              const SizedBox(width: 12),
+              _Legend(color: AppTheme.surfaceContainerHigh, label: 'Chưa có'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Legend extends StatelessWidget {
+  final Color color;
+  final String label;
+  const _Legend({required this.color, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(width: 12, height: 12, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(3))),
+        const SizedBox(width: 4),
+        Text(label, style: GoogleFonts.plusJakartaSans(fontSize: 10, color: AppTheme.outline)),
+      ],
     );
   }
 }

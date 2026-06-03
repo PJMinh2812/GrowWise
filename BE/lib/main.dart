@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'providers/app_state.dart';
 import 'screens/splash_screen.dart';
+import 'services/notification_service.dart';
 import 'theme/app_theme.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
@@ -74,6 +75,10 @@ Future<void> _bootstrap() async {
   }
 
   await appState.initialize();
+
+  // Init local notifications + request permission
+  await NotificationService.initialize();
+  await NotificationService.requestPermission();
 
   runApp(
     ChangeNotifierProvider.value(value: appState, child: const GrowWiseApp()),

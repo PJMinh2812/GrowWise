@@ -26,10 +26,24 @@ const EMPTY_QUIZ: Omit<LessonQuiz, "id" | "lesson_id"> = {
   quiz_options: makeOptions(4),
 };
 
-export default function QuizEditor({ lessonId }: { lessonId: string }) {
+interface QuizEditorProps {
+  lessonId: string;
+  lessonTitle?: string;
+  lessonDescription?: string;
+  audience?: string;
+}
+
+export default function QuizEditor({
+  lessonId,
+  lessonTitle = "",
+  lessonDescription = "",
+  audience = "child",
+}: QuizEditorProps) {
   const [quizzes, setQuizzes] = useState<LessonQuiz[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
+  const [generatingAi, setGeneratingAi] = useState(false);
+  const [aiCount, setAiCount] = useState(3);
 
   useEffect(() => {
     fetchQuizzes();
@@ -178,21 +192,82 @@ export default function QuizEditor({ lessonId }: { lessonId: string }) {
     setQuizzes((prev) => prev.filter((_, i) => i !== index));
   }
 
+  async function generateAiQuizzes() {
+    if (generatingAi) return;
+    setGeneratingAi(true);
+    try {
+      const res = await fetch("/api/ai-quiz", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: lessonTitle,
+          description: lessonDescription,
+          audience,
+          count: aiCount,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Lỗi AI");
+
+      const newQuizzes: LessonQuiz[] = (data.quizzes as {
+        question: string;
+        options: { emoji: string; text: string }[];
+        correct_index: number;
+        explanation: string;
+      }[]).map((q, idx) => ({
+        trigger_at: 0,
+        question: q.question,
+        question_type: "single" as const,
+        correct_index: q.correct_index ?? 0,
+        correct_indices: [],
+        explanation: q.explanation ?? "",
+        order_index: quizzes.length + idx,
+        quiz_options: (q.options ?? []).map((o, i) => ({
+          text: o.text ?? "",
+          emoji: o.emoji ?? OPTION_EMOJIS[i] ?? "🔘",
+          order_index: i,
+        })),
+      }));
+      setQuizzes((prev) => [...prev, ...newQuizzes]);
+    } catch (e) {
+      alert(`Không thể tạo câu hỏi: ${e}`);
+    }
+    setGeneratingAi(false);
+  }
+
   if (loading)
     return <div className="text-sm text-gray-400">Đang tải câu hỏi...</div>;
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-6">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <h2 className="font-semibold text-gray-900">
           Câu hỏi tương tác ({quizzes.length})
         </h2>
-        <button
-          onClick={addQuiz}
-          className="text-sm bg-violet-50 text-violet-700 px-3 py-1.5 rounded-lg font-medium hover:bg-violet-100 transition"
-        >
-          + Thêm câu hỏi
-        </button>
+        <div className="flex items-center gap-2">
+          {/* AI generate */}
+          <div className="flex items-center gap-1.5 bg-violet-50 border border-violet-200 rounded-lg px-2 py-1">
+            <span className="text-xs text-violet-600 font-medium">Số lượng:</span>
+            <input
+              type="number" min={1} max={10} value={aiCount}
+              onChange={(e) => setAiCount(Math.min(10, Math.max(1, parseInt(e.target.value) || 1)))}
+              className="w-10 text-xs text-center border-0 bg-transparent text-violet-700 font-bold focus:outline-none"
+            />
+          </div>
+          <button
+            onClick={generateAiQuizzes}
+            disabled={generatingAi || !lessonTitle}
+            className="text-xs bg-violet-600 text-white px-3 py-1.5 rounded-lg font-medium hover:bg-violet-700 disabled:opacity-50 transition flex items-center gap-1"
+          >
+            {generatingAi ? "✨ Đang tạo..." : "✨ AI tạo câu hỏi"}
+          </button>
+          <button
+            onClick={addQuiz}
+            className="text-xs bg-gray-50 text-gray-700 border border-gray-200 px-3 py-1.5 rounded-lg font-medium hover:bg-gray-100 transition"
+          >
+            + Thêm thủ công
+          </button>
+        </div>
       </div>
 
       {quizzes.length === 0 && (
