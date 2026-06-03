@@ -63,3 +63,4 @@ app.*.map.json
 # Optional service configs (keep out of repo unless intentionally committed)
 **/google-services.json
 **/GoogleService-Info.plist
+lib/firebase_options.dart
