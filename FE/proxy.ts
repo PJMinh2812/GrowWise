@@ -1,5 +1,48 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { createAdminClient } from '@/lib/supabase-admin'
+
+async function resolveRole(
+  userId: string,
+  userEmail: string,
+): Promise<{ role: string | null; isBanned: boolean }> {
+  const adminEmails = (process.env.ADMIN_EMAILS ?? '')
+    .split(',')
+    .map((e) => e.trim())
+    .filter(Boolean)
+  const isAdminEmail = adminEmails.includes(userEmail)
+
+  try {
+    const admin = createAdminClient()
+    const { data: profile, error } = await admin
+      .from('admin_profiles')
+      .select('role, is_banned, access_granted')
+      .eq('id', userId)
+      .maybeSingle()
+
+    if (error) throw error
+
+    // Bootstrap: tự tạo profile cho admin đầu tiên nếu chưa có
+    if (!profile && isAdminEmail) {
+      await admin
+        .from('admin_profiles')
+        .insert({ id: userId, email: userEmail, role: 'admin', access_granted: true })
+      return { role: 'admin', isBanned: false }
+    }
+
+    if (profile?.is_banned) return { role: null, isBanned: true }
+
+    const hasAccess = profile?.access_granted || isAdminEmail
+    return {
+      role: hasAccess ? (profile?.role ?? 'admin') : null,
+      isBanned: false,
+    }
+  } catch {
+    // Fallback khi SUPABASE_SERVICE_ROLE_KEY chưa set hoặc table chưa tạo:
+    // chỉ dùng ADMIN_EMAILS để xác định quyền
+    return { role: isAdminEmail ? 'admin' : null, isBanned: false }
+  }
+}
 
 export async function proxy(request: NextRequest) {
   const response = NextResponse.next({ request })
@@ -12,62 +55,60 @@ export async function proxy(request: NextRequest) {
         getAll: () => request.cookies.getAll(),
         setAll: (cookiesToSet) => {
           cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
+            response.cookies.set(name, value, options),
           )
         },
       },
-    }
+    },
   )
 
-  const { data: { session } } = await supabase.auth.getSession()
-  const isLoginPage = request.nextUrl.pathname === '/login'
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
-  if (!session && !isLoginPage) {
-    return NextResponse.redirect(new URL('/login', request.url))
+  const pathname = request.nextUrl.pathname
+  const isLoginPage = pathname === '/login'
+
+  // Chưa đăng nhập → chỉ được vào trang login
+  if (!user) {
+    if (!isLoginPage) {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
+    return response
   }
-  if (session && isLoginPage) {
+
+  // Đã đăng nhập → kiểm tra quyền TRƯỚC KHI quyết định redirect
+  const { role, isBanned } = await resolveRole(user.id, user.email ?? '')
+
+  // Không có quyền hoặc bị ban → cho ở lại login (không redirect ra /lessons)
+  if (!role || isBanned) {
+    if (isLoginPage) {
+      return response
+    }
+    const errorParam = isBanned ? 'banned' : 'unauthorized'
+    return NextResponse.redirect(
+      new URL(`/login?error=${errorParam}`, request.url),
+    )
+  }
+
+  // Có quyền + đang ở trang login → vào dashboard
+  if (isLoginPage) {
     return NextResponse.redirect(new URL('/lessons', request.url))
   }
 
-  if (session) {
-    const adminEmails = (process.env.ADMIN_EMAILS ?? '').split(',').map(e => e.trim())
-    const isAdminEmail = adminEmails.includes(session.user.email ?? '')
-
-    // Admin trong ADMIN_EMAILS → bypass DB hoàn toàn
-    if (isAdminEmail) {
-      response.cookies.set('x-user-role', 'admin', { httpOnly: false, sameSite: 'lax', path: '/' })
-      return response
-    }
-
-    // Các user khác → check admin_profiles
-    try {
-      const { data: profile } = await supabase
-        .from('admin_profiles')
-        .select('role, is_banned, access_granted')
-        .eq('id', session.user.id)
-        .single()
-
-      if (!profile?.access_granted || profile?.is_banned) {
-        await supabase.auth.signOut()
-        return NextResponse.redirect(new URL(
-          `/login?error=${profile?.is_banned ? 'banned' : 'unauthorized'}`,
-          request.url
-        ))
-      }
-
-      if (request.nextUrl.pathname.startsWith('/admin') && profile.role !== 'admin') {
-        return NextResponse.redirect(new URL('/lessons', request.url))
-      }
-
-      response.cookies.set('x-user-role', profile.role, { httpOnly: false, sameSite: 'lax', path: '/' })
-    } catch {
-      // Lỗi DB → cho qua, tránh redirect loop
-    }
+  // Phân quyền theo route
+  if (pathname.startsWith('/admin') && role !== 'admin') {
+    return NextResponse.redirect(new URL('/lessons', request.url))
   }
 
+  response.cookies.set('x-user-role', role, {
+    httpOnly: false,
+    sameSite: 'lax',
+    path: '/',
+  })
   return response
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|auth/callback).*)'],
 }
