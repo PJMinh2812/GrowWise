@@ -17,19 +17,20 @@ class ParentLearnScreen extends StatefulWidget {
 class _ParentLearnScreenState extends State<ParentLearnScreen> {
   String? _selectedCategory;
 
-  List<String> _categories(List<VideoLesson> lessons) {
+  List<String?> _categoryKeys(List<VideoLesson> lessons) {
     final cats = lessons.map((l) => l.category).toSet().toList();
-    return ['Tất cả', ...cats];
+    return [null, ...cats];
   }
 
   List<VideoLesson> _filteredLessons(List<VideoLesson> lessons) {
-    if (_selectedCategory == null || _selectedCategory == 'Tất cả') return lessons;
+    if (_selectedCategory == null) return lessons;
     return lessons.where((l) => l.category == _selectedCategory).toList();
   }
 
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
+    final s = app.strings;
     final lessons = app.parentLessons;
 
     return Scaffold(
@@ -39,7 +40,7 @@ class _ParentLearnScreenState extends State<ParentLearnScreen> {
         elevation: 0,
         automaticallyImplyLeading: false,
         title: Text(
-          'Góc học dành cho bố mẹ 🎓',
+          s.parentLearnTitle,
           style: GoogleFonts.plusJakartaSans(
             fontSize: 18, fontWeight: FontWeight.w800, color: AppTheme.textPrimary,
           ),
@@ -48,7 +49,6 @@ class _ParentLearnScreenState extends State<ParentLearnScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
         children: [
-          // Intro card
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -65,13 +65,13 @@ class _ParentLearnScreenState extends State<ParentLearnScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Nuôi dưỡng thói quen tài chính',
+                        s.parentLearnIntro,
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 15, fontWeight: FontWeight.w800, color: AppTheme.textPrimary,
                         ),
                       ),
                       Text(
-                        'Những bài học giúp bạn đồng hành cùng con hiệu quả hơn.',
+                        s.parentLearnSub,
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 12, color: AppTheme.textSecondary, height: 1.4,
                         ),
@@ -84,12 +84,11 @@ class _ParentLearnScreenState extends State<ParentLearnScreen> {
           ).animate().fadeIn().slideY(begin: 0.1),
           const SizedBox(height: 16),
 
-          // Category filter
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-              children: _categories(lessons).map((cat) {
-                final selected = (_selectedCategory ?? 'Tất cả') == cat;
+              children: _categoryKeys(lessons).map((cat) {
+                final selected = _selectedCategory == cat;
                 return GestureDetector(
                   onTap: () => setState(() => _selectedCategory = cat),
                   child: AnimatedContainer(
@@ -101,7 +100,7 @@ class _ParentLearnScreenState extends State<ParentLearnScreen> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      cat,
+                      cat ?? s.filterAll,
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 13, fontWeight: FontWeight.w600,
                         color: selected ? Colors.white : AppTheme.textSecondary,
