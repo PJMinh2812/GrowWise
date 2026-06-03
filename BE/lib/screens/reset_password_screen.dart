@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../providers/app_state.dart';
 import '../theme/app_theme.dart';
 import '../utils/validators.dart';
 import 'login_screen.dart';
@@ -48,9 +50,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       );
     } catch (e) {
       if (!mounted) return;
+      final s = context.read<AppState>().strings;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Lỗi: ${e.toString()}'),
+          content: Text('${s.errorPrefix}${e.toString()}'),
           backgroundColor: AppTheme.coral,
         ),
       );
@@ -69,6 +72,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.watch<AppState>().strings;
     return Scaffold(
       backgroundColor: AppTheme.bg,
       body: Stack(
@@ -104,7 +108,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      _isDone ? 'Đặt lại thành công!' : 'Đặt mật khẩu mới',
+                      _isDone ? s.resetSuccessTitle : s.resetTitle,
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 26,
                         fontWeight: FontWeight.w800,
@@ -113,9 +117,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      _isDone
-                          ? 'Hãy đăng nhập lại với mật khẩu mới'
-                          : 'Nhập mật khẩu mới cho tài khoản của bạn',
+                      _isDone ? s.resetSuccessSub : s.resetSubtitle,
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 14,
                         color: Colors.white.withValues(alpha: 0.85),
@@ -139,7 +141,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   borderRadius: BorderRadius.circular(28),
                   boxShadow: AppTheme.shadowMd(AppTheme.green),
                 ),
-                child: _isDone ? _buildSuccess() : _buildForm(),
+                child: _isDone ? _buildSuccess(s) : _buildForm(s),
               ),
             ),
           ),
@@ -148,13 +150,13 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     );
   }
 
-  Widget _buildForm() {
+  Widget _buildForm(dynamic s) {
     return Form(
       key: _formKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _Label('Mật khẩu mới'),
+          _Label(s.newPassword),
           const SizedBox(height: 6),
           TextFormField(
             controller: _passCtrl,
@@ -162,7 +164,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             validator: Validators.password,
             autovalidateMode: AutovalidateMode.onUserInteraction,
             decoration: InputDecoration(
-              hintText: 'Tối thiểu 6 ký tự',
+              hintText: s.passwordMin,
               prefixIcon: const Icon(Icons.lock_outline, size: 20, color: AppTheme.textHint),
               suffixIcon: IconButton(
                 icon: Icon(
@@ -176,7 +178,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           ),
           const SizedBox(height: 18),
 
-          _Label('Xác nhận mật khẩu'),
+          _Label(s.confirmPassword),
           const SizedBox(height: 6),
           TextFormField(
             controller: _confirmCtrl,
@@ -184,7 +186,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             validator: Validators.confirmPassword(_passCtrl.text),
             autovalidateMode: AutovalidateMode.onUserInteraction,
             decoration: InputDecoration(
-              hintText: 'Nhập lại mật khẩu mới',
+              hintText: s.reenterNew,
               prefixIcon: const Icon(Icons.lock_outline, size: 20, color: AppTheme.textHint),
               suffixIcon: IconButton(
                 icon: Icon(
@@ -222,7 +224,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                       )
                     : Text(
-                        'Cập nhật mật khẩu',
+                        s.updatePassword,
                         style: GoogleFonts.plusJakartaSans(
                           fontWeight: FontWeight.w700,
                           fontSize: 15,
@@ -237,7 +239,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     );
   }
 
-  Widget _buildSuccess() {
+  Widget _buildSuccess(dynamic s) {
     return Column(
       children: [
         Container(
@@ -254,7 +256,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         ),
         const SizedBox(height: 20),
         Text(
-          'Mật khẩu đã được cập nhật!',
+          s.passwordUpdated,
           style: GoogleFonts.plusJakartaSans(
             fontSize: 18,
             fontWeight: FontWeight.w800,
@@ -264,7 +266,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         ),
         const SizedBox(height: 12),
         Text(
-          'Bạn có thể đăng nhập lại với mật khẩu mới.',
+          s.canLoginAgain,
           textAlign: TextAlign.center,
           style: GoogleFonts.plusJakartaSans(
             fontSize: 14,
@@ -292,7 +294,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 ),
               ),
               child: Text(
-                'Đăng nhập ngay',
+                s.loginNow,
                 style: GoogleFonts.plusJakartaSans(
                   fontWeight: FontWeight.w700,
                   fontSize: 15,

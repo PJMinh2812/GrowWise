@@ -21,42 +21,20 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
 
-  static const _pageData = [
-    _PageData(
-      emoji: '🌱',
-      title: 'Chào mừng đến GrowWise!',
-      description: 'Nền tảng giáo dục tài chính cho trẻ 6–12 tuổi. Cùng con học quản lý tiền thông qua trò chơi!',
-      gradient: [Color(0xFF3DBE6E), Color(0xFF22A65B)],
-      bgColor: Color(0xFFE8F8EF),
-    ),
-    _PageData(
-      emoji: '🏦',
-      title: 'Phương pháp 3 Hũ',
-      description: 'Tiêu dùng • Tiết kiệm • Sẻ chia\nCon học phân chia tài chính từ nhỏ với phương pháp 3 hũ kinh điển.',
-      gradient: [Color(0xFF5B5BD6), Color(0xFF4040C0)],
-      bgColor: Color(0xFFEEEEFA),
-    ),
-    _PageData(
-      emoji: '🗺️',
-      title: 'Nhiệm vụ Gamification',
-      description: 'Bố mẹ giao việc nhà → Con hoàn thành → Nhận Xu thưởng! Học trách nhiệm qua trò chơi thú vị.',
-      gradient: [Color(0xFFF59E0B), Color(0xFFD97706)],
-      bgColor: Color(0xFFFEF3C7),
-    ),
-    _PageData(
-      emoji: '🤖',
-      title: 'AI Bonding Reminder',
-      description: 'AI nhắc nhở bố mẹ khen con, gửi Voice Note. Tăng kết nối tình cảm gia đình mỗi ngày.',
-      gradient: [Color(0xFFEC4899), Color(0xFFDB2777)],
-      bgColor: Color(0xFFFCE7F3),
-    ),
-    _PageData(
-      emoji: '⭐',
-      title: 'Dream Jar',
-      description: 'Con đặt mục tiêu mua đồ yêu thích. Tích Xu từ nhiệm vụ để đạt ước mơ!',
-      gradient: [Color(0xFFA855F7), Color(0xFF7C3AED)],
-      bgColor: Color(0xFFF3E8FF),
-    ),
+  static const _pageEmojis = ['🌱', '🏦', '🗺️', '🤖', '⭐'];
+  static const _pageGradients = [
+    [Color(0xFF3DBE6E), Color(0xFF22A65B)],
+    [Color(0xFF5B5BD6), Color(0xFF4040C0)],
+    [Color(0xFFF59E0B), Color(0xFFD97706)],
+    [Color(0xFFEC4899), Color(0xFFDB2777)],
+    [Color(0xFFA855F7), Color(0xFF7C3AED)],
+  ];
+  static const _pageBgColors = [
+    Color(0xFFE8F8EF),
+    Color(0xFFEEEEFA),
+    Color(0xFFFEF3C7),
+    Color(0xFFFCE7F3),
+    Color(0xFFF3E8FF),
   ];
 
   @override
@@ -87,7 +65,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   }
 
   void _nextPage() {
-    if (_currentPage < _pageData.length - 1) {
+    if (_currentPage < _pageEmojis.length - 1) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 400),
         curve: Curves.easeInOutCubic,
@@ -116,10 +94,16 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   @override
   Widget build(BuildContext context) {
-    final page = _pageData[_currentPage];
+    final s = context.watch<AppState>().strings;
+    final gradient = _pageGradients[_currentPage];
+    final bgColor = _pageBgColors[_currentPage];
+
+    final titles = [s.onb1Title, s.onb2Title, s.onb3Title, s.onb4Title, s.onb5Title];
+    final descs  = [s.onb1Desc,  s.onb2Desc,  s.onb3Desc,  s.onb4Desc,  s.onb5Desc];
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 400),
-      color: page.bgColor,
+      color: bgColor,
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: SafeArea(
@@ -132,14 +116,14 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     _DotIndicator(
-                      count: _pageData.length,
+                      count: _pageEmojis.length,
                       current: _currentPage,
-                      gradient: page.gradient,
+                      gradient: gradient,
                     ),
                     TextButton(
                       onPressed: _finish,
                       child: Text(
-                        'Bỏ qua',
+                        s.skip,
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
@@ -156,9 +140,12 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 child: PageView.builder(
                   controller: _pageController,
                   onPageChanged: _onPageChanged,
-                  itemCount: _pageData.length,
+                  itemCount: _pageEmojis.length,
                   itemBuilder: (context, i) => _OnboardingPageView(
-                    data: _pageData[i],
+                    emoji: _pageEmojis[i],
+                    title: titles[i],
+                    description: descs[i],
+                    gradient: _pageGradients[i],
                     fadeAnim: _fadeAnim,
                     slideAnim: _slideAnim,
                   ),
@@ -175,14 +162,14 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                       child: DecoratedBox(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
-                            colors: page.gradient,
+                            colors: gradient,
                             begin: Alignment.centerLeft,
                             end: Alignment.centerRight,
                           ),
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: page.gradient.first.withValues(alpha: 0.4),
+                              color: gradient.first.withValues(alpha: 0.4),
                               blurRadius: 16,
                               offset: const Offset(0, 6),
                             ),
@@ -199,9 +186,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                             ),
                           ),
                           child: Text(
-                            _currentPage == _pageData.length - 1
-                                ? 'Bắt đầu ngay! 🚀'
-                                : 'Tiếp theo →',
+                            _currentPage == _pageEmojis.length - 1
+                                ? s.getStarted
+                                : s.next,
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
@@ -213,7 +200,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                     ),
                     const SizedBox(height: 14),
                     Text(
-                      '${_currentPage + 1} / ${_pageData.length}',
+                      '${_currentPage + 1} / ${_pageEmojis.length}',
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 13,
                         color: AppTheme.textHint,
@@ -230,29 +217,19 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   }
 }
 
-class _PageData {
+class _OnboardingPageView extends StatelessWidget {
   final String emoji;
   final String title;
   final String description;
   final List<Color> gradient;
-  final Color bgColor;
-
-  const _PageData({
-    required this.emoji,
-    required this.title,
-    required this.description,
-    required this.gradient,
-    required this.bgColor,
-  });
-}
-
-class _OnboardingPageView extends StatelessWidget {
-  final _PageData data;
   final Animation<double> fadeAnim;
   final Animation<Offset> slideAnim;
 
   const _OnboardingPageView({
-    required this.data,
+    required this.emoji,
+    required this.title,
+    required this.description,
+    required this.gradient,
     required this.fadeAnim,
     required this.slideAnim,
   });
@@ -275,21 +252,21 @@ class _OnboardingPageView extends StatelessWidget {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      data.gradient.first.withValues(alpha: 0.15),
-                      data.gradient.last.withValues(alpha: 0.08),
+                      gradient.first.withValues(alpha: 0.15),
+                      gradient.last.withValues(alpha: 0.08),
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: data.gradient.first.withValues(alpha: 0.25),
+                    color: gradient.first.withValues(alpha: 0.25),
                     width: 2,
                   ),
                 ),
                 child: Center(
                   child: Text(
-                    data.emoji,
+                    emoji,
                     style: const TextStyle(fontSize: 72),
                   ),
                 ),
@@ -299,10 +276,10 @@ class _OnboardingPageView extends StatelessWidget {
               // Gradient title
               ShaderMask(
                 shaderCallback: (bounds) => LinearGradient(
-                  colors: data.gradient,
+                  colors: gradient,
                 ).createShader(bounds),
                 child: Text(
-                  data.title,
+                  title,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 26,
                     fontWeight: FontWeight.w800,
@@ -314,7 +291,7 @@ class _OnboardingPageView extends StatelessWidget {
               const SizedBox(height: 16),
 
               Text(
-                data.description,
+                description,
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 15,
                   height: 1.7,

@@ -241,6 +241,13 @@ class _HomeTab extends StatelessWidget {
           _ReviewNowSection(tasks: app.submittedTasks).animate(delay: 240.ms).fadeIn().slideY(begin: 0.1),
         ],
 
+        // Dream Purchase Requests
+        if (app.dreamPurchaseRequests.isNotEmpty) ...[
+          const SizedBox(height: 28),
+          _DreamRequestsSection(requests: app.dreamPurchaseRequests)
+              .animate(delay: 260.ms).fadeIn().slideY(begin: 0.1),
+        ],
+
         // All Tasks
         const SizedBox(height: 28),
         _AllTasksSection(app: app).animate(delay: 320.ms).fadeIn().slideY(begin: 0.1),
@@ -818,6 +825,127 @@ class _ApprovedTasksSection extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+class _DreamRequestsSection extends StatelessWidget {
+  final List<Map<String, dynamic>> requests;
+  const _DreamRequestsSection({required this.requests});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Text('🌟', style: TextStyle(fontSize: 22)),
+            const SizedBox(width: 8),
+            Text(
+              'Con muốn mua',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 22, fontWeight: FontWeight.w700, color: AppTheme.textPrimary,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+              decoration: BoxDecoration(
+                color: AppTheme.secondaryFixed,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '${requests.length}',
+                style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.onSecondaryFixed),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Con đã tích đủ xu, đang chờ bạn duyệt',
+          style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppTheme.outline),
+        ),
+        const SizedBox(height: 12),
+        ...requests.map((req) => Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: _DreamRequestCard(req: req),
+        )),
+      ],
+    );
+  }
+}
+
+class _DreamRequestCard extends StatelessWidget {
+  final Map<String, dynamic> req;
+  const _DreamRequestCard({required this.req});
+
+  @override
+  Widget build(BuildContext context) {
+    final dreamId = req['id'] as String;
+    final name = req['name'] as String? ?? '';
+    final price = req['price'] as int? ?? 0;
+    final icon = req['icon'] as String? ?? '⭐';
+    final app = context.read<AppState>();
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.secondaryFixed,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: AppTheme.secondaryFixedDim, width: 2),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceBright,
+              shape: BoxShape.circle,
+              border: Border.all(color: AppTheme.secondaryFixedDim, width: 2),
+            ),
+            child: Text(icon, style: const TextStyle(fontSize: 22)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(name, style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
+                Text('$price xu', style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.vibrantSecondary)),
+              ],
+            ),
+          ),
+          // Reject
+          GestureDetector(
+            onTap: () => app.rejectDreamPurchase(dreamId),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFE4E4),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFFFB8B8), width: 2),
+              ),
+              child: Text('Từ chối', style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFFEF4444))),
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Approve
+          GestureDetector(
+            onTap: () => app.approveDreamPurchase(dreamId),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: AppTheme.vibrantPrimary,
+                borderRadius: BorderRadius.circular(16),
+                border: const Border(bottom: BorderSide(color: AppTheme.onPrimaryFixedVariant, width: 3)),
+              ),
+              child: Text('Duyệt', style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white)),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

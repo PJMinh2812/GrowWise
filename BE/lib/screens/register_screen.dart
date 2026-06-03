@@ -85,8 +85,9 @@ class _RegisterScreenState extends State<RegisterScreen>
 
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
+    final s = context.read<AppState>().strings;
     if (!_agreedToTerms) {
-      _showError('Vui lòng đồng ý với điều khoản sử dụng');
+      _showError(s.errTermsRequired);
       return;
     }
     setState(() => _isLoading = true);
@@ -104,13 +105,14 @@ class _RegisterScreenState extends State<RegisterScreen>
       }
     } on AuthException catch (e) {
       if (!mounted) return;
+      final s = context.read<AppState>().strings;
       String msg;
       switch (e.statusCode) {
         case '422':
-          msg = 'Email đã được đăng ký. Vui lòng dùng email khác.';
+          msg = s.errEmailExists;
           break;
         case '429':
-          msg = 'Quá nhiều yêu cầu. Vui lòng thử lại sau.';
+          msg = s.errTooManyReqs;
           break;
         default:
           msg = e.message;
@@ -118,7 +120,8 @@ class _RegisterScreenState extends State<RegisterScreen>
       _showError(msg);
     } catch (e) {
       if (!mounted) return;
-      _showError('Lỗi đăng ký: ${e.toString()}');
+      final s = context.read<AppState>().strings;
+      _showError('${s.errRegister}${e.toString()}');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -131,6 +134,7 @@ class _RegisterScreenState extends State<RegisterScreen>
   }
 
   void _showEmailSentDialog() {
+    final s = context.read<AppState>().strings;
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -142,7 +146,7 @@ class _RegisterScreenState extends State<RegisterScreen>
             const Text('📧', style: TextStyle(fontSize: 56)),
             const SizedBox(height: 14),
             Text(
-              'Xác nhận email',
+              s.confirmEmailTitle,
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 22,
                 fontWeight: FontWeight.w800,
@@ -151,7 +155,7 @@ class _RegisterScreenState extends State<RegisterScreen>
             ),
             const SizedBox(height: 10),
             Text(
-              'Chúng tôi đã gửi link xác nhận đến\n${_emailCtrl.text.trim()}\n\nVui lòng kiểm tra email và nhấn vào link xác nhận.',
+              s.confirmEmailMsg(_emailCtrl.text.trim()),
               textAlign: TextAlign.center,
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 14,
@@ -186,7 +190,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                   ),
                 ),
                 child: Text(
-                  'Đến trang Đăng nhập',
+                  s.goToLogin,
                   style: GoogleFonts.plusJakartaSans(
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
@@ -202,6 +206,7 @@ class _RegisterScreenState extends State<RegisterScreen>
 
   @override
   Widget build(BuildContext context) {
+    final s = context.watch<AppState>().strings;
     return Scaffold(
       body: Stack(
         children: [
@@ -236,7 +241,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                       ),
                       const SizedBox(height: 10),
                       Text(
-                        'Tạo tài khoản',
+                        s.createAccount,
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 26,
                           fontWeight: FontWeight.w800,
@@ -259,7 +264,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _Label('Họ và tên'),
+                              _Label(s.fullName),
                               const SizedBox(height: 6),
                               TextFormField(
                                 controller: _nameCtrl,
@@ -278,7 +283,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                               ),
                               const SizedBox(height: 16),
 
-                              _Label('Email'),
+                              _Label(s.emailLabel),
                               const SizedBox(height: 6),
                               TextFormField(
                                 controller: _emailCtrl,
@@ -297,7 +302,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                               ),
                               const SizedBox(height: 16),
 
-                              _Label('Mật khẩu'),
+                              _Label(s.passwordLabel),
                               const SizedBox(height: 6),
                               TextFormField(
                                 controller: _passCtrl,
@@ -306,7 +311,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                 autovalidateMode:
                                     AutovalidateMode.onUserInteraction,
                                 decoration: InputDecoration(
-                                  hintText: 'Tối thiểu 6 ký tự',
+                                  hintText: s.passwordMin,
                                   prefixIcon: const Icon(
                                     Icons.lock_outline,
                                     size: 20,
@@ -328,7 +333,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                               ),
                               const SizedBox(height: 16),
 
-                              _Label('Xác nhận mật khẩu'),
+                              _Label(s.confirmPassword),
                               const SizedBox(height: 6),
                               TextFormField(
                                 controller: _confirmCtrl,
@@ -339,7 +344,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                 autovalidateMode:
                                     AutovalidateMode.onUserInteraction,
                                 decoration: InputDecoration(
-                                  hintText: 'Nhập lại mật khẩu',
+                                  hintText: s.reenterPassword,
                                   prefixIcon: const Icon(
                                     Icons.lock_outline,
                                     size: 20,
@@ -386,7 +391,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                     const SizedBox(width: 10),
                                     Expanded(
                                       child: Text(
-                                        'Tôi đồng ý với Điều khoản sử dụng và Chính sách bảo mật',
+                                        s.termsAgreement,
                                         style: GoogleFonts.plusJakartaSans(
                                           fontSize: 13,
                                           color: AppTheme.textSecondary,
@@ -431,7 +436,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                             ),
                                           )
                                         : Text(
-                                            'Tạo tài khoản',
+                                            s.createAccount,
                                             style: GoogleFonts.plusJakartaSans(
                                               fontSize: 16,
                                               fontWeight: FontWeight.w700,
@@ -452,7 +457,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 12),
                                     child: Text(
-                                      'hoặc',
+                                      s.orText,
                                       style: GoogleFonts.plusJakartaSans(
                                           fontSize: 13,
                                           color: AppTheme.textHint),
@@ -473,6 +478,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                       : () async {
                                           setState(
                                               () => _isGoogleLoading = true);
+                                          final googleErrorPrefix = context.read<AppState>().strings.googleError;
                                           try {
                                             await context
                                                 .read<AppState>()
@@ -480,7 +486,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                           } catch (e) {
                                             if (mounted) {
                                               _showError(
-                                                  'Lỗi Google: ${e.toString()}');
+                                                  '$googleErrorPrefix${e.toString()}');
                                             }
                                           } finally {
                                             if (mounted) {
@@ -533,7 +539,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                             ),
                                             const SizedBox(width: 10),
                                             Text(
-                                              'Tiếp tục với Google',
+                                              s.continueGoogle,
                                               style:
                                                   GoogleFonts.plusJakartaSans(
                                                 fontSize: 15,
@@ -553,7 +559,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text(
-                                      'Đã có tài khoản? ',
+                                      s.alreadyAccount,
                                       style: GoogleFonts.plusJakartaSans(
                                         fontSize: 14,
                                         color: AppTheme.textSecondary,
@@ -567,7 +573,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                                 const LoginScreen()),
                                       ),
                                       child: Text(
-                                        'Đăng nhập',
+                                        s.signIn,
                                         style: GoogleFonts.plusJakartaSans(
                                           fontSize: 14,
                                           fontWeight: FontWeight.w700,

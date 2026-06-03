@@ -8,12 +8,13 @@ import 'providers/app_state.dart';
 import 'screens/splash_screen.dart';
 import 'theme/app_theme.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await dotenv.load(fileName: '.env');
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   try {
     await Supabase.initialize(

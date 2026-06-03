@@ -34,6 +34,7 @@ class _ChildTaskListState extends State<ChildTaskList>
 
   @override
   Widget build(BuildContext context) {
+    final s = context.watch<AppState>().strings;
     return Consumer<AppState>(
       builder: (context, app, child) {
         final pending = app.pendingTasks;
@@ -45,7 +46,7 @@ class _ChildTaskListState extends State<ChildTaskList>
           backgroundColor: AppTheme.surfaceBright,
           body: Column(
             children: [
-              _buildHeader(todo.length, approved.length),
+              _buildHeader(todo.length, approved.length, s),
               Expanded(
                 child: TabBarView(
                   controller: _tabCtrl,
@@ -62,7 +63,7 @@ class _ChildTaskListState extends State<ChildTaskList>
     );
   }
 
-  Widget _buildHeader(int todoCount, int doneCount) {
+  Widget _buildHeader(int todoCount, int doneCount, dynamic s) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
       decoration: BoxDecoration(
@@ -87,7 +88,7 @@ class _ChildTaskListState extends State<ChildTaskList>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Nhiệm vụ',
+                    s.tasksTitle,
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 32,
                       fontWeight: FontWeight.w800,
@@ -96,7 +97,7 @@ class _ChildTaskListState extends State<ChildTaskList>
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '$todoCount việc cần làm · $doneCount đã xong',
+                    s.taskSubtitle(todoCount, doneCount),
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
@@ -108,8 +109,8 @@ class _ChildTaskListState extends State<ChildTaskList>
               GestureDetector(
                 onTap: () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Chỉ Bố/Mẹ mới có thể thêm nhiệm vụ mới!'),
+                    SnackBar(
+                      content: Text(s.parentOnlyMsg),
                     ),
                   );
                 },
@@ -166,8 +167,8 @@ class _ChildTaskListState extends State<ChildTaskList>
                 fontSize: 14,
               ),
               tabs: [
-                Tab(text: 'Cần làm ($todoCount)'),
-                Tab(text: 'Đã xong ($doneCount)'),
+                Tab(text: '${s.tabTodo} ($todoCount)'),
+                Tab(text: '${s.tabDone} ($doneCount)'),
               ],
             ),
           ),
@@ -185,6 +186,7 @@ class _TaskSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.watch<AppState>().strings;
     if (tasks.isEmpty) {
       return Center(
         child: Padding(
@@ -219,9 +221,7 @@ class _TaskSection extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  showAction
-                      ? 'Không có việc gì cần làm!'
-                      : 'Chưa hoàn thành việc nào',
+                  showAction ? s.emptyTodo : s.tabDone,
                   textAlign: TextAlign.center,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 24,
@@ -231,9 +231,7 @@ class _TaskSection extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  showAction
-                      ? 'Bố/Mẹ chưa giao việc gì hôm nay'
-                      : 'Hãy hoàn thành nhiệm vụ để tích lũy Xu nhé!',
+                  showAction ? s.noTasksSub : s.emptyDoneSub,
                   textAlign: TextAlign.center,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 16,
@@ -264,7 +262,7 @@ class _TaskSection extends StatelessWidget {
                           const Icon(Icons.explore, color: Colors.white),
                           const SizedBox(width: 8),
                           Text(
-                            'Khám phá hoạt động khác',
+                            s.exploreOther,
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
@@ -303,6 +301,7 @@ class _TaskCardItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.watch<AppState>().strings;
     final statusColor = task.status == TaskStatus.pending
         ? AppTheme.vibrantPrimary
         : (task.status == TaskStatus.submitted
@@ -385,7 +384,7 @@ class _TaskCardItem extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Text(
-                  '+${task.coinReward} Xu',
+                  '+${task.coinReward} ${s.coins}',
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
@@ -422,7 +421,7 @@ class _TaskCardItem extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Đã làm xong — Nộp bằng chứng',
+                      s.submitProofBtn,
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
@@ -448,7 +447,7 @@ class _TaskCardItem extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Đang chờ Bố/Mẹ duyệt...',
+                  s.waitingReview,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -492,20 +491,18 @@ class _SubmitProofSheetState extends State<_SubmitProofSheet> {
       }
     } catch (e) {
       if (!mounted) return;
+      final s = context.read<AppState>().strings;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Không thể chọn ảnh: ${e.toString()}')),
+        SnackBar(content: Text('${s.errPickImage}${e.toString()}')),
       );
     }
   }
 
   Future<void> _submit() async {
+    final s = context.read<AppState>().strings;
     if (_photoBytes == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Vui lòng chụp hoặc chọn ảnh bằng chứng trước khi nộp!',
-          ),
-        ),
+        SnackBar(content: Text(s.errNoPhoto)),
       );
       return;
     }
@@ -518,16 +515,17 @@ class _SubmitProofSheetState extends State<_SubmitProofSheet> {
       if (!mounted) return;
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('📸 Đã nộp bài! Đợi Bố/Mẹ duyệt nhé 🎉'),
+        SnackBar(
+          content: Text(s.submittedMsg),
           backgroundColor: AppTheme.green,
         ),
       );
     } catch (e) {
       if (!mounted) return;
+      final s2 = context.read<AppState>().strings;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Lỗi: ${e.toString()}'),
+          content: Text('${s2.errorPrefix}${e.toString()}'),
           backgroundColor: AppTheme.coral,
         ),
       );
@@ -538,6 +536,7 @@ class _SubmitProofSheetState extends State<_SubmitProofSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.watch<AppState>().strings;
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -561,7 +560,7 @@ class _SubmitProofSheetState extends State<_SubmitProofSheet> {
             ),
             const SizedBox(height: 20),
             Text(
-              'Nộp bằng chứng hoàn thành',
+              s.submitProofTitle,
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
@@ -609,7 +608,7 @@ class _SubmitProofSheetState extends State<_SubmitProofSheet> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Chụp hoặc chọn ảnh bằng chứng',
+                            s.photoHint,
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
@@ -617,7 +616,7 @@ class _SubmitProofSheetState extends State<_SubmitProofSheet> {
                             ),
                           ),
                           Text(
-                            '(Bắt buộc)',
+                            s.required_,
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 12,
                               color: AppTheme.outline,
@@ -637,7 +636,7 @@ class _SubmitProofSheetState extends State<_SubmitProofSheet> {
                     onPressed: () => _pickImage(ImageSource.camera),
                     icon: const Icon(Icons.camera_alt_outlined, size: 18),
                     label: Text(
-                      'Chụp ảnh',
+                      s.takePhoto,
                       style: GoogleFonts.plusJakartaSans(
                         fontWeight: FontWeight.w600,
                       ),
@@ -658,7 +657,7 @@ class _SubmitProofSheetState extends State<_SubmitProofSheet> {
                     onPressed: () => _pickImage(ImageSource.gallery),
                     icon: const Icon(Icons.photo_library_outlined, size: 18),
                     label: Text(
-                      'Thư viện',
+                      s.gallery,
                       style: GoogleFonts.plusJakartaSans(
                         fontWeight: FontWeight.w600,
                       ),
@@ -707,7 +706,7 @@ class _SubmitProofSheetState extends State<_SubmitProofSheet> {
                         )
                       : const Icon(Icons.check_rounded, color: Colors.white),
                   label: Text(
-                    _isSubmitting ? 'Đang nộp...' : 'Nộp bài cho Bố/Mẹ duyệt',
+                    _isSubmitting ? s.submitting : s.submitFinal,
                     style: GoogleFonts.plusJakartaSans(
                       fontWeight: FontWeight.w700,
                       fontSize: 15,

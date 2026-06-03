@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -43,6 +43,7 @@ class _ChildDashboardState extends State<ChildDashboard> {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.watch<AppState>().strings;
     return Theme(
       data: AppTheme.childTheme().copyWith(
         scaffoldBackgroundColor: AppTheme.surfaceBright,
@@ -59,7 +60,7 @@ class _ChildDashboardState extends State<ChildDashboard> {
             );
           }),
         ),
-        bottomNavigationBar: _buildBottomNav(),
+        bottomNavigationBar: _buildBottomNav(s),
       ),
     );
   }
@@ -110,6 +111,7 @@ class _ChildDashboardState extends State<ChildDashboard> {
 
   void _showLogoutSheet(BuildContext context) {
     final app = context.read<AppState>();
+    final s = app.strings;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -159,7 +161,7 @@ class _ChildDashboardState extends State<ChildDashboard> {
                     const Icon(Icons.logout_rounded, color: Color(0xFFEF4444), size: 22),
                     const SizedBox(width: 10),
                     Text(
-                      'Đăng xuất',
+                      s.signOut,
                       style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w700, color: const Color(0xFFEF4444)),
                     ),
                   ],
@@ -172,7 +174,7 @@ class _ChildDashboardState extends State<ChildDashboard> {
     );
   }
 
-  Widget _buildBottomNav() {
+  Widget _buildBottomNav(dynamic s) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
@@ -191,11 +193,11 @@ class _ChildDashboardState extends State<ChildDashboard> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _buildNavItem(0, Icons.home_filled, Icons.home_outlined, 'Trang chủ'),
-            _buildNavItem(1, Icons.assignment, Icons.assignment_outlined, 'Nhiệm vụ'),
-            _buildNavItem(2, Icons.savings, Icons.savings_outlined, '3 Hũ'),
-            _buildNavItem(3, Icons.stars, Icons.stars_outlined, 'Ước mơ'),
-            _buildNavItem(4, Icons.school, Icons.school_outlined, 'Học'),
+            _buildNavItem(0, Icons.home_filled, Icons.home_outlined, s.tabHome),
+            _buildNavItem(1, Icons.assignment, Icons.assignment_outlined, s.tabTasks),
+            _buildNavItem(2, Icons.savings, Icons.savings_outlined, s.tabJars),
+            _buildNavItem(3, Icons.stars, Icons.stars_outlined, s.tabDreams),
+            _buildNavItem(4, Icons.school, Icons.school_outlined, s.tabLearn),
           ],
         ),
       ),
@@ -251,6 +253,7 @@ class _HomeTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
+    final s = app.strings;
 
     // Show micro-lesson dialog when parent approves a task
     if (app.justApprovedTask != null) {
@@ -286,12 +289,12 @@ class _HomeTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
       children: [
-        _HeroCard(app: app)
+        _HeroCard(app: app, s: s)
             .animate()
             .fadeIn(duration: 500.ms)
             .slideY(begin: -0.05, curve: Curves.easeOutCubic),
         const SizedBox(height: 14),
-        _QuickStats(app: app, pendingCount: pending.length)
+        _QuickStats(app: app, pendingCount: pending.length, s: s)
             .animate(delay: 100.ms)
             .fadeIn()
             .slideX(begin: -0.05),
@@ -303,12 +306,12 @@ class _HomeTab extends StatelessWidget {
           ).animate(delay: 150.ms).fadeIn().slideX(begin: -0.08),
           const SizedBox(height: 20),
         ],
-        _TasksToday(tasks: pending)
+        _TasksToday(tasks: pending, s: s)
             .animate(delay: 200.ms)
             .fadeIn()
             .slideY(begin: 0.05),
         const SizedBox(height: 20),
-        _JarPreview(app: app)
+        _JarPreview(app: app, s: s)
             .animate(delay: 300.ms)
             .fadeIn()
             .slideY(begin: 0.05),
@@ -321,7 +324,8 @@ class _HomeTab extends StatelessWidget {
 
 class _HeroCard extends StatelessWidget {
   final AppState app;
-  const _HeroCard({required this.app});
+  final dynamic s;
+  const _HeroCard({required this.app, required this.s});
 
   @override
   Widget build(BuildContext context) {
@@ -378,7 +382,7 @@ class _HeroCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '${app.childAge} tuổi',
+                      s.ageDisplay(app.childAge),
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 13, color: Colors.white.withValues(alpha: 0.65),
                       ),
@@ -470,7 +474,7 @@ class _HeroCard extends StatelessWidget {
                   duration: const Duration(milliseconds: 1200),
                   curve: Curves.easeOutCubic,
                   builder: (ctx, v, _) => Text(
-                    '$v xu',
+                    '$v ${s.coins}',
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 20, fontWeight: FontWeight.w900, color: Colors.white,
                     ),
@@ -478,7 +482,7 @@ class _HeroCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  'đang có',
+                  s.coinsAvailable,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 13, color: Colors.white.withValues(alpha: 0.65),
                   ),
@@ -497,7 +501,8 @@ class _HeroCard extends StatelessWidget {
 class _QuickStats extends StatelessWidget {
   final AppState app;
   final int pendingCount;
-  const _QuickStats({required this.app, required this.pendingCount});
+  final dynamic s;
+  const _QuickStats({required this.app, required this.pendingCount, required this.s});
 
   @override
   Widget build(BuildContext context) {
@@ -505,16 +510,16 @@ class _QuickStats extends StatelessWidget {
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
-          _StatChip('🔥', '${app.streakDays} ngày\nliên tiếp', const Color(0xFFFF6B6B), const Color(0xFFFFE4E4)),
+          _StatChip('🔥', '${app.streakDays} ${s.daysStr}\n${s.categoryStreak}', const Color(0xFFFF6B6B), const Color(0xFFFFE4E4)),
           const SizedBox(width: 10),
-          _StatChip('📋', '$pendingCount việc\ncần làm', AppTheme.vibrantPrimary, AppTheme.primaryFixed),
+          _StatChip('📋', '$pendingCount ${s.tabTasks}', AppTheme.vibrantPrimary, AppTheme.primaryFixed),
           const SizedBox(width: 10),
           GestureDetector(
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AchievementScreen())),
-            child: _StatChip('🏅', '${app.badges.length} huy\nhiệu', AppTheme.vibrantSecondary, AppTheme.secondaryFixed),
+            child: _StatChip('🏅', '${app.badges.length} ${s.achievementsTitle}', AppTheme.vibrantSecondary, AppTheme.secondaryFixed),
           ),
           const SizedBox(width: 10),
-          _StatChip('🏆', '${app.approvedTasks.length} việc\nhoàn thành', AppTheme.vibrantTertiary, AppTheme.tertiaryFixed),
+          _StatChip('🏆', '${app.approvedTasks.length} ${s.tabTasks}', AppTheme.vibrantTertiary, AppTheme.tertiaryFixed),
         ],
       ),
     );
@@ -624,7 +629,8 @@ class _ParentBubble extends StatelessWidget {
 
 class _TasksToday extends StatelessWidget {
   final List<TaskModel> tasks;
-  const _TasksToday({required this.tasks});
+  final dynamic s;
+  const _TasksToday({required this.tasks, required this.s});
 
   @override
   Widget build(BuildContext context) {
@@ -634,7 +640,7 @@ class _TasksToday extends StatelessWidget {
         Row(
           children: [
             Text(
-              'Nhiệm vụ hôm nay',
+              s.tasksTodaySection,
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 20, fontWeight: FontWeight.w800, color: AppTheme.textPrimary,
               ),
@@ -648,7 +654,7 @@ class _TasksToday extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  '${tasks.length} việc',
+                  '${tasks.length} ${s.tabTasks}',
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.vibrantPrimary,
                   ),
@@ -674,6 +680,7 @@ class _TasksToday extends StatelessWidget {
 class _EmptyTaskCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final s = context.watch<AppState>().strings;
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
       decoration: BoxDecoration(
@@ -688,13 +695,13 @@ class _EmptyTaskCard extends StatelessWidget {
             Text('🎉', style: TextStyle(fontSize: isYoung ? 64.0 : 48.0)),
             const SizedBox(height: 8),
             Text(
-              isYoung ? 'Chưa có việc hôm nay! 🎉' : 'Không có việc gì cần làm!',
+              isYoung ? s.noTasksYoung : s.noTasksOlder,
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 16, fontWeight: FontWeight.w700, color: AppTheme.textPrimary,
               ),
             ),
             Text(
-              'Bố/Mẹ chưa giao việc hôm nay',
+              s.noTasksSub,
               style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppTheme.outline),
             ),
           ],
@@ -717,6 +724,7 @@ class _HomeTaskCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.watch<AppState>().strings;
     final style = _catStyle[task.category] ??
         (AppTheme.primaryFixed, AppTheme.vibrantPrimary);
     final isSubmitted = task.status == TaskStatus.submitted;
@@ -767,7 +775,7 @@ class _HomeTaskCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  isSubmitted ? '⏳ Đang chờ duyệt...' : task.category,
+                  isSubmitted ? '⏳ ${s.pendingApproval}' : task.category,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 12,
                     color: isSubmitted ? AppTheme.vibrantSecondary : AppTheme.outline,
@@ -784,7 +792,7 @@ class _HomeTaskCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
-              '+${task.coinReward}xu',
+              '+${task.coinReward}${s.coins}',
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 13, fontWeight: FontWeight.w800, color: style.$2,
               ),
@@ -801,7 +809,8 @@ class _HomeTaskCard extends StatelessWidget {
 
 class _JarPreview extends StatelessWidget {
   final AppState app;
-  const _JarPreview({required this.app});
+  final dynamic s;
+  const _JarPreview({required this.app, required this.s});
 
   @override
   Widget build(BuildContext context) {
@@ -825,7 +834,7 @@ class _JarPreview extends StatelessWidget {
           Row(
             children: [
               Text(
-                'Hũ tiền của con',
+                s.jarsSection,
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 17, fontWeight: FontWeight.w800, color: AppTheme.textPrimary,
                 ),
@@ -838,7 +847,7 @@ class _JarPreview extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  '${app.totalCoins} xu',
+                  '${app.totalCoins} ${s.coins}',
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 13, fontWeight: FontWeight.w800, color: AppTheme.vibrantSecondary,
                   ),
@@ -849,11 +858,11 @@ class _JarPreview extends StatelessWidget {
           const SizedBox(height: 14),
           Row(
             children: [
-              _JarMini('💰', 'Tiêu dùng', app.spendJar, AppTheme.vibrantPrimary, AppTheme.primaryFixed),
+              _JarMini('💰', s.jarSpend, app.spendJar, AppTheme.vibrantPrimary, AppTheme.primaryFixed),
               const SizedBox(width: 10),
-              _JarMini('🏦', 'Tiết kiệm', app.saveJar, AppTheme.vibrantSecondary, AppTheme.secondaryFixed),
+              _JarMini('🏦', s.jarSave, app.saveJar, AppTheme.vibrantSecondary, AppTheme.secondaryFixed),
               const SizedBox(width: 10),
-              _JarMini('🤝', 'Sẻ chia', app.shareJar, const Color(0xFFDC2626), const Color(0xFFFFDAD6)),
+              _JarMini('🤝', s.jarShare, app.shareJar, const Color(0xFFDC2626), const Color(0xFFFFDAD6)),
             ],
           ),
         ],
@@ -870,6 +879,7 @@ class _JarMini extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.watch<AppState>().strings;
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
@@ -893,7 +903,7 @@ class _JarMini extends StatelessWidget {
               ),
             ),
             Text(
-              'xu',
+              s.coins,
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 11, color: color.withValues(alpha: 0.7), fontWeight: FontWeight.w600,
               ),
@@ -918,6 +928,7 @@ void _showBadgePopup(BuildContext context, String badge) {
   final parts = badge.split(' ');
   final emoji = parts.first;
   final name = parts.sublist(1).join(' ');
+  final s = context.read<AppState>().strings;
 
   showDialog(
     context: context,
@@ -939,7 +950,7 @@ void _showBadgePopup(BuildContext context, String badge) {
                 .fadeIn(duration: 300.ms),
             const SizedBox(height: 8),
             Text(
-              'Huy hiệu mới!',
+              s.newBadge,
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 13, fontWeight: FontWeight.w600,
                 color: AppTheme.vibrantSecondary,
@@ -956,7 +967,7 @@ void _showBadgePopup(BuildContext context, String badge) {
             ).animate(delay: 300.ms).fadeIn().slideY(begin: 0.2),
             const SizedBox(height: 8),
             Text(
-              'Con thật tuyệt vời! 🎊',
+              s.congratsBadge,
               style: GoogleFonts.plusJakartaSans(fontSize: 14, color: AppTheme.textSecondary),
             ).animate(delay: 400.ms).fadeIn(),
             const SizedBox(height: 24),
@@ -977,7 +988,7 @@ void _showBadgePopup(BuildContext context, String badge) {
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     child: Text(
-                      'Xem tất cả',
+                      s.viewAllBadges,
                       style: GoogleFonts.plusJakartaSans(
                         fontWeight: FontWeight.w600, color: AppTheme.vibrantPrimary,
                       ),
@@ -994,7 +1005,7 @@ void _showBadgePopup(BuildContext context, String badge) {
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     child: Text(
-                      'Tuyệt! 🎉',
+                      s.excellent,
                       style: GoogleFonts.plusJakartaSans(
                         fontWeight: FontWeight.w700, color: Colors.white,
                       ),
@@ -1009,4 +1020,3 @@ void _showBadgePopup(BuildContext context, String badge) {
     ),
   );
 }
-

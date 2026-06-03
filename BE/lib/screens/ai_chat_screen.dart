@@ -47,9 +47,10 @@ class _AiChatScreenState extends State<AiChatScreen> {
   void initState() {
     super.initState();
     final app = context.read<AppState>();
+    final s = app.strings;
     final name = app.childName.isNotEmpty ? app.childName : 'bạn nhỏ';
     _msgs.add(_Msg(
-      text: 'Xin chào $name! Mình là trợ lý AI của GrowWise 🌱\nMình có thể giúp con:\n• Xem nhiệm vụ hôm nay\n• Kiểm tra số xu và hũ tiền\n• Theo dõi ước mơ\n• Nghe lời nhắn từ bố/mẹ\n\nCon muốn hỏi gì không?',
+      text: s.aiGreeting(name),
       isAi: true,
     ));
   }
@@ -111,6 +112,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.watch<AppState>().strings;
     return Scaffold(
       backgroundColor: AppTheme.surfaceBright,
       appBar: AppBar(
@@ -157,7 +159,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      'Đang hoạt động',
+                      s.aiOnline,
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 11,
                         color: AppTheme.textHint,
@@ -184,10 +186,10 @@ class _AiChatScreenState extends State<AiChatScreen> {
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  _QuickChip('📋 Nhiệm vụ hôm nay', () => _sendQuick('Nhiệm vụ hôm nay của con là gì?')),
-                  _QuickChip('💰 Số xu của con', () => _sendQuick('Con có bao nhiêu xu?')),
-                  _QuickChip('🧱 Ước mơ', () => _sendQuick('Con đang tiết kiệm ước mơ gì?')),
-                  _QuickChip('💌 Lời nhắn bố', () => _sendQuick('Bố có nhắn gì cho con không?')),
+                  _QuickChip(s.aiQuickTasks, () => _sendQuick('Nhiệm vụ hôm nay của con là gì?')),
+                  _QuickChip(s.aiQuickCoins, () => _sendQuick('Con có bao nhiêu xu?')),
+                  _QuickChip(s.aiQuickDreams, () => _sendQuick('Con đang tiết kiệm ước mơ gì?')),
+                  _QuickChip(s.aiQuickMessage, () => _sendQuick('Bố có nhắn gì cho con không?')),
                 ],
               ),
             ),
@@ -236,7 +238,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
                           color: AppTheme.textPrimary,
                         ),
                         decoration: InputDecoration(
-                          hintText: 'Nhắn tin với AI...',
+                          hintText: s.aiInputHint,
                           hintStyle: GoogleFonts.plusJakartaSans(
                             fontSize: 14,
                             color: AppTheme.textHint,

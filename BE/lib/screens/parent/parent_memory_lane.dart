@@ -24,11 +24,10 @@ class ParentMemoryLane extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _MemoryHero(
-                  onExport: () => ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('🎬 Video kỷ niệm sẽ có trong phiên bản đầy đủ'),
-                    ),
-                  ),
+                  memoriesCount: memories.length,
+                  childName: appState.childName,
+                  totalCoins: appState.totalCoins,
+                  approvedCount: appState.approvedTasks.length,
                 ),
                 const SizedBox(height: 32),
 
@@ -130,8 +129,73 @@ class ParentMemoryLane extends StatelessWidget {
 // ── Hero ──────────────────────────────────────────────────────────────────────
 
 class _MemoryHero extends StatelessWidget {
-  final VoidCallback onExport;
-  const _MemoryHero({required this.onExport});
+  final int memoriesCount;
+  final String childName;
+  final int totalCoins;
+  final int approvedCount;
+
+  const _MemoryHero({
+    required this.memoriesCount,
+    required this.childName,
+    required this.totalCoins,
+    required this.approvedCount,
+  });
+
+  void _showShareDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('🎬', style: TextStyle(fontSize: 48)),
+            const SizedBox(height: 12),
+            Text(
+              'Hành trình của $childName',
+              style: GoogleFonts.plusJakartaSans(fontSize: 20, fontWeight: FontWeight.w800, color: const Color(0xFF1A1A2E)),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _StatChip(label: 'Kỷ niệm', value: '$memoriesCount', emoji: '📸'),
+                _StatChip(label: 'Nhiệm vụ', value: '$approvedCount', emoji: '✅'),
+                _StatChip(label: 'Xu tích lũy', value: '$totalCoins', emoji: '🪙'),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0F4FF),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Text(
+                'Chụp màn hình trang này để lưu lại và chia sẻ hành trình tài chính của $childName với gia đình! 🌱',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.plusJakartaSans(fontSize: 13, color: const Color(0xFF4A4A6A), height: 1.5),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: () => Navigator.pop(ctx),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF5B5BD6),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              child: Text('Đã hiểu', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -185,7 +249,7 @@ class _MemoryHero extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           GestureDetector(
-            onTap: onExport,
+            onTap: () => _showShareDialog(context),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               decoration: BoxDecoration(
@@ -523,6 +587,26 @@ class _EmptyMemory extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _StatChip extends StatelessWidget {
+  final String label;
+  final String value;
+  final String emoji;
+
+  const _StatChip({required this.label, required this.value, required this.emoji});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(emoji, style: const TextStyle(fontSize: 24)),
+        const SizedBox(height: 4),
+        Text(value, style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w800, color: const Color(0xFF5B5BD6))),
+        Text(label, style: GoogleFonts.plusJakartaSans(fontSize: 11, color: const Color(0xFF6B7280))),
+      ],
     );
   }
 }
