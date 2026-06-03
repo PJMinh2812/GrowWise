@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_state.dart';
+import '../../services/gemini_service.dart';
 import '../../theme/app_theme.dart';
 import '../../models/task_model.dart';
 import 'parent_task_detail.dart';
@@ -234,6 +235,10 @@ class _HomeTab extends StatelessWidget {
 
         // Weekly summary
         _WeeklySummaryCard(app: app).animate(delay: 220.ms).fadeIn().slideY(begin: 0.1),
+        const SizedBox(height: 16),
+
+        // AI Weekly Report
+        _AiWeeklyReportCard(app: app).animate(delay: 240.ms).fadeIn().slideY(begin: 0.1),
 
         // Review Now
         if (app.submittedTasks.isNotEmpty) ...[
@@ -949,6 +954,111 @@ class _DreamRequestCard extends StatelessWidget {
     );
   }
 }
+
+// ── AI Weekly Report Card ─────────────────────────────────────────────────────
+
+class _AiWeeklyReportCard extends StatefulWidget {
+  final AppState app;
+  const _AiWeeklyReportCard({required this.app});
+
+  @override
+  State<_AiWeeklyReportCard> createState() => _AiWeeklyReportCardState();
+}
+
+class _AiWeeklyReportCardState extends State<_AiWeeklyReportCard> {
+  String? _report;
+  bool _loading = false;
+  bool _expanded = false;
+
+  Future<void> _fetchReport() async {
+    if (_loading) return;
+    setState(() { _loading = true; _expanded = true; });
+    final app = context.read<AppState>();
+    final report = await GeminiService.weeklyReport(
+      childName: app.childName.isNotEmpty ? app.childName : 'bé',
+      totalApproved: app.approvedTasks.length,
+      streakDays: app.streakDays,
+      categoryTaskCounts: {
+        'Học tập': app.approvedTasks.where((t) => t.category == 'Học tập').length,
+        'Việc nhà': app.approvedTasks.where((t) => t.category == 'Việc nhà').length,
+        'Sức khỏe': app.approvedTasks.where((t) => t.category == 'Sức khỏe').length,
+        'Sáng tạo': app.approvedTasks.where((t) => t.category == 'Sáng tạo').length,
+      },
+      totalCoins: app.totalCoins,
+      dreamNames: app.dreamItemsList.map((d) => d['name'] as String? ?? '').toList(),
+    );
+    if (mounted) setState(() { _report = report; _loading = false; });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.tertiaryFixed,
+        borderRadius: BorderRadius.circular(20),
+        border: const Border(bottom: BorderSide(color: AppTheme.tertiaryFixedDim, width: 4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          GestureDetector(
+            onTap: _expanded ? () => setState(() => _expanded = !_expanded) : _fetchReport,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+              child: Row(
+                children: [
+                  const Text('📊', style: TextStyle(fontSize: 22)),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Báo cáo tuần từ Wisy AI',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 15, fontWeight: FontWeight.w700,
+                        color: AppTheme.onTertiaryFixed,
+                      ),
+                    ),
+                  ),
+                  if (_loading)
+                    const SizedBox(width: 18, height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.vibrantTertiary))
+                  else
+                    Icon(_expanded ? Icons.expand_less : Icons.auto_awesome,
+                        size: 18, color: AppTheme.vibrantTertiary),
+                ],
+              ),
+            ),
+          ),
+          if (_expanded && !_loading) ...[
+            Divider(height: 1, color: AppTheme.tertiaryFixedDim),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+              child: Text(
+                _report ?? 'Chưa có báo cáo — nhấn để tạo.',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 14, height: 1.6, color: AppTheme.onTertiaryFixed,
+                ),
+              ),
+            ),
+            if (_report != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+                child: GestureDetector(
+                  onTap: _fetchReport,
+                  child: Text('↺ Làm mới',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12, fontWeight: FontWeight.w700,
+                        color: AppTheme.vibrantTertiary,
+                      )),
+                ),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+// ── Task List Item ────────────────────────────────────────────────────────────
 
 class _TaskListItem extends StatelessWidget {
   final TaskModel task;

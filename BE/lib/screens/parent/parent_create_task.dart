@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_state.dart';
+import '../../services/gemini_service.dart';
 import '../../theme/app_theme.dart';
 import '../../models/task_model.dart';
 import '../../utils/validators.dart';
@@ -22,6 +23,8 @@ class _ParentCreateTaskState extends State<ParentCreateTask> {
   bool _isSubmitting = false;
   int _coins = 15;
   String _category = 'Việc nhà';
+  bool _loadingAi = false;
+  List<Map<String, dynamic>>? _aiSuggestions;
 
   static const _allQuickIdeas = [
     // Việc nhà
@@ -67,6 +70,138 @@ class _ParentCreateTaskState extends State<ParentCreateTask> {
     super.dispose();
   }
 
+  Future<void> _loadAiSuggestions() async {
+    setState(() { _loadingAi = true; _aiSuggestions = null; });
+    final suggestions = await GeminiService.suggestTasks(
+      childAge: context.read<AppState>().childAge,
+      category: _category,
+    );
+    if (mounted) setState(() { _aiSuggestions = suggestions; _loadingAi = false; });
+  }
+
+  Widget _buildAiSuggestions() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              '✨ Gợi ý từ AI',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 20, fontWeight: FontWeight.w700,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+            const Spacer(),
+            GestureDetector(
+              onTap: _loadingAi ? null : _loadAiSuggestions,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryFixed,
+                  borderRadius: BorderRadius.circular(99),
+                  border: Border.all(color: AppTheme.primaryFixedDim, width: 2),
+                ),
+                child: _loadingAi
+                    ? const SizedBox(
+                        width: 16, height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppTheme.vibrantPrimary,
+                        ),
+                      )
+                    : Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.auto_awesome, size: 14, color: AppTheme.vibrantPrimary),
+                          const SizedBox(width: 4),
+                          Text(
+                            _aiSuggestions == null ? 'Gợi ý ngay' : 'Gợi ý lại',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12, fontWeight: FontWeight.w700,
+                              color: AppTheme.vibrantPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
+            ),
+          ],
+        ),
+        if (_aiSuggestions != null) ...[
+          const SizedBox(height: 12),
+          ..._aiSuggestions!.map((s) {
+            final title = s['title'] as String? ?? '';
+            final desc = s['description'] as String? ?? '';
+            final icon = s['icon'] as String? ?? '📋';
+            final coins = s['coins'] as int? ?? 15;
+            return GestureDetector(
+              onTap: () {
+                _titleCtrl.text = title;
+                _descCtrl.text = desc;
+                setState(() => _coins = coins.clamp(5, 50));
+              },
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: AppTheme.surfaceContainerLowest,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppTheme.surfaceContainerHigh, width: 2),
+                ),
+                child: Row(
+                  children: [
+                    Text(icon, style: const TextStyle(fontSize: 24)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(title,
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 14, fontWeight: FontWeight.w700,
+                                color: AppTheme.textPrimary,
+                              )),
+                          if (desc.isNotEmpty)
+                            Text(desc,
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 12, color: AppTheme.outline,
+                                )),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppTheme.secondaryFixed,
+                        borderRadius: BorderRadius.circular(99),
+                      ),
+                      child: Text('🪙 $coins',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 11, fontWeight: FontWeight.w700,
+                            color: AppTheme.vibrantSecondary,
+                          )),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
+        ],
+        if (_aiSuggestions == null && !_loadingAi)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              'Nhấn "Gợi ý ngay" để AI tự tạo nhiệm vụ phù hợp với con',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 12, color: AppTheme.outline,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -85,6 +220,8 @@ class _ParentCreateTaskState extends State<ParentCreateTask> {
                 _buildQuickIdeas(),
                 const SizedBox(height: 32),
                 _buildCustomTaskForm(),
+                const SizedBox(height: 24),
+                _buildAiSuggestions(),
                 const SizedBox(height: 32),
                 _buildCategorySelector(),
                 const SizedBox(height: 24),
@@ -140,11 +277,12 @@ class _ParentCreateTaskState extends State<ParentCreateTask> {
   }
 
   Widget _buildHeader() {
+    final s = context.read<AppState>().strings;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Nhiệm vụ mới!',
+          s.createTaskTitle,
           style: GoogleFonts.plusJakartaSans(
             fontSize: 32,
             fontWeight: FontWeight.w800,
@@ -153,7 +291,7 @@ class _ParentCreateTaskState extends State<ParentCreateTask> {
         ),
         const SizedBox(height: 4),
         Text(
-          'Hôm nay giao việc gì cho con?',
+          s.createTaskSub,
           style: GoogleFonts.plusJakartaSans(
             fontSize: 18,
             fontWeight: FontWeight.w500,
@@ -173,7 +311,7 @@ class _ParentCreateTaskState extends State<ParentCreateTask> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '⭐ Mẫu đã lưu',
+              context.read<AppState>().strings.savedTemplates,
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 18, fontWeight: FontWeight.w700,
                 color: AppTheme.textPrimary,
@@ -230,11 +368,12 @@ class _ParentCreateTaskState extends State<ParentCreateTask> {
   }
 
   Widget _buildQuickIdeas() {
+    final s = context.read<AppState>().strings;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Ý tưởng nhanh',
+          s.quickIdeas,
           style: GoogleFonts.plusJakartaSans(
             fontSize: 24,
             fontWeight: FontWeight.w700,
@@ -287,6 +426,7 @@ class _ParentCreateTaskState extends State<ParentCreateTask> {
   }
 
   Widget _buildCustomTaskForm() {
+    final s = context.read<AppState>().strings;
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -296,91 +436,44 @@ class _ParentCreateTaskState extends State<ParentCreateTask> {
             color: AppTheme.surfaceContainerLowest,
             borderRadius: BorderRadius.circular(24),
             border: Border.all(color: AppTheme.surfaceContainer, width: 2),
-            boxShadow: [
-              BoxShadow(
-                color: AppTheme.vibrantPrimary.withValues(alpha: 0.06),
-                blurRadius: 24,
-                offset: const Offset(0, 8),
-              )
-            ],
+            boxShadow: [BoxShadow(color: AppTheme.vibrantPrimary.withValues(alpha: 0.06), blurRadius: 24, offset: const Offset(0, 8))],
           ),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Tạo nhiệm vụ tùy chỉnh',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.textPrimary,
-                  ),
-                ),
+                Text(s.customTask, style: GoogleFonts.plusJakartaSans(fontSize: 24, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
                 const SizedBox(height: 16),
-                Text(
-                  'Tên nhiệm vụ',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.outline,
-                  ),
-                ),
+                Text(s.taskNameLabel, style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.outline)),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _titleCtrl,
                   validator: Validators.taskTitle,
                   style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.w500),
                   decoration: InputDecoration(
-                    hintText: 'VD: Quét dọn phòng ngủ',
-                    hintStyle: TextStyle(color: AppTheme.outlineVariant),
-                    filled: true,
-                    fillColor: AppTheme.surfaceContainerLow,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppTheme.outlineVariant, width: 2),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppTheme.outlineVariant, width: 2),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppTheme.secondaryContainer, width: 2),
-                    ),
+                    hintText: s.taskNameHint,
+                    hintStyle: const TextStyle(color: AppTheme.outlineVariant),
+                    filled: true, fillColor: AppTheme.surfaceContainerLow,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.outlineVariant, width: 2)),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.outlineVariant, width: 2)),
+                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.secondaryContainer, width: 2)),
                   ),
                 ),
                 const SizedBox(height: 16),
-                Text(
-                  'Mô tả (Tùy chọn)',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.outline,
-                  ),
-                ),
+                Text(s.descriptionLabel, style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.outline)),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _descCtrl,
                   maxLines: 3,
                   style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w500),
                   decoration: InputDecoration(
-                    hintText: 'Hướng dẫn thêm cho con...',
-                    hintStyle: TextStyle(color: AppTheme.outlineVariant),
-                    filled: true,
-                    fillColor: AppTheme.surfaceContainerLow,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppTheme.outlineVariant, width: 2),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppTheme.outlineVariant, width: 2),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppTheme.secondaryContainer, width: 2),
-                    ),
+                    hintText: s.descriptionHint,
+                    hintStyle: const TextStyle(color: AppTheme.outlineVariant),
+                    filled: true, fillColor: AppTheme.surfaceContainerLow,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.outlineVariant, width: 2)),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.outlineVariant, width: 2)),
+                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppTheme.secondaryContainer, width: 2)),
                   ),
                 ),
               ],
@@ -388,27 +481,20 @@ class _ParentCreateTaskState extends State<ParentCreateTask> {
           ),
         ),
         Positioned(
-          top: -20,
-          right: -20,
-          child: Container(
-            width: 100,
-            height: 100,
-            decoration: BoxDecoration(
-              color: AppTheme.secondaryFixed.withValues(alpha: 0.3),
-              shape: BoxShape.circle,
-            ),
-          ),
+          top: -20, right: -20,
+          child: Container(width: 100, height: 100, decoration: BoxDecoration(color: AppTheme.secondaryFixed.withValues(alpha: 0.3), shape: BoxShape.circle)),
         ),
       ],
     );
   }
 
   Widget _buildCategorySelector() {
+    final s = context.read<AppState>().strings;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Danh mục',
+          s.categorySection,
           style: GoogleFonts.plusJakartaSans(
             fontSize: 24,
             fontWeight: FontWeight.w700,
@@ -619,7 +705,7 @@ class _ParentCreateTaskState extends State<ParentCreateTask> {
                       const Icon(Icons.send, color: Colors.white, size: 28),
                       const SizedBox(width: 12),
                       Text(
-                        'Giao việc',
+                        context.read<AppState>().strings.createTaskBtn,
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 24,
                           fontWeight: FontWeight.w700,
@@ -664,9 +750,10 @@ class _ParentCreateTaskState extends State<ParentCreateTask> {
       _showSuccessDialog();
     } catch (e) {
       if (!mounted) return;
+      final s = context.read<AppState>().strings;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Lỗi: ${e.toString()}'),
+          content: Text('${s.errorPrefix}${e.toString()}'),
           backgroundColor: const Color(0xFFEF4444),
         ),
       );
@@ -676,7 +763,8 @@ class _ParentCreateTaskState extends State<ParentCreateTask> {
   }
 
   void _showSuccessDialog() {
-    final childName = context.read<AppState>().childName;
+    final app = context.read<AppState>();
+    final s = app.strings;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -686,23 +774,12 @@ class _ParentCreateTaskState extends State<ParentCreateTask> {
           children: [
             const Text('🎉', style: TextStyle(fontSize: 56)),
             const SizedBox(height: 14),
-            Text(
-              'Đã giao việc!',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                color: AppTheme.textPrimary,
-              ),
-            ),
+            Text(s.taskCreatedTitle, style: GoogleFonts.plusJakartaSans(fontSize: 22, fontWeight: FontWeight.w800, color: AppTheme.textPrimary)),
             const SizedBox(height: 8),
             Text(
-              '$childName sẽ nhận được thông báo ngay!\n\nPhần thưởng: $_coins Xu 🪙',
+              s.taskCreatedMsg(app.childName, _coins),
               textAlign: TextAlign.center,
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 14,
-                color: AppTheme.textSecondary,
-                height: 1.5,
-              ),
+              style: GoogleFonts.plusJakartaSans(fontSize: 14, color: AppTheme.textSecondary, height: 1.5),
             ),
           ],
         ),
@@ -710,29 +787,15 @@ class _ParentCreateTaskState extends State<ParentCreateTask> {
           SizedBox(
             width: double.infinity,
             child: GestureDetector(
-              onTap: () {
-                Navigator.pop(ctx);
-                Navigator.pop(context);
-              },
+              onTap: () { Navigator.pop(ctx); Navigator.pop(context); },
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 decoration: BoxDecoration(
                   color: AppTheme.vibrantPrimary,
                   borderRadius: BorderRadius.circular(16),
-                  border: const Border(
-                    bottom: BorderSide(color: AppTheme.onPrimaryFixedVariant, width: 4),
-                  ),
+                  border: const Border(bottom: BorderSide(color: AppTheme.onPrimaryFixedVariant, width: 4)),
                 ),
-                child: Center(
-                  child: Text(
-                    'Xong! ✓',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
+                child: Center(child: Text(s.done, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: Colors.white, fontSize: 16))),
               ),
             ),
           ),

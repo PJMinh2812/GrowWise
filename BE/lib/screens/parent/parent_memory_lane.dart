@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../providers/app_state.dart';
 import '../../theme/app_theme.dart';
 
@@ -17,7 +18,7 @@ class ParentMemoryLane extends StatelessWidget {
 
         return Scaffold(
           backgroundColor: AppTheme.surfaceBright,
-          appBar: _buildAppBar(),
+          appBar: _buildAppBar(() => _shareMemories(appState.childName, memories)),
           body: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
             child: Column(
@@ -84,7 +85,20 @@ class ParentMemoryLane extends StatelessWidget {
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
+  static void _shareMemories(String childName, List<Map<String, String>> memories) {
+    final String text;
+    if (memories.isEmpty) {
+      text = '$childName chưa có ký ức nào. Hãy giao việc để bắt đầu! 🌱';
+    } else {
+      final lines = memories.take(20)
+          .map((m) => '${m['emoji']} ${m['date']}: ${m['task']}')
+          .join('\n');
+      text = '🌱 Hành trình của $childName trên GrowWise\n\n$lines\n\n— Ứng dụng GrowWise';
+    }
+    Share.share(text);
+  }
+
+  PreferredSizeWidget _buildAppBar(VoidCallback onShare) {
     return AppBar(
       backgroundColor: AppTheme.surface,
       surfaceTintColor: Colors.transparent,
@@ -102,6 +116,11 @@ class ParentMemoryLane extends StatelessWidget {
         onPressed: () {},
       ),
       actions: [
+        IconButton(
+          icon: const Icon(Icons.share_rounded, color: AppTheme.vibrantPrimary, size: 24),
+          tooltip: 'Chia sẻ',
+          onPressed: onShare,
+        ),
         IconButton(
           icon: const Icon(Icons.account_circle, color: AppTheme.vibrantPrimary, size: 28),
           onPressed: () {},

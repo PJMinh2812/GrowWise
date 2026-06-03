@@ -5,6 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../l10n/app_strings.dart';
 import '../models/task_model.dart';
 import '../models/video_lesson_model.dart';
+import '../services/notification_service.dart';
 import '../services/supabase_service.dart';
 
 class AppState extends ChangeNotifier {
@@ -439,6 +440,10 @@ class AppState extends ChangeNotifier {
     _justApprovedTask = task;
     _categoryTaskCounts[task.category] =
         (_categoryTaskCounts[task.category] ?? 0) + 1;
+    NotificationService.showTaskApproved(
+      taskTitle: task.title,
+      coins: task.coinReward,
+    );
     _checkCategoryBadge(task.category);
 
     // Add memory

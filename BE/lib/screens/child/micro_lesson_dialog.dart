@@ -55,6 +55,7 @@ class _MicroLessonDialogState extends State<MicroLessonDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.watch<AppState>().strings;
     final data = _microLessons[widget.category] ?? _defaultLesson;
 
     return Dialog(
@@ -73,7 +74,7 @@ class _MicroLessonDialogState extends State<MicroLessonDialog> {
                 ),
             const SizedBox(height: 8),
             Text(
-              'Hoàn thành rồi! 🎉',
+              s.lessonCompleteTitle,
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
@@ -102,7 +103,7 @@ class _MicroLessonDialogState extends State<MicroLessonDialog> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '💡 Bài học hôm nay',
+                    s.todayLesson,
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
@@ -134,7 +135,7 @@ class _MicroLessonDialogState extends State<MicroLessonDialog> {
             const SizedBox(height: 20),
             // Mood rating
             Text(
-              'Con cảm thấy thế nào?',
+              s.howDoYouFeel,
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
@@ -147,7 +148,7 @@ class _MicroLessonDialogState extends State<MicroLessonDialog> {
               children: [
                 _MoodButton(
                   emoji: '😊',
-                  label: 'Vui',
+                  label: s.moodHappy,
                   value: 'happy',
                   selected: _selectedMood == 'happy',
                   onTap: () => setState(() => _selectedMood = 'happy'),
@@ -155,7 +156,7 @@ class _MicroLessonDialogState extends State<MicroLessonDialog> {
                 const SizedBox(width: 12),
                 _MoodButton(
                   emoji: '😐',
-                  label: 'Bình thường',
+                  label: s.moodNeutral,
                   value: 'neutral',
                   selected: _selectedMood == 'neutral',
                   onTap: () => setState(() => _selectedMood = 'neutral'),
@@ -163,7 +164,7 @@ class _MicroLessonDialogState extends State<MicroLessonDialog> {
                 const SizedBox(width: 12),
                 _MoodButton(
                   emoji: '😔',
-                  label: 'Mệt',
+                  label: s.moodTired,
                   value: 'sad',
                   selected: _selectedMood == 'sad',
                   onTap: () => setState(() => _selectedMood = 'sad'),
@@ -193,7 +194,7 @@ class _MicroLessonDialogState extends State<MicroLessonDialog> {
                   ),
                 ),
                 child: Text(
-                  'Xong! ✓',
+                  s.done,
                   style: GoogleFonts.plusJakartaSans(
                     fontWeight: FontWeight.w700,
                     color: Colors.white,

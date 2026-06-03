@@ -281,7 +281,13 @@ export default function LessonForm({ initial, lessonId }: Props) {
       {/* Quiz editor — only shown when editing an existing child lesson */}
       {isEdit && form.audience === "child" && (
         <div className="mt-8">
-          <QuizEditor lessonId={lessonId} />
+          <QuizEditor
+            lessonId={lessonId}
+            lessonTitle={form.title}
+            lessonDescription={form.description}
+            audience={form.audience}
+            lessonDuration={form.duration_seconds}
+          />
         </div>
       )}
     </div>
