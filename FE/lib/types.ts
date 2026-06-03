@@ -11,7 +11,9 @@ export interface LessonQuiz {
   lesson_id?: string
   trigger_at: number
   question: string
+  question_type?: 'single' | 'multi'
   correct_index: number
+  correct_indices?: number[]
   explanation: string
   order_index: number
   quiz_options?: QuizOption[]
