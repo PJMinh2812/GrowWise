@@ -47,10 +47,15 @@ export async function POST(req: NextRequest) {
 
     const match = text.match(/\[[\s\S]*\]/)
     if (!match) {
-      return NextResponse.json({ error: 'Could not parse AI response' }, { status: 500 })
+      return NextResponse.json({ error: 'AI không trả về JSON array hợp lệ' }, { status: 500 })
     }
 
-    const quizzes = JSON.parse(match[0])
+    let quizzes: unknown[]
+    try {
+      quizzes = JSON.parse(match[0])
+    } catch {
+      return NextResponse.json({ error: 'Không thể parse JSON từ AI response', raw: match[0].slice(0, 200) }, { status: 500 })
+    }
     return NextResponse.json({ quizzes })
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 })

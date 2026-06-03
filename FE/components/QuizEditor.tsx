@@ -31,6 +31,7 @@ interface QuizEditorProps {
   lessonTitle?: string;
   lessonDescription?: string;
   audience?: string;
+  lessonDuration?: number;
 }
 
 export default function QuizEditor({
@@ -38,6 +39,7 @@ export default function QuizEditor({
   lessonTitle = "",
   lessonDescription = "",
   audience = "child",
+  lessonDuration = 0,
 }: QuizEditorProps) {
   const [quizzes, setQuizzes] = useState<LessonQuiz[]>([]);
   const [loading, setLoading] = useState(true);
@@ -209,13 +211,17 @@ export default function QuizEditor({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Lỗi AI");
 
+      const total = data.quizzes.length
       const newQuizzes: LessonQuiz[] = (data.quizzes as {
         question: string;
         options: { emoji: string; text: string }[];
         correct_index: number;
         explanation: string;
       }[]).map((q, idx) => ({
-        trigger_at: 0,
+        // Distribute trigger_at evenly across video duration (avoid 0 and end)
+        trigger_at: lessonDuration > 0
+          ? Math.round((lessonDuration / (total + 1)) * (idx + 1))
+          : 0,
         question: q.question,
         question_type: "single" as const,
         correct_index: q.correct_index ?? 0,

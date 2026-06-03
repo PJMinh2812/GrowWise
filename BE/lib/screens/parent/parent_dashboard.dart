@@ -973,7 +973,7 @@ class _AiWeeklyReportCardState extends State<_AiWeeklyReportCard> {
   Future<void> _fetchReport() async {
     if (_loading) return;
     setState(() { _loading = true; _expanded = true; });
-    final app = widget.app;
+    final app = context.read<AppState>();
     final report = await GeminiService.weeklyReport(
       childName: app.childName.isNotEmpty ? app.childName : 'bé',
       totalApproved: app.approvedTasks.length,

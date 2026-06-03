@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_state.dart';
+import '../../services/notification_service.dart';
 import '../../theme/app_theme.dart';
 import '../../models/task_model.dart';
 import 'child_task_list.dart';
@@ -25,6 +26,22 @@ class ChildDashboard extends StatefulWidget {
 class _ChildDashboardState extends State<ChildDashboard> {
   int _tab = 0;
   final _built = <int>{0};
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final app = context.read<AppState>();
+      final name = app.childName.isNotEmpty ? app.childName : 'bé';
+      NotificationService.scheduleDailyReminder(childName: name);
+      if (app.pendingTasks.isNotEmpty) {
+        NotificationService.showPendingTasksReminder(
+          childName: name,
+          pendingCount: app.pendingTasks.length,
+        );
+      }
+    });
+  }
 
   void _switchTab(int i) {
     setState(() {

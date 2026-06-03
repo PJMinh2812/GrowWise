@@ -286,6 +286,7 @@ export default function LessonForm({ initial, lessonId }: Props) {
             lessonTitle={form.title}
             lessonDescription={form.description}
             audience={form.audience}
+            lessonDuration={form.duration_seconds}
           />
         </div>
       )}
