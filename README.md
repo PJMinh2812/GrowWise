@@ -1,123 +1,177 @@
-# GrowWise
+<p align="center">
+  <img src="mobile/assets/images/app_logo.png" alt="GrowWise Logo" width="120" />
+</p>
 
-GrowWise là ứng dụng Flutter hỗ trợ phụ huynh giao nhiệm vụ cho trẻ, theo dõi tiến độ, thưởng xu và xây dựng thói quen quản lý tài chính cá nhân cho trẻ theo hướng game hóa.
+<h1 align="center">GrowWise</h1>
 
-## Tính năng chính
+<p align="center">
+  Nền tảng giáo dục tài chính dành cho trẻ em, được xây dựng bằng Flutter + Supabase
+</p>
 
-- Đăng ký, đăng nhập bằng email/password
-- Đăng nhập với Google qua Supabase OAuth
-- Luồng onboarding và thiết lập hồ sơ gia đình
-- Dashboard riêng cho phụ huynh và trẻ
-- Quản lý nhiệm vụ: tạo, nộp, duyệt, từ chối
-- Hệ thống xu và hũ (tiêu dùng, tiết kiệm, sẻ chia)
-- Dream Jar: đặt mục tiêu và mua khi đủ xu
-- Gửi lời khen (bonding message) từ phụ huynh cho trẻ
+<p align="center">
+  <img src="https://img.shields.io/badge/version-2.0.0-blue" alt="version" />
+  <img src="https://img.shields.io/badge/flutter-3.x-54C5F8?logo=flutter" alt="flutter" />
+  <img src="https://img.shields.io/badge/dart-^3.11-0175C2?logo=dart" alt="dart" />
+  <img src="https://img.shields.io/badge/supabase-2.x-3ECF8E?logo=supabase" alt="supabase" />
+  <img src="https://img.shields.io/badge/license-Internal-lightgrey" alt="license" />
+</p>
 
-## Công nghệ sử dụng
+---
 
-- Flutter, Dart
-- State management: Provider
-- Backend/Auth/DB: Supabase
-- Local secure storage: flutter_secure_storage
+## Giới thiệu
 
-## Cấu trúc thư mục
+GrowWise giúp phụ huynh giao nhiệm vụ hằng ngày cho trẻ, thưởng xu khi hoàn thành, và dạy trẻ quản lý tiền qua hệ thống 3 hũ (tiêu dùng · tiết kiệm · sẻ chia). Ứng dụng được game hóa với XP, cấp độ, huy hiệu và gợi ý AI để trẻ luôn có động lực.
 
-```text
-lib/
-    data/           # data helpers và sample data
-    models/         # model classes
-    providers/      # app state
-    screens/        # UI screens (parent/child/auth)
-    services/       # Supabase service layer
-    theme/          # theme configs
-    utils/          # validators, helper utils
+> **EXE201 — FPT University · Semester 8 · SU26**
+
+---
+
+## Tính năng nổi bật
+
+| Nhóm | Tính năng |
+|---|---|
+| **Auth** | Email/password, Google OAuth, quên mật khẩu, xác nhận email |
+| **Gia đình** | Đăng ký phụ huynh → tự động tạo gia đình → thêm hồ sơ trẻ |
+| **Nhiệm vụ** | Tạo → nộp → duyệt/từ chối → thưởng xu tự động |
+| **3 Hũ xu** | Chia xu tự động: Tiêu dùng 40% · Tiết kiệm 20% · Sẻ chia 40% |
+| **Dream Jar** | Trẻ đặt mục tiêu tiết kiệm, theo dõi tiến trình |
+| **AI** | Gợi ý nhiệm vụ cho phụ huynh, Dream Coach cho trẻ, báo cáo tổng hợp, tạo quiz tự động |
+| **Gamification** | XP · cấp độ · huy hiệu · streak calendar · bảng thành tích |
+| **Kết nối** | Bonding message từ phụ huynh, Memory Lane tự động sau mỗi nhiệm vụ |
+| **Tiện ích** | Chia sẻ thành tích, thông báo push, bài học video |
+
+---
+
+## Kiến trúc
+
+```
+GrowWise/
+├── mobile/                     # Flutter mobile app (iOS & Android)
+│   └── lib/
+│       ├── data/               # helpers, sample data
+│       ├── models/             # data models
+│       ├── providers/          # app state (Provider)
+│       ├── screens/            # UI — auth / parent / child
+│       ├── services/           # Supabase service layer
+│       ├── theme/              # màu sắc, typography
+│       └── utils/              # validators, helpers
+└── admin/                      # Next.js admin panel
 ```
 
-## Yêu cầu môi trường
+---
 
-- Flutter stable (khuyến nghị 3.41.x trở lên)
+## Tech Stack
+
+**Mobile (BE)**
+- [Flutter](https://flutter.dev) · Dart `^3.11`
+- State management: `provider ^6`
+- Backend / Auth / Realtime DB: `supabase_flutter ^2`
+- AI: Google Gemini API (`http`)
+- Notifications: `flutter_local_notifications`
+- Fonts: `google_fonts`, Animations: `flutter_animate`
+
+**Admin Panel (FE)**
+- [Next.js](https://nextjs.org) (App Router)
+- TypeScript · Tailwind CSS
+- Supabase JS client
+
+---
+
+## Yêu cầu
+
+- Flutter stable ≥ 3.41
 - Dart SDK theo phiên bản Flutter
-- Android SDK + cmdline-tools
-- JDK 17 (khuyến nghị cho Android build)
+- Android SDK + cmdline-tools (cho Android build)
+- JDK 17+ (khuyến nghị)
+- Node.js ≥ 18 (cho admin panel)
+- Tài khoản [Supabase](https://supabase.com)
 
-## Chạy project local
+---
 
-1. Clone repo
+## Bắt đầu
+
+### 1. Clone repo
 
 ```bash
 git clone https://github.com/PJMinh2812/GrowWise.git
 cd GrowWise
 ```
 
-2. Tạo file môi trường
+### 2. Cấu hình môi trường (Mobile)
 
 ```bash
+cd BE
 cp .env.example .env
 ```
 
-Điền thông tin Supabase vào `.env`:
+Điền thông tin vào `.env`:
 
 ```env
-SUPABASE_URL=your_supabase_url
-SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_URL=https://<your-project-ref>.supabase.co
+SUPABASE_ANON_KEY=<your-anon-key>
+GEMINI_API_KEY=<your-gemini-key>
 ```
 
-3. Cài package
+### 3. Cài dependencies và chạy
 
 ```bash
+# Mobile app
+cd mobile
 flutter pub get
-```
-
-4. Chạy app
-
-```bash
 flutter run
+
+# Admin panel (terminal khác)
+cd admin
+npm install
+npm run dev          # http://localhost:3000
 ```
 
-## Cấu hình Google Auth (Supabase)
+---
 
-1. Trong Google Cloud Console:
+## Cấu hình Google OAuth
 
-- Tạo OAuth consent screen
-- Tạo OAuth client loại Web
-- Thêm redirect URI:
+1. **Google Cloud Console** → tạo OAuth client loại *Web* → thêm redirect URI:
+   ```
+   https://<your-project-ref>.supabase.co/auth/v1/callback
+   ```
 
-```text
-https://<your-project-ref>.supabase.co/auth/v1/callback
-```
+2. **Supabase Dashboard** → Authentication → Providers → Google → bật, dán Client ID & Secret.
 
-2. Trong Supabase Dashboard:
+3. **Supabase URL Configuration** → thêm redirect URL cho mobile:
+   ```
+   io.supabase.growwise://login-callback
+   ```
 
-- Authentication -> Providers -> Google: Enable
-- Dán Web Client ID và Client Secret
+> Deep link Android đã được khai báo trong `mobile/android/app/src/main/AndroidManifest.xml`.
 
-3. Trong Supabase URL Configuration, thêm redirect URL mobile:
+---
 
-```text
-io.supabase.growwise://login-callback
-```
+## Database
 
-4. Android deep link đã được khai báo trong `android/app/src/main/AndroidManifest.xml`.
+Schema đầy đủ và migration scripts nằm trong `BE/`:
 
-## Trạng thái hiện tại
+| File | Mục đích |
+|---|---|
+| `mobile/supabase_schema.sql` | Schema hoàn chỉnh với RLS, triggers, indexes |
+| `mobile/supabase_rls_fix.sql` | Fix RLS infinite recursion (families ↔ children) |
+| `mobile/supabase_migration_v2.sql` | Thêm `bonding_message`, `streak_days` |
 
-- Đã có luồng auth, nhiệm vụ, hũ xu, dream jar, parent/child dashboards
-- Một số tính năng nâng cao đang ở mức demo/MVP
+---
 
 ## Đóng góp
 
-1. Tạo branch mới từ `main`
-2. Commit theo Conventional Commits
-3. Mở Pull Request
+1. Tạo branch từ `develop`
+2. Commit theo [Conventional Commits](https://www.conventionalcommits.org/)
+3. Mở Pull Request về `develop`
 
-Ví dụ commit message:
-
-```text
-feat(auth): add Google OAuth callback handling
-fix(tasks): use dynamic coin reward in approval flow
-chore(repo): update gitignore for env and generated files
 ```
+feat(auth):    add Google OAuth callback handling
+fix(tasks):    use dynamic coin reward in approval flow
+chore(repo):   update gitignore for env files
+```
+
+---
 
 ## License
 
-Nội bộ cho mục đích học tập và demo.
+Nội bộ — chỉ dùng cho mục đích học tập và demo tại FPT University.
