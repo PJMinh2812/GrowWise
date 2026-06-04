@@ -64,8 +64,8 @@ class _AiChatScreenState extends State<AiChatScreen> {
     super.dispose();
   }
 
-  Future<void> _send() async {
-    final text = _inputText.trim();
+  Future<void> _send([String? override]) async {
+    final text = (override ?? _inputText).trim();
     if (text.isEmpty || _typing) return;
     setState(() {
       _msgs.add(_Msg(text: text, isAi: false));
@@ -129,10 +129,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
     _scrollDown();
   }
 
-  void _sendQuick(String text) {
-    _inputText = text;
-    _send();
-  }
+  void _sendQuick(String text) => _send(text);
 
   void _scrollDown() {
     Future.delayed(const Duration(milliseconds: 100), () {

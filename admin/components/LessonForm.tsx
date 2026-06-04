@@ -53,17 +53,22 @@ export default function LessonForm({ initial, lessonId }: Props) {
         setSaving(false);
         return;
       }
+      router.push("/lessons");
+      router.refresh();
     } else {
-      const { error } = await supabase.from("lessons").insert(payload);
+      const { data: newLesson, error } = await supabase
+        .from("lessons")
+        .insert(payload)
+        .select()
+        .single();
       if (error) {
         setError(error.message);
         setSaving(false);
         return;
       }
+      // Redirect to edit page so QuizEditor is available immediately
+      router.push(`/lessons/${newLesson.id}`);
     }
-
-    router.push("/lessons");
-    router.refresh();
   }
 
   const youtubePreviewUrl = form.youtube_id
@@ -266,7 +271,7 @@ export default function LessonForm({ initial, lessonId }: Props) {
             disabled={saving}
             className="flex-1 bg-violet-600 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-violet-700 disabled:opacity-50 transition"
           >
-            {saving ? "Đang lưu..." : isEdit ? "Lưu thay đổi" : "Tạo bài học"}
+            {saving ? "Đang lưu..." : isEdit ? "Lưu thay đổi" : "Tạo & thêm câu hỏi →"}
           </button>
           <button
             type="button"
@@ -278,8 +283,8 @@ export default function LessonForm({ initial, lessonId }: Props) {
         </div>
       </form>
 
-      {/* Quiz editor — only shown when editing an existing child lesson */}
-      {isEdit && form.audience === "child" && (
+      {/* Quiz editor — shown when editing any lesson */}
+      {isEdit && (
         <div className="mt-8">
           <QuizEditor
             lessonId={lessonId}
