@@ -45,6 +45,18 @@ async function resolveRole(
 }
 
 export async function proxy(request: NextRequest) {
+  const pathname = request.nextUrl.pathname
+  
+  // Allow landing page to be accessed without authentication
+  if (pathname === '/') {
+    return NextResponse.next({ request })
+  }
+
+  // Skip auth check if Supabase env vars are not configured
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    return NextResponse.next({ request })
+  }
+
   const response = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -66,13 +78,13 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const pathname = request.nextUrl.pathname
-  const isLoginPage = pathname === '/login'
+  const isLoginPage = pathname === '/admin/login'
+  const isAdminRoute = pathname.startsWith('/admin')
 
-  // Chưa đăng nhập → chỉ được vào trang login
+  // Chưa đăng nhập → chỉ được vào trang admin/login
   if (!user) {
-    if (!isLoginPage) {
-      return NextResponse.redirect(new URL('/login', request.url))
+    if (isAdminRoute && !isLoginPage) {
+      return NextResponse.redirect(new URL('/admin/login', request.url))
     }
     return response
   }
@@ -80,25 +92,25 @@ export async function proxy(request: NextRequest) {
   // Đã đăng nhập → kiểm tra quyền TRƯỚC KHI quyết định redirect
   const { role, isBanned } = await resolveRole(user.id, user.email ?? '')
 
-  // Không có quyền hoặc bị ban → cho ở lại login (không redirect ra /lessons)
+  // Không có quyền hoặc bị ban → cho ở lại login (không redirect ra /admin/lessons)
   if (!role || isBanned) {
     if (isLoginPage) {
       return response
     }
     const errorParam = isBanned ? 'banned' : 'unauthorized'
     return NextResponse.redirect(
-      new URL(`/login?error=${errorParam}`, request.url),
+      new URL(`/admin/login?error=${errorParam}`, request.url),
     )
   }
 
   // Có quyền + đang ở trang login → vào dashboard
   if (isLoginPage) {
-    return NextResponse.redirect(new URL('/lessons', request.url))
+    return NextResponse.redirect(new URL('/admin/lessons', request.url))
   }
 
-  // Phân quyền theo route
-  if (pathname.startsWith('/admin') && role !== 'admin') {
-    return NextResponse.redirect(new URL('/lessons', request.url))
+  // Phân quyền theo route: chỉ admin mới vào /admin/users
+  if (pathname.startsWith('/admin/users') && role !== 'admin') {
+    return NextResponse.redirect(new URL('/admin/lessons', request.url))
   }
 
   response.cookies.set('x-user-role', role, {

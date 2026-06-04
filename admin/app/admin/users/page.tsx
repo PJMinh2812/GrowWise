@@ -36,7 +36,7 @@ export default function AdminUsersPage() {
     setLoading(true);
     const res = await fetch("/api/admin/users");
     if (!res.ok) {
-      router.push("/lessons");
+      router.push("/admin/lessons");
       return;
     }
     setUsers(await res.json());
@@ -46,7 +46,7 @@ export default function AdminUsersPage() {
   async function handleLogout() {
     const supabase = createClient();
     await supabase.auth.signOut();
-    router.push("/login");
+    router.push("/admin/login");
   }
 
   async function updateUser(id: string, patch: object) {
@@ -103,7 +103,7 @@ export default function AdminUsersPage() {
         </div>
         <div className="flex items-center gap-4">
           <Link
-            href="/lessons"
+            href="/admin/lessons"
             className="text-sm text-gray-500 hover:text-gray-700"
           >
             Bài học

@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get('code')
 
   if (code) {
-    const response = NextResponse.redirect(`${origin}/lessons`)
+    const response = NextResponse.redirect(`${origin}/admin/lessons`)
 
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -28,5 +28,5 @@ export async function GET(request: NextRequest) {
   }
 
   // Nếu lỗi → về login
-  return NextResponse.redirect(`${origin}/login?error=oauth`)
+  return NextResponse.redirect(`${origin}/admin/login?error=oauth`)
 }
