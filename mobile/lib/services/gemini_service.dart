@@ -4,8 +4,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 
 class GeminiService {
-  static const _endpoint =
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+  static const _endpoint = 'https://api.groq.com/openai/v1/chat/completions';
+  static const _model = 'llama-3.3-70b-versatile';
 
   static String _buildSystemPrompt(Map<String, dynamic> ctx) {
     final name = ctx['childName'] as String;
@@ -44,83 +44,71 @@ Quy tắc:
 - Giải thích tài chính một cách thú vị, dễ hiểu.''';
   }
 
-  /// Gửi tin nhắn đến Gemini và trả về phản hồi.
-  /// [history] là lịch sử hội thoại (không bao gồm lời chào đầu tiên).
-  /// Trả về null nếu API key chưa cấu hình hoặc có lỗi.
-  static Future<String?> send({
-    required List<Map<String, String>> history,
-    required Map<String, dynamic> childContext,
-  }) async {
-    final apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
-    if (apiKey.isEmpty) return null;
-
-    final contents = history
-        .map(
-          (m) => {
-            'role': m['role'],
-            'parts': [
-              {'text': m['text']},
-            ],
-          },
-        )
-        .toList();
-
-    final body = jsonEncode({
-      'system_instruction': {
-        'parts': [
-          {'text': _buildSystemPrompt(childContext)},
-        ],
-      },
-      'contents': contents,
-      'generationConfig': {'temperature': 0.85, 'maxOutputTokens': 256},
-    });
-
+  static Future<http.Response?> _post(
+    String apiKey,
+    Map<String, dynamic> body,
+    Duration timeout,
+  ) async {
     try {
-      final res = await http
+      return await http
           .post(
-            Uri.parse('$_endpoint?key=$apiKey'),
-            headers: {'Content-Type': 'application/json'},
-            body: body,
+            Uri.parse(_endpoint),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $apiKey',
+            },
+            body: jsonEncode(body),
           )
-          .timeout(const Duration(seconds: 15));
-
-      debugPrint('[Gemini] status=${res.statusCode}');
-      debugPrint('[Gemini] body=${res.body}');
-
-      if (res.statusCode == 200) {
-        final json = jsonDecode(res.body) as Map<String, dynamic>;
-        final candidates = json['candidates'] as List<dynamic>;
-        if (candidates.isNotEmpty) {
-          final parts =
-              (candidates.first['content'] as Map<String, dynamic>)['parts']
-                  as List<dynamic>;
-          return (parts.first['text'] as String).trim();
-        }
-      }
-    } catch (e, st) {
-      debugPrint('[Gemini] error: $e\n$st');
+          .timeout(timeout);
+    } catch (e) {
+      debugPrint('[Groq] request error: $e');
+      return null;
     }
-    return null;
   }
 
-  // Lọc thinking parts (gemini-2.5-flash trả về thought trước answer thật)
-  static String? _extractText(Map<String, dynamic> body) {
+  static String? _extractContent(Map<String, dynamic> json) {
     try {
-      final parts = (body['candidates'] as List).first['content']['parts'] as List;
-      final answer = parts.firstWhere(
-        (p) => (p as Map)['thought'] != true,
-        orElse: () => parts.first,
-      );
-      return (answer['text'] as String).trim();
+      return (json['choices'] as List).first['message']['content'] as String?;
     } catch (_) {
       return null;
     }
   }
 
-  static Map<String, dynamic> _noThinkingConfig(Map<String, dynamic> base) =>
-      {...base, 'thinkingConfig': {'thinkingBudget': 0}};
+  static Future<String?> send({
+    required List<Map<String, String>> history,
+    required Map<String, dynamic> childContext,
+  }) async {
+    final apiKey = dotenv.env['GROQ_API_KEY'] ?? '';
+    if (apiKey.isEmpty) return null;
 
-  /// Báo cáo tiến trình tuần cho phụ huynh.
+    final messages = <Map<String, String>>[
+      {'role': 'system', 'content': _buildSystemPrompt(childContext)},
+      ...history.map((m) => {
+        'role': m['role'] == 'model' ? 'assistant' : m['role']!,
+        'content': m['text']!,
+      }),
+    ];
+
+    final res = await _post(
+      apiKey,
+      {
+        'model': _model,
+        'messages': messages,
+        'temperature': 0.85,
+        'max_tokens': 256,
+      },
+      const Duration(seconds: 15),
+    );
+
+    debugPrint('[Groq] status=${res?.statusCode}');
+    if (res?.statusCode == 200) {
+      final json = jsonDecode(res!.body) as Map<String, dynamic>;
+      return _extractContent(json)?.trim();
+    }
+    debugPrint('[Groq] body=${res?.body}');
+    return null;
+  }
+
   static Future<String?> weeklyReport({
     required String childName,
     required int totalApproved,
@@ -129,15 +117,15 @@ Quy tắc:
     required int totalCoins,
     required List<String> dreamNames,
   }) async {
-    final apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
+    final apiKey = dotenv.env['GROQ_API_KEY'] ?? '';
     if (apiKey.isEmpty) return null;
 
     final cats = categoryTaskCounts.entries
         .where((e) => e.value > 0)
         .map((e) => '${e.key}: ${e.value} nhiệm vụ')
         .join(', ');
-
-    final dreamStr = dreamNames.isNotEmpty ? 'Ước mơ: ${dreamNames.join(', ')}.' : '';
+    final dreamStr =
+        dreamNames.isNotEmpty ? 'Ước mơ: ${dreamNames.join(', ')}.' : '';
 
     final prompt =
         'Bạn là Wisy 🌱 của GrowWise. Viết báo cáo tiến trình ngắn gọn cho phụ huynh '
@@ -147,36 +135,32 @@ Quy tắc:
         'Viết 3–4 câu tiếng Việt: tóm tắt thành tích + 1 lời khuyên cho phụ huynh '
         'tuần tới. Dùng 1–2 emoji.';
 
-    final body = jsonEncode({
-      'contents': [
-        {'role': 'user', 'parts': [{'text': prompt}]},
-      ],
-      'generationConfig': _noThinkingConfig({'temperature': 0.85, 'maxOutputTokens': 200}),
-    });
+    final res = await _post(
+      apiKey,
+      {
+        'model': _model,
+        'messages': [
+          {'role': 'user', 'content': prompt},
+        ],
+        'temperature': 0.85,
+        'max_tokens': 200,
+      },
+      const Duration(seconds: 15),
+    );
 
-    try {
-      final res = await http
-          .post(Uri.parse('$_endpoint?key=$apiKey'),
-              headers: {'Content-Type': 'application/json'}, body: body)
-          .timeout(const Duration(seconds: 15));
-
-      if (res.statusCode == 200) {
-        final decoded = jsonDecode(res.body) as Map<String, dynamic>;
-        return _extractText(decoded);
-      }
-    } catch (e) {
-      debugPrint('[Gemini.weeklyReport] $e');
+    if (res?.statusCode == 200) {
+      final json = jsonDecode(res!.body) as Map<String, dynamic>;
+      return _extractContent(json)?.trim();
     }
+    debugPrint('[Groq.weeklyReport] status=${res?.statusCode}');
     return null;
   }
 
-  /// Gợi ý 4 nhiệm vụ cho phụ huynh dựa trên tuổi trẻ và danh mục.
-  /// Returns list of {title, description, icon, coins} hoặc null nếu lỗi.
   static Future<List<Map<String, dynamic>>?> suggestTasks({
     required int childAge,
     required String category,
   }) async {
-    final apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
+    final apiKey = dotenv.env['GROQ_API_KEY'] ?? '';
     if (apiKey.isEmpty) return null;
 
     final prompt =
@@ -186,47 +170,42 @@ Quy tắc:
         'Quy tắc: coins từ 5–50 tùy độ khó, description dưới 20 từ tiếng Việt, '
         'icon là 1 emoji phù hợp.';
 
-    final body = jsonEncode({
-      'contents': [
-        {'role': 'user', 'parts': [{'text': prompt}]},
-      ],
-      'generationConfig': _noThinkingConfig({'temperature': 0.8, 'maxOutputTokens': 512}),
-    });
+    final res = await _post(
+      apiKey,
+      {
+        'model': _model,
+        'messages': [
+          {'role': 'user', 'content': prompt},
+        ],
+        'temperature': 0.8,
+        'max_tokens': 512,
+      },
+      const Duration(seconds: 20),
+    );
 
-    try {
-      final res = await http
-          .post(Uri.parse('$_endpoint?key=$apiKey'),
-              headers: {'Content-Type': 'application/json'}, body: body)
-          .timeout(const Duration(seconds: 20));
-
-      debugPrint('[Gemini.suggestTasks] status=${res.statusCode}');
-      if (res.statusCode == 200) {
-        final decoded = jsonDecode(res.body) as Map<String, dynamic>;
-        final text = _extractText(decoded);
-        debugPrint('[Gemini.suggestTasks] text=$text');
-        if (text != null) {
-          // Greedy regex: lấy từ [ đầu tiên đến ] cuối cùng
-          final match = RegExp(r'\[[\s\S]*\]').firstMatch(text);
-          if (match != null) {
-            return List<Map<String, dynamic>>.from(
-                jsonDecode(match.group(0)!) as List);
-          }
+    debugPrint('[Groq.suggestTasks] status=${res?.statusCode}');
+    if (res?.statusCode == 200) {
+      final json = jsonDecode(res!.body) as Map<String, dynamic>;
+      final text = _extractContent(json);
+      debugPrint('[Groq.suggestTasks] text=$text');
+      if (text != null) {
+        final match = RegExp(r'\[[\s\S]*\]').firstMatch(text);
+        if (match != null) {
+          return List<Map<String, dynamic>>.from(
+              jsonDecode(match.group(0)!) as List);
         }
       }
-    } catch (e) {
-      debugPrint('[Gemini.suggestTasks] $e');
     }
     return null;
   }
 
-  /// Lời khuyến khích từ Wisy cho ước mơ đang tiết kiệm.
   static Future<String?> dreamCoach({
     required String childName,
     required String dreamName,
     required int dreamPrice,
     required int currentCoins,
   }) async {
-    final apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
+    final apiKey = dotenv.env['GROQ_API_KEY'] ?? '';
     if (apiKey.isEmpty) return null;
 
     final percent = dreamPrice > 0
@@ -239,26 +218,23 @@ Quy tắc:
         'Hiện tại $childName có $currentCoins xu ($percent% tiến độ). '
         'Ngắn gọn, vui vẻ, thân thiện với trẻ em. Dùng 1–2 emoji.';
 
-    final body = jsonEncode({
-      'contents': [
-        {'role': 'user', 'parts': [{'text': prompt}]},
-      ],
-      'generationConfig': _noThinkingConfig({'temperature': 0.9, 'maxOutputTokens': 150}),
-    });
+    final res = await _post(
+      apiKey,
+      {
+        'model': _model,
+        'messages': [
+          {'role': 'user', 'content': prompt},
+        ],
+        'temperature': 0.9,
+        'max_tokens': 150,
+      },
+      const Duration(seconds: 15),
+    );
 
-    try {
-      final res = await http
-          .post(Uri.parse('$_endpoint?key=$apiKey'),
-              headers: {'Content-Type': 'application/json'}, body: body)
-          .timeout(const Duration(seconds: 15));
-
-      debugPrint('[Gemini.dreamCoach] status=${res.statusCode}');
-      if (res.statusCode == 200) {
-        final decoded = jsonDecode(res.body) as Map<String, dynamic>;
-        return _extractText(decoded);
-      }
-    } catch (e) {
-      debugPrint('[Gemini.dreamCoach] $e');
+    debugPrint('[Groq.dreamCoach] status=${res?.statusCode}');
+    if (res?.statusCode == 200) {
+      final json = jsonDecode(res!.body) as Map<String, dynamic>;
+      return _extractContent(json)?.trim();
     }
     return null;
   }
