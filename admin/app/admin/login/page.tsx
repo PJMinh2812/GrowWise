@@ -40,7 +40,7 @@ function LoginForm() {
       return;
     }
 
-    router.push("/lessons");
+    router.push("/admin/lessons");
     router.refresh();
   }
 

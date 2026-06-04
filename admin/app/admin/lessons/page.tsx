@@ -48,7 +48,7 @@ export default function LessonsPage() {
   async function handleLogout() {
     const supabase = createClient()
     await supabase.auth.signOut()
-    router.push('/login')
+    router.push('/admin/login')
   }
 
   const filtered = filter === 'all' ? lessons : lessons.filter(l => l.audience === filter)
@@ -77,7 +77,7 @@ export default function LessonsPage() {
             <p className="text-sm text-gray-500">{lessons.length} bài học</p>
           </div>
           <Link
-            href="/lessons/new"
+            href="/admin/lessons/new"
             className="bg-violet-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-violet-700 transition"
           >
             + Thêm bài học
@@ -142,7 +142,7 @@ export default function LessonsPage() {
                     {lesson.is_published ? 'Gỡ đăng' : 'Đăng bài'}
                   </button>
                   <Link
-                    href={`/lessons/${lesson.id}`}
+                    href={`/admin/lessons/${lesson.id}`}
                     className="text-xs px-3 py-1.5 rounded-lg bg-violet-50 text-violet-700 hover:bg-violet-100 font-medium transition"
                   >
                     Chỉnh sửa

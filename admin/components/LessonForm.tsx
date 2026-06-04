@@ -53,7 +53,7 @@ export default function LessonForm({ initial, lessonId }: Props) {
         setSaving(false);
         return;
       }
-      router.push("/lessons");
+      router.push("/admin/lessons");
       router.refresh();
     } else {
       const { data: newLesson, error } = await supabase
@@ -67,7 +67,7 @@ export default function LessonForm({ initial, lessonId }: Props) {
         return;
       }
       // Redirect to edit page so QuizEditor is available immediately
-      router.push(`/lessons/${newLesson.id}`);
+      router.push(`/admin/lessons/${newLesson.id}`);
     }
   }
 
