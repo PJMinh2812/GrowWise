@@ -45,6 +45,18 @@ async function resolveRole(
 }
 
 export async function proxy(request: NextRequest) {
+  const pathname = request.nextUrl.pathname
+  
+  // Allow landing page to be accessed without authentication
+  if (pathname === '/') {
+    return NextResponse.next({ request })
+  }
+
+  // Skip auth check if Supabase env vars are not configured
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    return NextResponse.next({ request })
+  }
+
   const response = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -66,8 +78,8 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const pathname = request.nextUrl.pathname
   const isLoginPage = pathname === '/login'
+  const isLandingPage = pathname === '/'
 
   // Chưa đăng nhập → chỉ được vào trang login
   if (!user) {
