@@ -9,7 +9,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'GROQ_API_KEY not configured' }, { status: 500 })
   }
 
-  const { title, description, audience, count = 3 } = await req.json()
+  const body = await req.json()
+  const { title, description, audience } = body
+  const count = Math.max(1, Math.min(10, parseInt(body.count ?? 3) || 3))
 
   const prompt =
     `Tạo ${count} câu hỏi trắc nghiệm cho bài học "${title}" về chủ đề tài chính cho trẻ em. ` +

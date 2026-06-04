@@ -211,45 +211,46 @@ export default function QuizEditor({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Lỗi AI");
 
-      const total = data.quizzes.length;
+      const aiQuizzes = data.quizzes as {
+        question: string;
+        options: { emoji: string; text: string }[];
+        correct_index: number;
+        explanation: string;
+      }[];
+      const total = aiQuizzes.length;
+      const baseOrder = quizzes.length;
       const supabase = createClient();
 
-      for (let idx = 0; idx < total; idx++) {
-        const q = (data.quizzes as {
-          question: string;
-          options: { emoji: string; text: string }[];
-          correct_index: number;
-          explanation: string;
-        }[])[idx];
+      // Batch insert all quizzes at once
+      const quizPayloads = aiQuizzes.map((q, idx) => ({
+        lesson_id: lessonId,
+        trigger_at: lessonDuration > 0
+          ? Math.round((lessonDuration / (total + 1)) * (idx + 1))
+          : 0,
+        question: q.question,
+        question_type: "single",
+        correct_index: q.correct_index ?? 0,
+        correct_indices: [],
+        explanation: q.explanation ?? "",
+        order_index: baseOrder + idx,
+      }));
 
-        const quizPayload = {
-          lesson_id: lessonId,
-          trigger_at: lessonDuration > 0
-            ? Math.round((lessonDuration / (total + 1)) * (idx + 1))
-            : 0,
-          question: q.question,
-          question_type: "single",
-          correct_index: q.correct_index ?? 0,
-          correct_indices: [],
-          explanation: q.explanation ?? "",
-          order_index: quizzes.length + idx,
-        };
+      const { data: newQuizzes } = await supabase
+        .from("lesson_quizzes")
+        .insert(quizPayloads)
+        .select();
 
-        const { data: newQuiz } = await supabase
-          .from("lesson_quizzes")
-          .insert(quizPayload)
-          .select()
-          .single();
-
-        if (newQuiz) {
-          const options = (q.options ?? []).map((o, i) => ({
-            quiz_id: newQuiz.id,
+      if (newQuizzes?.length) {
+        // Batch insert all options at once
+        const allOptions = newQuizzes.flatMap((nq, idx) =>
+          (aiQuizzes[idx].options ?? []).map((o, i) => ({
+            quiz_id: nq.id,
             text: o.text ?? "",
             emoji: o.emoji ?? OPTION_EMOJIS[i] ?? "🔘",
             order_index: i,
-          }));
-          await supabase.from("quiz_options").insert(options);
-        }
+          }))
+        );
+        await supabase.from("quiz_options").insert(allOptions);
       }
 
       // Reload from DB to get correct IDs
