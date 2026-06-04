@@ -211,30 +211,49 @@ export default function QuizEditor({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Lỗi AI");
 
-      const total = data.quizzes.length
-      const newQuizzes: LessonQuiz[] = (data.quizzes as {
-        question: string;
-        options: { emoji: string; text: string }[];
-        correct_index: number;
-        explanation: string;
-      }[]).map((q, idx) => ({
-        // Distribute trigger_at evenly across video duration (avoid 0 and end)
-        trigger_at: lessonDuration > 0
-          ? Math.round((lessonDuration / (total + 1)) * (idx + 1))
-          : 0,
-        question: q.question,
-        question_type: "single" as const,
-        correct_index: q.correct_index ?? 0,
-        correct_indices: [],
-        explanation: q.explanation ?? "",
-        order_index: quizzes.length + idx,
-        quiz_options: (q.options ?? []).map((o, i) => ({
-          text: o.text ?? "",
-          emoji: o.emoji ?? OPTION_EMOJIS[i] ?? "🔘",
-          order_index: i,
-        })),
-      }));
-      setQuizzes((prev) => [...prev, ...newQuizzes]);
+      const total = data.quizzes.length;
+      const supabase = createClient();
+
+      for (let idx = 0; idx < total; idx++) {
+        const q = (data.quizzes as {
+          question: string;
+          options: { emoji: string; text: string }[];
+          correct_index: number;
+          explanation: string;
+        }[])[idx];
+
+        const quizPayload = {
+          lesson_id: lessonId,
+          trigger_at: lessonDuration > 0
+            ? Math.round((lessonDuration / (total + 1)) * (idx + 1))
+            : 0,
+          question: q.question,
+          question_type: "single",
+          correct_index: q.correct_index ?? 0,
+          correct_indices: [],
+          explanation: q.explanation ?? "",
+          order_index: quizzes.length + idx,
+        };
+
+        const { data: newQuiz } = await supabase
+          .from("lesson_quizzes")
+          .insert(quizPayload)
+          .select()
+          .single();
+
+        if (newQuiz) {
+          const options = (q.options ?? []).map((o, i) => ({
+            quiz_id: newQuiz.id,
+            text: o.text ?? "",
+            emoji: o.emoji ?? OPTION_EMOJIS[i] ?? "🔘",
+            order_index: i,
+          }));
+          await supabase.from("quiz_options").insert(options);
+        }
+      }
+
+      // Reload from DB to get correct IDs
+      await fetchQuizzes();
     } catch (e) {
       alert(`Không thể tạo câu hỏi: ${e}`);
     }

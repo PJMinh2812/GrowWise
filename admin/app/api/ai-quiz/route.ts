@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const GEMINI_ENDPOINT =
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent'
+const GROQ_ENDPOINT = 'https://api.groq.com/openai/v1/chat/completions'
+const GROQ_MODEL = 'llama-3.3-70b-versatile'
 
 export async function POST(req: NextRequest) {
-  const apiKey = process.env.GEMINI_API_KEY
+  const apiKey = process.env.GROQ_API_KEY
   if (!apiKey) {
-    return NextResponse.json({ error: 'GEMINI_API_KEY not configured' }, { status: 500 })
+    return NextResponse.json({ error: 'GROQ_API_KEY not configured' }, { status: 500 })
   }
 
   const { title, description, audience, count = 3 } = await req.json()
@@ -20,30 +20,27 @@ export async function POST(req: NextRequest) {
     'Mỗi câu có 4 lựa chọn, 1 đáp án đúng, giải thích ngắn gọn. Tiếng Việt, đơn giản, thú vị.'
 
   try {
-    const res = await fetch(`${GEMINI_ENDPOINT}?key=${apiKey}`, {
+    const res = await fetch(GROQ_ENDPOINT, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
       body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.8,
-          maxOutputTokens: 1024,
-          thinkingConfig: { thinkingBudget: 0 },
-        },
+        model: GROQ_MODEL,
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.8,
+        max_tokens: 1024,
       }),
     })
 
     if (!res.ok) {
       const err = await res.json()
-      return NextResponse.json({ error: err?.error?.message ?? 'Gemini error' }, { status: res.status })
+      return NextResponse.json({ error: err?.error?.message ?? 'Groq error' }, { status: res.status })
     }
 
     const data = await res.json()
-    // Filter out thinking parts
-    const parts: { thought?: boolean; text?: string }[] =
-      data?.candidates?.[0]?.content?.parts ?? []
-    const textPart = parts.find((p) => !p.thought)
-    const text = textPart?.text ?? ''
+    const text: string = data?.choices?.[0]?.message?.content ?? ''
 
     const match = text.match(/\[[\s\S]*\]/)
     if (!match) {
@@ -54,8 +51,9 @@ export async function POST(req: NextRequest) {
     try {
       quizzes = JSON.parse(match[0])
     } catch {
-      return NextResponse.json({ error: 'Không thể parse JSON từ AI response', raw: match[0].slice(0, 200) }, { status: 500 })
+      return NextResponse.json({ error: 'Không thể parse JSON từ AI response' }, { status: 500 })
     }
+
     return NextResponse.json({ quizzes })
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 })

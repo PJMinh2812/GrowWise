@@ -15,10 +15,11 @@ class AiChatScreen extends StatefulWidget {
 }
 
 class _AiChatScreenState extends State<AiChatScreen> {
-  final _ctrl = TextEditingController();
   final _scroll = ScrollController();
   final List<_Msg> _msgs = [];
   bool _typing = false;
+  String _inputText = '';
+  int _fieldKey = 0;
 
   // Fallback responses khi Gemini API chưa cấu hình hoặc lỗi mạng
   static const _fallbackReplies = {
@@ -59,19 +60,19 @@ class _AiChatScreenState extends State<AiChatScreen> {
 
   @override
   void dispose() {
-    _ctrl.dispose();
     _scroll.dispose();
     super.dispose();
   }
 
   Future<void> _send() async {
-    final text = _ctrl.text.trim();
+    final text = _inputText.trim();
     if (text.isEmpty || _typing) return;
     setState(() {
       _msgs.add(_Msg(text: text, isAi: false));
       _typing = true;
+      _inputText = '';
+      _fieldKey++;
     });
-    _ctrl.clear();
     _scrollDown();
 
     final app = context.read<AppState>();
@@ -129,7 +130,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
   }
 
   void _sendQuick(String text) {
-    _ctrl.text = text;
+    _inputText = text;
     _send();
   }
 
@@ -266,8 +267,8 @@ class _AiChatScreenState extends State<AiChatScreen> {
                         border: Border.all(color: AppTheme.surfaceContainerHigh, width: 2),
                       ),
                       child: TextField(
-                        controller: _ctrl,
-                        onSubmitted: (_) => _send(),
+                        key: ValueKey(_fieldKey),
+                        onChanged: (v) => _inputText = v,
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 14,
                           color: AppTheme.textPrimary,
