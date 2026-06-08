@@ -98,9 +98,12 @@ class AppState extends ChangeNotifier {
 
   // ── Subscription / Plan ────────────────────────────────────────────────────
   String _planType = 'free'; // 'free' | 'premium' | 'family'
+  int _demoAiUsed = 0; // persists across chat screen reopens in demo mode
 
   String get planType => _planType;
   bool get isPremium => _planType == 'premium' || _planType == 'family';
+  int get demoAiUsed => _demoAiUsed;
+  void incrementDemoAiUsage() { _demoAiUsed++; notifyListeners(); }
   int get maxDailyAiMessages => isPremium ? 999 : 5;
   int get maxActiveTasks => isPremium ? 999 : 3;
   int get unlockedLessons => isPremium ? 999 : 3;

@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_state.dart';
 import '../../services/gemini_service.dart';
+import '../../widgets/paywall_dialog.dart';
 import '../../theme/app_theme.dart';
 import '../../models/task_model.dart';
 import '../../utils/validators.dart';
@@ -722,9 +723,17 @@ class _ParentCreateTaskState extends State<ParentCreateTask> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    final appState = context.read<AppState>();
+
+    // Task limit gate for free users
+    final activeCount = appState.pendingTasks.length;
+    if (!appState.isPremium && activeCount >= appState.maxActiveTasks) {
+      showPaywallDialog(context, feature: PaywallFeature.tasks);
+      return;
+    }
+
     setState(() => _isSubmitting = true);
     try {
-      final appState = context.read<AppState>();
       
       const categoryIcons = {
         'Việc nhà': '🏠',
