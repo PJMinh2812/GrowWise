@@ -12,6 +12,7 @@ import 'parent_create_task.dart';
 import 'parent_memory_lane.dart';
 import 'parent_settings.dart';
 import 'parent_learn_screen.dart';
+import '../pricing_screen.dart';
 
 class ParentDashboard extends StatefulWidget {
   const ParentDashboard({super.key});
@@ -31,12 +32,13 @@ class _ParentDashboardState extends State<ParentDashboard> {
     });
   }
 
-  void _goToSettings() => _switchTab(3);
+  void _goToSettings() => _switchTab(4);
 
   Widget _tabWidget(int i) => switch (i) {
     0 => _HomeTab(onGoToSettings: _goToSettings),
     1 => const ParentMemoryLane(),
     2 => const ParentLearnScreen(),
+    3 => const PricingScreen(),
     _ => const ParentSettings(),
   };
 
@@ -47,7 +49,7 @@ class _ParentDashboardState extends State<ParentDashboard> {
       child: Scaffold(
         backgroundColor: AppTheme.surfaceBright,
         body: Stack(
-          children: List.generate(4, (i) {
+          children: List.generate(5, (i) {
             if (!_built.contains(i)) return const SizedBox.shrink();
             return TickerMode(
               enabled: _tab == i,
@@ -123,6 +125,7 @@ class _BottomNav extends StatelessWidget {
       (Icons.home_rounded, Icons.home_outlined, 'Home'),
       (Icons.auto_stories_rounded, Icons.auto_stories_outlined, 'Memories'),
       (Icons.school_rounded, Icons.school_outlined, 'Học'),
+      (Icons.workspace_premium_rounded, Icons.workspace_premium_outlined, 'Gói'),
       (Icons.settings_rounded, Icons.settings_outlined, 'Settings'),
     ];
     return Container(
@@ -144,7 +147,7 @@ class _BottomNav extends StatelessWidget {
               behavior: HitTestBehavior.opaque,
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: active
                     ? BoxDecoration(
                         color: AppTheme.secondaryContainer,

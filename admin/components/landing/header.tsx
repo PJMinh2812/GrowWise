@@ -30,6 +30,9 @@ export function Header() {
             <Link href="#testimonials" className="text-muted-foreground hover:text-foreground transition-colors">
               Đánh giá
             </Link>
+            <Link href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
+              Bảng giá
+            </Link>
           </nav>
 
           {/* CTA Button */}
@@ -76,6 +79,13 @@ export function Header() {
                 onClick={() => setIsMenuOpen(false)}
               >
                 Đánh giá
+              </Link>
+              <Link
+                href="#pricing"
+                className="text-muted-foreground hover:text-foreground transition-colors font-medium"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Bảng giá
               </Link>
               <Link
                 href="#download"

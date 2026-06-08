@@ -5,7 +5,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../services/gemini_service.dart';
+import '../services/supabase_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/paywall_dialog.dart';
 
 class AiChatScreen extends StatefulWidget {
   const AiChatScreen({super.key});
@@ -45,6 +47,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
   ];
 
   int _fallbackIdx = 0;
+  int _dailyUsed = 0; // tracked locally this session
 
   @override
   void initState() {
@@ -52,10 +55,15 @@ class _AiChatScreenState extends State<AiChatScreen> {
     final app = context.read<AppState>();
     final s = app.strings;
     final name = app.childName.isNotEmpty ? app.childName : 'bạn nhỏ';
-    _msgs.add(_Msg(
-      text: s.aiGreeting(name),
-      isAi: true,
-    ));
+    _msgs.add(_Msg(text: s.aiGreeting(name), isAi: true));
+    _loadDailyUsage();
+  }
+
+  Future<void> _loadDailyUsage() async {
+    final uid = SupabaseService.userId;
+    if (uid == null) return;
+    final count = await SupabaseService.getDailyAiUsage(uid);
+    if (mounted) setState(() => _dailyUsed = count);
   }
 
   @override
@@ -67,6 +75,13 @@ class _AiChatScreenState extends State<AiChatScreen> {
   Future<void> _send([String? override]) async {
     final text = (override ?? _inputText).trim();
     if (text.isEmpty || _typing) return;
+
+    // Daily limit gate for free users
+    final app = context.read<AppState>();
+    if (!app.isPremium && _dailyUsed >= app.maxDailyAiMessages) {
+      showPaywallDialog(context, feature: PaywallFeature.aiChat, childMode: true);
+      return;
+    }
     setState(() {
       _msgs.add(_Msg(text: text, isAi: false));
       _typing = true;
@@ -75,7 +90,6 @@ class _AiChatScreenState extends State<AiChatScreen> {
     });
     _scrollDown();
 
-    final app = context.read<AppState>();
     final childContext = {
       'childName': app.childName.isNotEmpty ? app.childName : 'bạn nhỏ',
       'childAge': app.childAge,
@@ -125,7 +139,11 @@ class _AiChatScreenState extends State<AiChatScreen> {
     setState(() {
       _typing = false;
       _msgs.add(_Msg(text: reply!, isAi: true));
+      _dailyUsed++;
     });
+    // Track usage in Supabase (fire-and-forget)
+    final uid = SupabaseService.userId;
+    if (uid != null) SupabaseService.incrementAiUsage(uid);
     _scrollDown();
   }
 
@@ -145,7 +163,10 @@ class _AiChatScreenState extends State<AiChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final s = context.watch<AppState>().strings;
+    final appState = context.watch<AppState>();
+    final s = appState.strings;
+    final limit = appState.maxDailyAiMessages;
+    final isAtLimit = !appState.isPremium && _dailyUsed >= limit;
     return Scaffold(
       backgroundColor: AppTheme.surfaceBright,
       appBar: AppBar(
@@ -254,7 +275,50 @@ class _AiChatScreenState extends State<AiChatScreen> {
             ),
             child: SafeArea(
               top: false,
-              child: Row(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Daily limit counter for free users
+                  if (!appState.isPremium) ...[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Text(
+                          isAtLimit
+                              ? 'Hết lượt hôm nay 🔒'
+                              : '$_dailyUsed/$limit tin hôm nay',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: isAtLimit
+                                ? const Color(0xFFEF4444)
+                                : AppTheme.textHint,
+                          ),
+                        ),
+                        if (isAtLimit) ...[
+                          const SizedBox(width: 6),
+                          GestureDetector(
+                            onTap: () => showPaywallDialog(
+                              context,
+                              feature: PaywallFeature.aiChat,
+                              childMode: true,
+                            ),
+                            child: Text(
+                              'Nâng cấp →',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF6833EA),
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                  ],
+                  Row(
                 children: [
                   Expanded(
                     child: Container(
@@ -284,23 +348,31 @@ class _AiChatScreenState extends State<AiChatScreen> {
                   ),
                   const SizedBox(width: 8),
                   GestureDetector(
-                    onTap: _send,
+                    onTap: isAtLimit ? null : _send,
                     child: Container(
                       width: 48,
                       height: 48,
                       decoration: BoxDecoration(
-                        color: AppTheme.vibrantPrimary,
+                        color: isAtLimit
+                            ? AppTheme.surfaceContainerHigh
+                            : AppTheme.vibrantPrimary,
                         shape: BoxShape.circle,
-                        boxShadow: const [
-                          BoxShadow(color: AppTheme.onPrimaryFixedVariant, offset: Offset(0, 3)),
-                        ],
+                        boxShadow: isAtLimit
+                            ? null
+                            : const [BoxShadow(color: AppTheme.onPrimaryFixedVariant, offset: Offset(0, 3))],
                       ),
-                      child: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+                      child: Icon(
+                        Icons.send_rounded,
+                        color: isAtLimit ? AppTheme.textHint : Colors.white,
+                        size: 20,
+                      ),
                     ),
                   ),
                 ],
-              ),
-            ),
+              ), // Row
+              ], // Column children
+            ), // Column
+            ), // SafeArea
           ),
         ],
       ),

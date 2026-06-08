@@ -1,0 +1,701 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../providers/app_state.dart';
+
+// Stitch design token colors
+const _kBg = Color(0xFFFFF8F3);
+const _kOrange = Color(0xFFFF8C00);
+const _kOrangeDark = Color(0xFF904D00);
+const _kPurple = Color(0xFF6833EA);
+const _kPurpleLight = Color(0xFFEDE7F6);
+const _kGreen = Color(0xFF006E1C);
+const _kText = Color(0xFF211B10);
+const _kTextMuted = Color(0xFF564334);
+const _kBorder = Color(0xFFDDC1AE);
+
+class PricingScreen extends StatefulWidget {
+  const PricingScreen({super.key});
+
+  @override
+  State<PricingScreen> createState() => _PricingScreenState();
+}
+
+class _PricingScreenState extends State<PricingScreen> {
+  bool _isYearly = false;
+  int? _openFaq;
+  bool _loading = false;
+
+  String _formatVND(int amount) {
+    if (amount == 0) return 'Miễn phí';
+    final s = amount.toString();
+    final buffer = StringBuffer();
+    for (int i = 0; i < s.length; i++) {
+      if (i > 0 && (s.length - i) % 3 == 0) buffer.write('.');
+      buffer.write(s[i]);
+    }
+    return '$buffer₫';
+  }
+
+  Future<void> _startTrial(String planName) async {
+    if (_loading) return;
+    setState(() => _loading = true);
+    final appState = context.read<AppState>();
+    await appState.startPremiumTrial(planName);
+    if (!mounted) return;
+    setState(() => _loading = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('7 ngày dùng thử bắt đầu! Chúc bạn trải nghiệm tốt 🎉'),
+        backgroundColor: _kGreen,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+    Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final appState = context.watch<AppState>();
+
+    return Scaffold(
+      backgroundColor: _kBg,
+      appBar: AppBar(
+        backgroundColor: _kBg,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, color: _kText),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          'Pricing Plans',
+          style: GoogleFonts.nunitoSans(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: _kText,
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline_rounded, color: _kTextMuted),
+            onPressed: () {},
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
+        child: Column(
+          children: [
+            const SizedBox(height: 8),
+            // Header
+            Text(
+              'Chọn gói phù hợp ☀️',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.nunitoSans(
+                fontSize: 26,
+                fontWeight: FontWeight.w900,
+                color: _kText,
+                letterSpacing: -0.5,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Đầu tư nhỏ, tương lai lớn',
+              style: GoogleFonts.nunitoSans(
+                fontSize: 15,
+                color: _kTextMuted,
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Billing toggle
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEEE0CF),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _ToggleBtn(
+                    label: 'Hàng tháng',
+                    active: !_isYearly,
+                    onTap: () => setState(() => _isYearly = false),
+                  ),
+                  _ToggleBtn(
+                    label: 'Hàng năm',
+                    badge: '-20%',
+                    active: _isYearly,
+                    onTap: () => setState(() => _isYearly = true),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Free plan card
+            _PlanCard(
+              emoji: '🌿',
+              name: 'Cơ Bản',
+              price: '0₫',
+              priceLabel: '/ tháng',
+              subtitle: null,
+              features: const [
+                '3 bài học video',
+                'Hệ thống 3 lọ tiền',
+                'Tối đa 3 nhiệm vụ',
+                'Chat AI Wisy (5 tin/ngày)',
+                '2 mini-game',
+              ],
+              lockedFeatures: const [
+                'Báo cáo AI thông minh',
+                'Savings Analytics',
+              ],
+              cardColor: Colors.white,
+              borderColor: _kBorder,
+              ctaLabel: 'Đang dùng',
+              ctaColor: null,
+              onCta: null,
+              badge: null,
+              isCurrentPlan: appState.planType == 'free',
+            ),
+            const SizedBox(height: 12),
+
+            // Premium plan card
+            _PlanCard(
+              emoji: '🚀',
+              name: 'Nâng Cao',
+              price: _isYearly ? _formatVND(749000) : _formatVND(79000),
+              priceLabel: _isYearly ? '/ năm' : '/ tháng',
+              subtitle: _isYearly
+                  ? '≈ 62.400₫/tháng'
+                  : '~2.600₫/ngày — ít hơn 1 tô phở!',
+              savingBadge: _isYearly ? 'Tiết kiệm 200.000₫' : null,
+              features: const [
+                'Tất cả bài học (không giới hạn)',
+                'Nhiệm vụ không giới hạn',
+                'Chat AI không giới hạn',
+                'Tất cả mini-game',
+                'Báo cáo AI thông minh 📊',
+                'Custom badge riêng',
+              ],
+              lockedFeatures: const [],
+              cardColor: _kPurpleLight,
+              borderColor: _kPurple,
+              ctaLabel: _isYearly
+                  ? 'Dùng thử 7 ngày • ${_formatVND(749000)}/năm'
+                  : 'Dùng thử 7 ngày miễn phí →',
+              ctaColor: _kPurple,
+              onCta: appState.isPremium ? null : () => _startTrial('premium'),
+              badge: 'PHỔ BIẾN NHẤT',
+              badgeColor: _kOrange,
+              isCurrentPlan: appState.planType == 'premium',
+              loading: _loading,
+            ),
+            const SizedBox(height: 12),
+
+            // Family plan card
+            _PlanCard(
+              emoji: '👨‍👩‍👧‍👦',
+              name: 'Gia Đình',
+              price: _isYearly ? _formatVND(1419000) : _formatVND(149000),
+              priceLabel: _isYearly ? '/ năm' : '/ tháng',
+              subtitle: _isYearly
+                  ? '≈ 118.250₫/tháng'
+                  : 'Tối đa 3 hồ sơ trẻ',
+              savingBadge: _isYearly ? 'Tiết kiệm 369.000₫' : null,
+              features: const [
+                'Tất cả tính năng Nâng Cao',
+                'Tối đa 3 hồ sơ trẻ',
+                'Dashboard phụ huynh chia sẻ',
+                'So sánh tiến độ các con',
+              ],
+              lockedFeatures: const [],
+              cardColor: const Color(0xFFFFF3E0),
+              borderColor: _kOrange,
+              ctaLabel: 'Chọn gói Gia Đình →',
+              ctaColor: _kOrangeDark,
+              onCta: appState.planType == 'family' ? null : () => _startTrial('family'),
+              badge: null,
+              isCurrentPlan: appState.planType == 'family',
+              loading: _loading,
+            ),
+            const SizedBox(height: 28),
+
+            // Trust row
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: const [
+                _TrustItem(icon: Icons.lock_outline_rounded, label: 'Thanh toán\nan toàn'),
+                _TrustItem(icon: Icons.cancel_outlined, label: 'Hủy bất cứ\nlúc nào'),
+                _TrustItem(icon: Icons.card_giftcard_rounded, label: '7 ngày\nmiễn phí'),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'MoMo · VNPay · ZaloPay · Thẻ ngân hàng',
+              style: GoogleFonts.nunitoSans(
+                fontSize: 12,
+                color: _kTextMuted,
+              ),
+            ),
+            const SizedBox(height: 28),
+
+            // FAQ
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Câu hỏi thường gặp',
+                style: GoogleFonts.nunitoSans(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: _kText,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            ..._faqs.asMap().entries.map((e) => _FaqItem(
+              index: e.key,
+              q: e.value['q']!,
+              a: e.value['a']!,
+              isOpen: _openFaq == e.key,
+              onToggle: () => setState(() => _openFaq = _openFaq == e.key ? null : e.key),
+            )),
+            const SizedBox(height: 20),
+            Text(
+              'Bằng cách đăng ký, bạn đồng ý với Điều khoản & Chính sách của GrowWise.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.nunitoSans(
+                fontSize: 11,
+                color: _kTextMuted,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+const _faqs = [
+  {'q': 'Tôi có thể hủy không?', 'a': 'Có, bạn có thể hủy bất kỳ lúc nào mà không mất thêm phí.'},
+  {'q': 'Dùng thử có cần thẻ không?', 'a': 'Không cần! 7 ngày dùng thử hoàn toàn miễn phí, không yêu cầu thông tin thanh toán.'},
+  {'q': 'Family package dùng được mấy điện thoại?', 'a': 'Mỗi hồ sơ trẻ được dùng trên 1 thiết bị. Gói Gia Đình cho tối đa 3 hồ sơ trẻ.'},
+];
+
+class _ToggleBtn extends StatelessWidget {
+  final String label;
+  final String? badge;
+  final bool active;
+  final VoidCallback onTap;
+
+  const _ToggleBtn({required this.label, this.badge, required this.active, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
+        decoration: BoxDecoration(
+          color: active ? _kOrange : Colors.transparent,
+          borderRadius: BorderRadius.circular(999),
+          boxShadow: active
+              ? [BoxShadow(color: _kOrange.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 2))]
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: GoogleFonts.nunitoSans(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: active ? Colors.white : _kTextMuted,
+              ),
+            ),
+            if (badge != null) ...[
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: active ? Colors.white.withValues(alpha: 0.3) : const Color(0xFF4CAF50),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  badge!,
+                  style: GoogleFonts.nunitoSans(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    color: active ? Colors.white : Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PlanCard extends StatelessWidget {
+  final String emoji;
+  final String name;
+  final String price;
+  final String priceLabel;
+  final String? subtitle;
+  final String? savingBadge;
+  final List<String> features;
+  final List<String> lockedFeatures;
+  final Color cardColor;
+  final Color borderColor;
+  final String ctaLabel;
+  final Color? ctaColor;
+  final VoidCallback? onCta;
+  final String? badge;
+  final Color? badgeColor;
+  final bool isCurrentPlan;
+  final bool loading;
+
+  const _PlanCard({
+    required this.emoji,
+    required this.name,
+    required this.price,
+    required this.priceLabel,
+    this.subtitle,
+    this.savingBadge,
+    required this.features,
+    required this.lockedFeatures,
+    required this.cardColor,
+    required this.borderColor,
+    required this.ctaLabel,
+    this.ctaColor,
+    this.onCta,
+    this.badge,
+    this.badgeColor,
+    required this.isCurrentPlan,
+    this.loading = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: cardColor,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: borderColor, width: 2),
+            boxShadow: [
+              BoxShadow(
+                color: borderColor.withValues(alpha: 0.15),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Plan name + saving badge row
+              Row(
+                children: [
+                  Text(emoji, style: const TextStyle(fontSize: 24)),
+                  const SizedBox(width: 8),
+                  Text(
+                    name,
+                    style: GoogleFonts.nunitoSans(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: _kText,
+                    ),
+                  ),
+                  if (savingBadge != null) ...[
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF4CAF50),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        savingBadge!,
+                        style: GoogleFonts.nunitoSans(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 8),
+              // Price
+              RichText(
+                text: TextSpan(
+                  children: [
+                    TextSpan(
+                      text: price,
+                      style: GoogleFonts.nunitoSans(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w900,
+                        color: ctaColor ?? _kText,
+                      ),
+                    ),
+                    TextSpan(
+                      text: ' $priceLabel',
+                      style: GoogleFonts.nunitoSans(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: _kTextMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (subtitle != null) ...[
+                const SizedBox(height: 2),
+                Text(
+                  subtitle!,
+                  style: GoogleFonts.nunitoSans(
+                    fontSize: 12,
+                    color: ctaColor ?? _kTextMuted,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 14),
+              // Features
+              ...features.map((f) => Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.check_circle_rounded, size: 16, color: _kGreen),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        f,
+                        style: GoogleFonts.nunitoSans(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: _kText,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              )),
+              ...lockedFeatures.map((f) => Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.lock_rounded, size: 16, color: _kBorder),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        f,
+                        style: GoogleFonts.nunitoSans(
+                          fontSize: 13,
+                          color: _kBorder,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              )),
+              const SizedBox(height: 16),
+              // CTA button
+              SizedBox(
+                width: double.infinity,
+                child: ctaColor == null
+                    ? OutlinedButton(
+                        onPressed: null,
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: _kBorder),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        child: Text(
+                          isCurrentPlan ? 'Đang dùng' : ctaLabel,
+                          style: GoogleFonts.nunitoSans(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: _kTextMuted,
+                          ),
+                        ),
+                      )
+                    : ElevatedButton(
+                        onPressed: isCurrentPlan ? null : onCta,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: isCurrentPlan ? _kBorder : ctaColor,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        child: loading
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              )
+                            : Text(
+                                isCurrentPlan ? 'Gói hiện tại ✓' : ctaLabel,
+                                style: GoogleFonts.nunitoSans(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                      ),
+              ),
+            ],
+          ),
+        ),
+        // "PHỔ BIẾN NHẤT" badge
+        if (badge != null)
+          Positioned(
+            top: -12,
+            right: 16,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+              decoration: BoxDecoration(
+                color: badgeColor ?? _kOrange,
+                borderRadius: BorderRadius.circular(999),
+                boxShadow: [
+                  BoxShadow(
+                    color: (badgeColor ?? _kOrange).withValues(alpha: 0.4),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Text(
+                badge!,
+                style: GoogleFonts.nunitoSans(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _TrustItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  const _TrustItem({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.07), blurRadius: 8, offset: const Offset(0, 2))],
+          ),
+          child: Icon(icon, size: 20, color: _kOrangeDark),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          style: GoogleFonts.nunitoSans(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: _kTextMuted,
+            height: 1.4,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _FaqItem extends StatelessWidget {
+  final int index;
+  final String q;
+  final String a;
+  final bool isOpen;
+  final VoidCallback onToggle;
+
+  const _FaqItem({
+    required this.index,
+    required this.q,
+    required this.a,
+    required this.isOpen,
+    required this.onToggle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _kBorder),
+      ),
+      child: Column(
+        children: [
+          InkWell(
+            onTap: onToggle,
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      q,
+                      style: GoogleFonts.nunitoSans(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: _kText,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    isOpen ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+                    color: _kTextMuted,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (isOpen)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+              child: Text(
+                a,
+                style: GoogleFonts.nunitoSans(
+                  fontSize: 13,
+                  color: _kTextMuted,
+                  height: 1.5,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
