@@ -57,8 +57,13 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
-        <!-- MoMo payment app -->
+        <!-- MoMo payment app (production) -->
         <package android:name="com.mservice.momotransfer" />
+        <!-- MoMo deeplink scheme — needed for UAT and production deeplinks -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="momo" />
+        </intent>
         <!-- url_launcher: allow opening https links -->
         <intent>
             <action android:name="android.intent.action.VIEW" />

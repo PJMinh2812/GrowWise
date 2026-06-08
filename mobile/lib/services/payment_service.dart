@@ -61,19 +61,32 @@ class PaymentService {
     );
   }
 
-  /// Opens MoMo payment page in the device browser.
+  /// Opens MoMo UAT app via deeplink, falls back to browser payUrl.
   static Future<bool> launchMoMo(PaymentResult result) async {
-    final url = result.payUrl;
-    if (url == null || url.isEmpty) return false;
-    try {
-      return await launchUrl(
-        Uri.parse(url),
-        mode: LaunchMode.externalApplication,
-      );
-    } catch (e) {
-      debugPrint('[PaymentService] launchMoMo error: $e');
-      return false;
+    // Try deeplink first — works when MoMo UAT app is installed
+    if (result.deeplink != null && result.deeplink!.isNotEmpty) {
+      try {
+        final launched = await launchUrl(
+          Uri.parse(result.deeplink!),
+          mode: LaunchMode.externalApplication,
+        );
+        if (launched) return true;
+      } catch (e) {
+        debugPrint('[PaymentService] deeplink failed, trying payUrl: $e');
+      }
     }
+    // Fallback: open payUrl in browser
+    if (result.payUrl != null && result.payUrl!.isNotEmpty) {
+      try {
+        return await launchUrl(
+          Uri.parse(result.payUrl!),
+          mode: LaunchMode.externalApplication,
+        );
+      } catch (e) {
+        debugPrint('[PaymentService] payUrl failed: $e');
+      }
+    }
+    return false;
   }
 
   /// Polls the server for the payment status of the given orderId.
