@@ -96,6 +96,38 @@ class AppState extends ChangeNotifier {
   // Locale
   String _locale = 'vi';
 
+  // ── Subscription / Plan ────────────────────────────────────────────────────
+  String _planType = 'free'; // 'free' | 'premium' | 'family'
+
+  String get planType => _planType;
+  bool get isPremium => _planType == 'premium' || _planType == 'family';
+  int get maxDailyAiMessages => isPremium ? 999 : 5;
+  int get maxActiveTasks => isPremium ? 999 : 3;
+  int get unlockedLessons => isPremium ? 999 : 3;
+
+  Future<void> startPremiumTrial(String planName) async {
+    if (isDemoMode) {
+      _planType = planName;
+      notifyListeners();
+      return;
+    }
+    final uid = SupabaseService.userId;
+    if (uid == null) return;
+    await SupabaseService.startTrial(userId: uid, planName: planName);
+    _planType = planName;
+    notifyListeners();
+  }
+
+  Future<void> _loadPlan() async {
+    final uid = SupabaseService.userId;
+    if (uid == null) return;
+    final plan = await SupabaseService.getUserPlan(uid);
+    if (plan != null && plan != _planType) {
+      _planType = plan;
+      notifyListeners();
+    }
+  }
+
   // ── Initialize ─────────────────────────────────────────────────────────────
 
   Future<void> initialize() async {
@@ -187,6 +219,9 @@ class AppState extends ChangeNotifier {
     // Load lessons từ Supabase
     final lessonRows = await SupabaseService.getLessons();
     _lessons = lessonRows.map(_parseLessonFromJson).toList();
+
+    // Load subscription plan
+    await _loadPlan();
 
     notifyListeners();
   }

@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../models/video_lesson_model.dart';
 import '../../providers/app_state.dart';
+import '../../widgets/paywall_dialog.dart';
 import '../shared/video_lesson_screen.dart';
 
 // Stitch "Storybook Finance" palette
@@ -124,19 +125,24 @@ class _ChildLearnScreenState extends State<ChildLearnScreen> {
 
           // Lesson cards
           ..._filteredLessons(lessons).asMap().entries.map((entry) {
+            final globalIndex = lessons.indexOf(entry.value);
             final lesson = entry.value;
             final isCompleted = app.isLessonCompleted(lesson.id);
-            final isLocked = entry.key > 0 && !app.isLessonCompleted(lessons[entry.key - 1].id);
+            final isSequentialLocked = entry.key > 0 && !app.isLessonCompleted(lessons[entry.key - 1].id);
+            final isPremiumLocked = !app.isPremium && globalIndex >= app.unlockedLessons;
             return _LessonCard(
               lesson: lesson,
               isCompleted: isCompleted,
-              isLocked: isLocked,
-              onTap: isLocked
-                  ? null
-                  : () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => VideoLessonScreen(lesson: lesson)),
-                      ),
+              isLocked: isSequentialLocked || isPremiumLocked,
+              isPremiumLocked: isPremiumLocked,
+              onTap: isPremiumLocked
+                  ? () => showPaywallDialog(context, feature: PaywallFeature.lesson, childMode: true)
+                  : isSequentialLocked
+                      ? null
+                      : () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => VideoLessonScreen(lesson: lesson)),
+                          ),
             ).animate(delay: Duration(milliseconds: 120 + entry.key * 80)).fadeIn().slideY(begin: 0.1);
           }),
         ],
@@ -261,12 +267,14 @@ class _LessonCard extends StatelessWidget {
   final VideoLesson lesson;
   final bool isCompleted;
   final bool isLocked;
+  final bool isPremiumLocked;
   final VoidCallback? onTap;
 
   const _LessonCard({
     required this.lesson,
     required this.isCompleted,
     required this.isLocked,
+    this.isPremiumLocked = false,
     required this.onTap,
   });
 
@@ -340,9 +348,22 @@ class _LessonCard extends StatelessWidget {
                   alignment: Alignment.center,
                   children: [
                     Text(
-                      isLocked ? '🔒' : lesson.thumbnailEmoji,
+                      isPremiumLocked ? '🚀' : isLocked ? '🔒' : lesson.thumbnailEmoji,
                       style: const TextStyle(fontSize: 32),
                     ),
+                    if (isPremiumLocked)
+                      Positioned(
+                        right: 2,
+                        bottom: 2,
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF6833EA),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.lock_rounded, size: 10, color: Colors.white),
+                        ),
+                      ),
                     if (isCompleted)
                       Positioned(
                         right: 4,

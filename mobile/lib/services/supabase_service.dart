@@ -361,4 +361,82 @@ class SupabaseService {
     final rows = await query.order('order_index');
     return List<Map<String, dynamic>>.from(rows as List);
   }
+
+  // ── Subscription / Pricing ─────────────────────────────────────────────────
+
+  /// Returns the plan name ('free' | 'premium' | 'family') for the given user.
+  static Future<String?> getUserPlan(String userId) async {
+    try {
+      final data = await client
+          .from('user_subscriptions')
+          .select('status, plan:plans(name)')
+          .eq('user_id', userId)
+          .maybeSingle();
+      if (data == null) return 'free';
+      final status = data['status'] as String?;
+      if (status == 'active' || status == 'trial') {
+        return (data['plan'] as Map<String, dynamic>?)?['name'] as String? ?? 'free';
+      }
+      return 'free';
+    } catch (e) {
+      debugPrint('[SupabaseService] getUserPlan error: $e');
+      return 'free';
+    }
+  }
+
+  /// Creates a 7-day trial subscription for the given user and plan.
+  static Future<void> startTrial({
+    required String userId,
+    required String planName,
+  }) async {
+    try {
+      final planRow = await client
+          .from('plans')
+          .select('id')
+          .eq('name', planName)
+          .single();
+      final planId = planRow['id'] as String;
+      final now = DateTime.now();
+      await client.from('user_subscriptions').upsert({
+        'user_id': userId,
+        'plan_id': planId,
+        'status': 'trial',
+        'billing_interval': 'monthly',
+        'trial_ends_at': now.add(const Duration(days: 7)).toIso8601String(),
+        'current_period_start': now.toIso8601String(),
+        'current_period_end': now.add(const Duration(days: 7)).toIso8601String(),
+      }, onConflict: 'user_id');
+    } catch (e) {
+      debugPrint('[SupabaseService] startTrial error: $e');
+    }
+  }
+
+  /// Returns today's AI message count for the user, or 0 if no record.
+  static Future<int> getDailyAiUsage(String userId) async {
+    try {
+      final today = DateTime.now().toIso8601String().substring(0, 10);
+      final data = await client
+          .from('daily_ai_usage')
+          .select('message_count')
+          .eq('user_id', userId)
+          .eq('date', today)
+          .maybeSingle();
+      return (data?['message_count'] as int?) ?? 0;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  /// Increments today's AI message count for the user.
+  static Future<void> incrementAiUsage(String userId) async {
+    try {
+      final today = DateTime.now().toIso8601String().substring(0, 10);
+      await client.rpc('increment_ai_usage', params: {
+        'p_user_id': userId,
+        'p_date': today,
+      });
+    } catch (e) {
+      debugPrint('[SupabaseService] incrementAiUsage error: $e');
+    }
+  }
 }

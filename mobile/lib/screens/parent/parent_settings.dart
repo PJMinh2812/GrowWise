@@ -5,6 +5,7 @@ import '../../providers/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/validators.dart';
 import '../login_screen.dart';
+import '../pricing_screen.dart';
 
 class ParentSettings extends StatelessWidget {
   const ParentSettings({super.key});
@@ -68,6 +69,21 @@ class ParentSettings extends StatelessWidget {
                   title: 'Tuổi',
                   subtitle: '${appState.childAge} tuổi',
                   onTap: () => _editAgeDialog(context, appState),
+                ),
+                const SizedBox(height: 24),
+
+                _SectionLabel('💎 Gói đăng ký'),
+                const SizedBox(height: 10),
+                _Tile(
+                  icon: Icons.workspace_premium_rounded,
+                  title: 'Gói đăng ký',
+                  subtitle: appState.isPremium
+                      ? 'Premium đang hoạt động ✨'
+                      : 'Nâng cấp để mở khóa tính năng nâng cao',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const PricingScreen()),
+                  ),
                 ),
                 const SizedBox(height: 24),
 

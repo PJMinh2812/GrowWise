@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+
+<html class="light" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary-fixed": "#20005f",
+                    "tertiary-fixed": "#e8deff",
+                    "outline-variant": "#ddc1ae",
+                    "surface-container-low": "#fff2e1",
+                    "inverse-primary": "#ffb77d",
+                    "surface": "#fff8f3",
+                    "secondary-container": "#91f78e",
+                    "inverse-surface": "#372f24",
+                    "primary-fixed-dim": "#ffb77d",
+                    "background": "#fff8f3",
+                    "on-error-container": "#93000a",
+                    "on-tertiary": "#ffffff",
+                    "surface-dim": "#e5d8c7",
+                    "inverse-on-surface": "#fdefdd",
+                    "primary-container": "#ff8c00",
+                    "surface-container": "#faecda",
+                    "on-primary-container": "#623200",
+                    "on-secondary-fixed-variant": "#005313",
+                    "on-secondary": "#ffffff",
+                    "on-surface": "#211b10",
+                    "on-tertiary-container": "#4600bb",
+                    "outline": "#897362",
+                    "tertiary": "#6833ea",
+                    "on-surface-variant": "#564334",
+                    "on-secondary-container": "#00731e",
+                    "surface-tint": "#904d00",
+                    "surface-container-highest": "#eee0cf",
+                    "error-container": "#ffdad6",
+                    "tertiary-fixed-dim": "#cdbdff",
+                    "on-primary-fixed-variant": "#6e3900",
+                    "surface-container-lowest": "#ffffff",
+                    "on-error": "#ffffff",
+                    "secondary-fixed": "#94f990",
+                    "tertiary-container": "#b29bff",
+                    "surface-container-high": "#f4e6d5",
+                    "surface-bright": "#fff8f3",
+                    "on-secondary-fixed": "#002204",
+                    "on-primary": "#ffffff",
+                    "error": "#ba1a1a",
+                    "primary-fixed": "#ffdcc3",
+                    "secondary": "#006e1c",
+                    "primary": "#904d00",
+                    "on-background": "#211b10",
+                    "on-primary-fixed": "#2f1500",
+                    "secondary-fixed-dim": "#78dc77",
+                    "surface-variant": "#eee0cf",
+                    "on-tertiary-fixed-variant": "#4f00d0"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "gutter": "16px",
+                    "container-padding": "24px",
+                    "stack-md": "16px",
+                    "unit": "4px",
+                    "stack-lg": "32px",
+                    "stack-sm": "8px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["Nunito Sans"],
+                    "headline-lg-mobile": ["Nunito Sans"],
+                    "headline-xl": ["Nunito Sans"],
+                    "body-lg": ["Nunito Sans"],
+                    "body-md": ["Nunito Sans"],
+                    "label-lg": ["Nunito Sans"],
+                    "headline-md": ["Nunito Sans"]
+            },
+            "fontSize": {
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "800"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "800"}],
+                    "headline-xl": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "900"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-lg": ["14px", {"lineHeight": "20px", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "800"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Nunito Sans', sans-serif; -webkit-font-smoothing: antialiased; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .progress-stripe { background-image: linear-gradient(45deg, rgba(255,255,255,0.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.15) 75%, transparent 75%, transparent); background-size: 1rem 1rem; }
+        .pricing-card { transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .pricing-card:active { transform: scale(0.98); }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface pb-32">
+<!-- Top App Bar -->
+<header class="w-full top-0 sticky z-50 bg-background flex items-center justify-between px-gutter h-16 shadow-none">
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-primary p-2 hover:bg-surface-container-high rounded-full transition-colors active:scale-95" data-icon="arrow_back">arrow_back</button>
+<h1 class="text-headline-md font-headline-md font-extrabold text-primary">Pricing Plans</h1>
+</div>
+<button class="material-symbols-outlined text-primary p-2 hover:bg-surface-container-high rounded-full transition-colors active:scale-95" data-icon="help">help</button>
+</header>
+<main class="max-w-md mx-auto px-container-padding pt-stack-md">
+<!-- Header Section -->
+<div class="text-center mb-stack-lg">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-2">Chọn gói phù hợp 🌟</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Đầu tư nhỏ, tương lai lớn</p>
+</div>
+<!-- Billing Toggle -->
+<div class="flex justify-center mb-stack-lg">
+<div class="bg-surface-container rounded-full p-1.5 flex items-center shadow-inner">
+<button class="px-6 py-2 rounded-full font-label-lg text-label-lg transition-all bg-primary-container text-on-primary-container shadow-sm" id="toggleMonthly">
+                    Hàng tháng
+                </button>
+<button class="px-6 py-2 rounded-full font-label-lg text-label-lg transition-all text-on-surface-variant hover:bg-surface-container-high" id="toggleYearly">
+                    Hàng năm <span class="ml-1 text-[10px] bg-secondary-container text-on-secondary-container px-1.5 py-0.5 rounded-full">-20%</span>
+</button>
+</div>
+</div>
+<!-- Plan Cards Stack -->
+<div class="space-y-stack-md">
+<!-- CARD 1: Basic -->
+<div class="pricing-card bg-surface-container-lowest border-2 border-outline-variant rounded-[24px] p-6 shadow-sm">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface">Cơ Bản 🌱</h3>
+<div class="flex items-baseline gap-1 mt-1">
+<span class="font-headline-lg-mobile text-headline-lg-mobile text-primary">0₫</span>
+<span class="font-label-lg text-label-lg text-on-surface-variant">/ tháng</span>
+</div>
+</div>
+</div>
+<ul class="space-y-3 mb-6">
+<li class="flex items-center gap-3 font-body-md text-body-md text-on-surface-variant">
+<span class="material-symbols-outlined text-secondary text-[20px]" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                        3 bài học video
+                    </li>
+<li class="flex items-center gap-3 font-body-md text-body-md text-on-surface-variant">
+<span class="material-symbols-outlined text-secondary text-[20px]" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                        Hệ thống 3 lọ tiền
+                    </li>
+<li class="flex items-center gap-3 font-body-md text-body-md text-on-surface-variant">
+<span class="material-symbols-outlined text-secondary text-[20px]" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                        Tối đa 3 nhiệm vụ
+                    </li>
+<li class="flex items-center gap-3 font-body-md text-body-md text-on-surface-variant">
+<span class="material-symbols-outlined text-secondary text-[20px]" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                        Chat AI Wisy (5 tin/ngày)
+                    </li>
+<li class="flex items-center gap-3 font-body-md text-body-md text-on-surface-variant">
+<span class="material-symbols-outlined text-secondary text-[20px]" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                        2 mini-game
+                    </li>
+</ul>
+<button class="w-full py-4 rounded-full border-2 border-outline text-outline font-label-lg text-label-lg active:scale-95 transition-transform" disabled="">
+                    Đang dùng
+                </button>
+</div>
+<!-- CARD 2: Pro (Most Popular) -->
+<div class="pricing-card bg-tertiary-fixed border-2 border-tertiary rounded-[24px] p-6 shadow-[0_8px_24px_rgba(104,51,234,0.15)] relative overflow-hidden">
+<div class="absolute top-0 right-0 bg-tertiary text-on-tertiary px-4 py-1 rounded-bl-xl font-label-lg text-[12px] uppercase tracking-wider">Phổ biến nhất</div>
+<div class="mb-4">
+<h3 class="font-headline-md text-headline-md text-on-tertiary-fixed">Nâng Cao 🚀</h3>
+<div class="flex items-baseline gap-1 mt-1">
+<span class="font-headline-lg-mobile text-headline-lg-mobile text-tertiary">79.000₫</span>
+<span class="font-label-lg text-label-lg text-on-tertiary-fixed-variant">/ tháng</span>
+</div>
+<p class="text-[13px] text-tertiary font-bold mt-1">~2.600₫/ngày — ít hơn 1 tô phở!</p>
+</div>
+<ul class="space-y-3 mb-6">
+<li class="flex items-center gap-3 font-body-md text-body-md text-on-tertiary-fixed">
+<span class="material-symbols-outlined text-tertiary text-[20px]" data-icon="verified" style="font-variation-settings: 'FILL' 1;">verified</span>
+                        Tất cả bài học (không giới hạn)
+                    </li>
+<li class="flex items-center gap-3 font-body-md text-body-md text-on-tertiary-fixed">
+<span class="material-symbols-outlined text-tertiary text-[20px]" data-icon="verified" style="font-variation-settings: 'FILL' 1;">verified</span>
+                        Nhiệm vụ không giới hạn
+                    </li>
+<li class="flex items-center gap-3 font-body-md text-body-md text-on-tertiary-fixed">
+<span class="material-symbols-outlined text-tertiary text-[20px]" data-icon="verified" style="font-variation-settings: 'FILL' 1;">verified</span>
+                        Chat AI không giới hạn
+                    </li>
+<li class="flex items-center gap-3 font-body-md text-body-md text-on-tertiary-fixed">
+<span class="material-symbols-outlined text-tertiary text-[20px]" data-icon="verified" style="font-variation-settings: 'FILL' 1;">verified</span>
+                        Báo cáo AI thông minh 📊
+                    </li>
+<li class="flex items-center gap-3 font-body-md text-body-md text-on-tertiary-fixed">
+<span class="material-symbols-outlined text-tertiary text-[20px]" data-icon="verified" style="font-variation-settings: 'FILL' 1;">verified</span>
+                        Custom badge riêng
+                    </li>
+</ul>
+<button class="w-full py-4 rounded-full bg-tertiary text-on-tertiary font-label-lg text-label-lg shadow-lg hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2">
+                    Dùng thử 7 ngày miễn phí <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+<!-- CARD 3: Family -->
+<div class="pricing-card bg-surface-container-low border-2 border-primary-container rounded-[24px] p-6 shadow-[0_8px_20px_rgba(255,140,0,0.12)]">
+<div class="mb-4">
+<h3 class="font-headline-md text-headline-md text-on-primary-container">Gia Đình 👨‍👩‍👧‍👦</h3>
+<div class="flex items-baseline gap-1 mt-1">
+<span class="font-headline-lg-mobile text-headline-lg-mobile text-primary-container">149.000₫</span>
+<span class="font-label-lg text-label-lg text-on-primary-container">/ tháng</span>
+</div>
+<p class="text-[13px] text-primary-container font-bold mt-1">Tối đa 3 hồ sơ trẻ</p>
+</div>
+<ul class="space-y-3 mb-6">
+<li class="flex items-center gap-3 font-body-md text-body-md text-on-primary-container">
+<span class="material-symbols-outlined text-primary-container text-[20px]" data-icon="stars" style="font-variation-settings: 'FILL' 1;">stars</span>
+                        Tất cả tính năng Premium
+                    </li>
+<li class="flex items-center gap-3 font-body-md text-body-md text-on-primary-container">
+<span class="material-symbols-outlined text-primary-container text-[20px]" data-icon="group_add" style="font-variation-settings: 'FILL' 1;">group_add</span>
+                        Tối đa 3 hồ sơ trẻ
+                    </li>
+<li class="flex items-center gap-3 font-body-md text-body-md text-on-primary-container">
+<span class="material-symbols-outlined text-primary-container text-[20px]" data-icon="dashboard_customize" style="font-variation-settings: 'FILL' 1;">dashboard_customize</span>
+                        Dashboard phụ huynh chia sẻ
+                    </li>
+<li class="flex items-center gap-3 font-body-md text-body-md text-on-primary-container">
+<span class="material-symbols-outlined text-primary-container text-[20px]" data-icon="leaderboard" style="font-variation-settings: 'FILL' 1;">leaderboard</span>
+                        So sánh tiến độ các con
+                    </li>
+</ul>
+<button class="w-full py-4 rounded-full bg-primary-container text-on-primary-container font-label-lg text-label-lg shadow-md hover:brightness-110 active:scale-95 transition-all border-b-2 border-primary flex items-center justify-center gap-2">
+                    Chọn gói Gia Đình <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Trust Section -->
+<section class="mt-stack-lg py-8 bg-white/50 rounded-[32px] px-6 text-center">
+<div class="grid grid-cols-3 gap-4 mb-8">
+<div class="flex flex-col items-center gap-2">
+<span class="material-symbols-outlined text-secondary" data-icon="lock">lock</span>
+<span class="text-[11px] font-bold leading-tight">Thanh toán an toàn</span>
+</div>
+<div class="flex flex-col items-center gap-2">
+<span class="material-symbols-outlined text-secondary" data-icon="event_repeat">event_repeat</span>
+<span class="text-[11px] font-bold leading-tight">Hủy bất cứ lúc nào</span>
+</div>
+<div class="flex flex-col items-center gap-2">
+<span class="material-symbols-outlined text-secondary" data-icon="timer">timer</span>
+<span class="text-[11px] font-bold leading-tight">7 ngày miễn phí</span>
+</div>
+</div>
+<div class="flex flex-wrap justify-center items-center gap-4 opacity-70 grayscale hover:grayscale-0 transition-all">
+<img alt="Visa" class="h-4" data-alt="Official Visa payment network logo in blue and gold on a white background, representing global financial trust and security." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAodrr-Up80P62LUoSXXPEozA0hbNU328PsSWLIZSicwC7uHoyfMFmpos5wTHFOg287nF0b1q1RXBui_yecbM6GsBV6vYsB2iltK2yav8rl37ZayftZn_wJGpIkZ3X-UJIbxUL8EsVzdJIYmhwZxIja-0mliDahxRZMXJdpbdltsAMdZlC5dmsKGrjbMJh4rltEmr-zXgOx8rExNkDg3leeHiSJXHKfbg6IycTzC1XJL6oVaeMghKMt85kJS_aPx50uHx22V5cHuzA"/>
+<img alt="Mastercard" class="h-6" data-alt="The iconic Mastercard logo with intersecting red and yellow circles, symbolizing worldwide payment acceptance and reliable financial transactions." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDOXY2cFHgIYVr9kzptV2ldf4a4PR9hBhyjtWRuydnfMvo-VKLI2uDMrKejvNp8Izl_32CQL_E2FTgziQZIidRaDAAXGHqSP_iphtwxzM_63jzI7puJ_XxkSMOciLR1SKNnpP04n57BoCsY1-_5eHPb4TeKjNdwIqsJ9-CI9qs30Vi-StGupHBszztVaqB1ObYnt8xTzSNs3wrlVPUZx8esmX2wqQCXCg08XhK_Hab6hLS-gM7ktof3c_ozAWA_fw3eOdhkavt5BCQ"/>
+<img alt="MoMo" class="h-6" data-alt="The MoMo e-wallet logo featuring a vibrant magenta background with a white 'momo' character, representing the most popular digital payment method in Vietnam." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDU8mDmnxpF9Hq0oVsfT__rSa0doGJWns6_qIzTZ4-czHqKwA534YXtI-3CNDGsErDy0d5KZtKnoGCf_K8g_TytJBl5YPX_8NCr0WsKV0zslIQUQvkKW9jBHWUFW9nA2_9CvV7xMZd5jKT_FiRmEOU4ry-IGbSFnWYLBcCxwvi8VW5pQfkIQ75KAfhu75ZJodTfmZQo3XJ0i5-siTyyNrKP0zGMrBnEd27jmgibKZmqwNd5fJ3lBG1SWmClI2sPMeMFMdQUD6E-qnQ"/>
+<img alt="ZaloPay" class="h-5" data-alt="The ZaloPay mobile payment logo with its distinctive green and blue branding, conveying modern digital banking convenience for Vietnamese users." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC7wIHPi2086boU7X7v1aEbnxDOqwwgVyj5NAvuTOwYVhXktGLfRIR53VKH8-Y7yxeKkBgImMY9bo-49h4lq2E1PY0AAvQTtg1xS_T-naNJm7ChhUmIyPhYXFD_wfCBHNdcsSDt75GiMB5CPwxZS7nOf2G-PgsOjxLQOC-yfOqlC5KrPFz0j6lzsSQRbEkQfVQ57HfgJswxQXrNJGNLqqPx8Wfk4GbQ1NRIfzoKP26kVZx4ZkdaFlrIYuTZM14xwZaqPYVGcpTRqGE"/>
+</div>
+</section>
+<!-- FAQ Accordion -->
+<section class="mt-stack-lg mb-8">
+<h4 class="font-headline-md text-headline-md text-on-surface mb-stack-md text-center">Câu hỏi thường gặp</h4>
+<div class="space-y-3">
+<details class="group bg-surface-container rounded-2xl p-4 cursor-pointer transition-all">
+<summary class="flex justify-between items-center font-label-lg text-label-lg list-none">
+                        Tôi có thể hủy không?
+                        <span class="material-symbols-outlined group-open:rotate-180 transition-transform">expand_more</span>
+</summary>
+<p class="pt-3 font-body-md text-body-md text-on-surface-variant">Có, hủy bất kỳ lúc nào không mất phí</p>
+</details>
+<details class="group bg-surface-container rounded-2xl p-4 cursor-pointer transition-all">
+<summary class="flex justify-between items-center font-label-lg text-label-lg list-none">
+                        Dùng thử có cần thẻ không?
+                        <span class="material-symbols-outlined group-open:rotate-180 transition-transform">expand_more</span>
+</summary>
+<p class="pt-3 font-body-md text-body-md text-on-surface-variant">Không cần! 7 ngày hoàn toàn miễn phí</p>
+</details>
+<details class="group bg-surface-container rounded-2xl p-4 cursor-pointer transition-all">
+<summary class="flex justify-between items-center font-label-lg text-label-lg list-none">
+                        Family package dùng được mấy điện thoại?
+                        <span class="material-symbols-outlined group-open:rotate-180 transition-transform">expand_more</span>
+</summary>
+<p class="pt-3 font-body-md text-body-md text-on-surface-variant">Mỗi hồ sơ trẻ dùng 1 thiết bị</p>
+</details>
+</div>
+</section>
+<p class="text-center text-[12px] text-on-surface-variant opacity-60 mb-stack-lg">
+            Bằng cách đăng ký, bạn đồng ý với Điều khoản &amp; Chính sách của GrowWise.
+        </p>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 py-3 pb-6 bg-surface-container shadow-[0_-4px_12px_0_rgba(144,77,0,0.08)] z-50 rounded-t-xl">
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-highest transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-label-lg text-label-lg">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-1 active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="school">school</span>
+<span class="font-label-lg text-label-lg">Lessons</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-highest transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="savings">savings</span>
+<span class="font-label-lg text-label-lg">Piggy Bank</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-highest transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="supervisor_account">supervisor_account</span>
+<span class="font-label-lg text-label-lg">Parents</span>
+</a>
+</nav>
+<script>
+        const btnMonthly = document.getElementById('toggleMonthly');
+        const btnYearly = document.getElementById('toggleYearly');
+
+        btnMonthly.addEventListener('click', () => {
+            btnMonthly.classList.add('bg-primary-container', 'text-on-primary-container', 'shadow-sm');
+            btnMonthly.classList.remove('text-on-surface-variant');
+            btnYearly.classList.remove('bg-primary-container', 'text-on-primary-container', 'shadow-sm');
+            btnYearly.classList.add('text-on-surface-variant');
+        });
+
+        btnYearly.addEventListener('click', () => {
+            btnYearly.classList.add('bg-primary-container', 'text-on-primary-container', 'shadow-sm');
+            btnYearly.classList.remove('text-on-surface-variant');
+            btnMonthly.classList.remove('bg-primary-container', 'text-on-primary-container', 'shadow-sm');
+            btnMonthly.classList.add('text-on-surface-variant');
+        });
+
+        // Small interaction: Scale up the 'Popular' card on mount
+        document.querySelectorAll('.pricing-card').forEach((card, idx) => {
+            if(idx === 1) { // Pro card
+                card.style.transform = 'scale(1.02)';
+            }
+        });
+    </script>
+</body></html>

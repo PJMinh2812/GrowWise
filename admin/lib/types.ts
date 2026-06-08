@@ -28,6 +28,35 @@ export interface Profile {
   created_at: string
 }
 
+export interface Plan {
+  id: string
+  name: 'free' | 'premium' | 'family'
+  display_name: string
+  price_monthly: number
+  price_yearly: number | null
+  max_children: number
+  max_daily_ai_messages: number
+  max_active_tasks: number
+  max_lessons: number
+  features: string[]
+  is_active: boolean
+  created_at: string
+}
+
+export interface UserSubscription {
+  id: string
+  user_id: string
+  plan_id: string
+  status: 'active' | 'canceled' | 'expired' | 'trial'
+  billing_interval: 'monthly' | 'yearly'
+  trial_ends_at: string | null
+  current_period_start: string
+  current_period_end: string | null
+  payment_method: 'momo' | 'vnpay' | 'zalopay' | 'card' | null
+  created_at: string
+  plan?: Plan
+}
+
 export interface Lesson {
   id?: string
   title: string
