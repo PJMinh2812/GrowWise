@@ -104,3 +104,30 @@ BEGIN
   DO UPDATE SET message_count = daily_ai_usage.message_count + 1;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ============================================================================
+-- Payment Transactions
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS payment_transactions (
+  id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_id                TEXT NOT NULL UNIQUE,
+  user_id                 UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  plan_name               TEXT NOT NULL,
+  billing_interval        TEXT NOT NULL DEFAULT 'monthly',
+  amount                  INTEGER NOT NULL,
+  status                  TEXT NOT NULL DEFAULT 'pending'
+                            CHECK (status IN ('pending', 'completed', 'failed', 'cancelled')),
+  provider                TEXT NOT NULL DEFAULT 'momo'
+                            CHECK (provider IN ('momo', 'vnpay', 'zalopay', 'card')),
+  provider_transaction_id TEXT,
+  created_at              TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at              TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE payment_transactions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users read own payments" ON payment_transactions
+  FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Service role full access payments" ON payment_transactions
+  USING (true) WITH CHECK (true);

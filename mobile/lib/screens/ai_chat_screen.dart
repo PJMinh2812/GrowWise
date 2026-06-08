@@ -61,11 +61,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
 
   Future<void> _loadDailyUsage() async {
     final uid = SupabaseService.userId;
-    if (uid == null) {
-      // demo mode — read persisted counter from AppState
-      if (mounted) setState(() => _dailyUsed = context.read<AppState>().demoAiUsed);
-      return;
-    }
+    if (uid == null) return; // demo mode: local counter starts at 0
     final count = await SupabaseService.getDailyAiUsage(uid);
     if (mounted) setState(() => _dailyUsed = count);
   }
@@ -145,13 +141,9 @@ class _AiChatScreenState extends State<AiChatScreen> {
       _msgs.add(_Msg(text: reply!, isAi: true));
       _dailyUsed++;
     });
-    // Track usage in Supabase or AppState (demo mode)
+    // Track usage in Supabase (fire-and-forget)
     final uid = SupabaseService.userId;
-    if (uid != null) {
-      SupabaseService.incrementAiUsage(uid);
-    } else {
-      if (mounted) context.read<AppState>().incrementDemoAiUsage();
-    }
+    if (uid != null) SupabaseService.incrementAiUsage(uid);
     _scrollDown();
   }
 
