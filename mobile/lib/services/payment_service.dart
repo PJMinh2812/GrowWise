@@ -61,22 +61,29 @@ class PaymentService {
     );
   }
 
-  /// Opens the MoMo app via deeplink, falling back to payUrl in browser.
+  /// Opens MoMo UAT app via deeplink, falls back to browser payUrl.
   static Future<bool> launchMoMo(PaymentResult result) async {
+    // Try deeplink first — works when MoMo UAT app is installed
     if (result.deeplink != null && result.deeplink!.isNotEmpty) {
-      final uri = Uri.parse(result.deeplink!);
       try {
-        if (await canLaunchUrl(uri)) {
-          return launchUrl(uri, mode: LaunchMode.externalApplication);
-        }
+        final launched = await launchUrl(
+          Uri.parse(result.deeplink!),
+          mode: LaunchMode.externalApplication,
+        );
+        if (launched) return true;
       } catch (e) {
-        debugPrint('[PaymentService] deeplink failed: $e');
+        debugPrint('[PaymentService] deeplink failed, trying payUrl: $e');
       }
     }
+    // Fallback: open payUrl in browser
     if (result.payUrl != null && result.payUrl!.isNotEmpty) {
-      final uri = Uri.parse(result.payUrl!);
-      if (await canLaunchUrl(uri)) {
-        return launchUrl(uri, mode: LaunchMode.externalApplication);
+      try {
+        return await launchUrl(
+          Uri.parse(result.payUrl!),
+          mode: LaunchMode.externalApplication,
+        );
+      } catch (e) {
+        debugPrint('[PaymentService] payUrl failed: $e');
       }
     }
     return false;
