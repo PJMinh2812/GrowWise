@@ -1,18 +1,21 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
+import '../services/payment_service.dart';
+import '../services/supabase_service.dart';
 
 // Stitch design token colors
-const _kBg = Color(0xFFFFF8F3);
-const _kOrange = Color(0xFFFF8C00);
-const _kOrangeDark = Color(0xFF904D00);
-const _kPurple = Color(0xFF6833EA);
+const _kBg          = Color(0xFFFFF8F3);
+const _kOrange      = Color(0xFFFF8C00);
+const _kOrangeDark  = Color(0xFF904D00);
+const _kPurple      = Color(0xFF6833EA);
 const _kPurpleLight = Color(0xFFEDE7F6);
-const _kGreen = Color(0xFF006E1C);
-const _kText = Color(0xFF211B10);
-const _kTextMuted = Color(0xFF564334);
-const _kBorder = Color(0xFFDDC1AE);
+const _kGreen       = Color(0xFF006E1C);
+const _kText        = Color(0xFF211B10);
+const _kTextMuted   = Color(0xFF564334);
+const _kBorder      = Color(0xFFDDC1AE);
 
 class PricingScreen extends StatefulWidget {
   const PricingScreen({super.key});
@@ -21,10 +24,37 @@ class PricingScreen extends StatefulWidget {
   State<PricingScreen> createState() => _PricingScreenState();
 }
 
-class _PricingScreenState extends State<PricingScreen> {
+class _PricingScreenState extends State<PricingScreen>
+    with WidgetsBindingObserver {
   bool _isYearly = false;
   int? _openFaq;
   bool _loading = false;
+
+  // Real payment tracking
+  String? _pendingOrderId;
+  bool _waitingForPayment = false;
+  Timer? _pollTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _pollTimer?.cancel();
+    super.dispose();
+  }
+
+  // Called when user comes back from MoMo app / browser
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _waitingForPayment) {
+      _startPolling();
+    }
+  }
 
   String _formatVND(int amount) {
     if (amount == 0) return 'Miễn phí';
@@ -37,6 +67,7 @@ class _PricingScreenState extends State<PricingScreen> {
     return '$buffer₫';
   }
 
+  // ── Demo mode: free trial ──────────────────────────────────────────────────
   Future<void> _startTrial(String planName) async {
     if (_loading) return;
     setState(() => _loading = true);
@@ -44,20 +75,120 @@ class _PricingScreenState extends State<PricingScreen> {
     await appState.startPremiumTrial(planName);
     if (!mounted) return;
     setState(() => _loading = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('7 ngày dùng thử bắt đầu! Chúc bạn trải nghiệm tốt 🎉'),
-        backgroundColor: _kGreen,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
+    _showSuccess('7 ngày dùng thử bắt đầu! Chúc bạn trải nghiệm tốt 🎉');
     Navigator.pop(context);
+  }
+
+  // ── Real mode: MoMo payment ────────────────────────────────────────────────
+  Future<void> _payWithMoMo(String planName) async {
+    if (_loading) return;
+    final uid = SupabaseService.userId;
+    if (uid == null) {
+      _showError('Vui lòng đăng nhập để thanh toán');
+      return;
+    }
+
+    setState(() => _loading = true);
+
+    try {
+      final result = await PaymentService.createMoMoOrder(
+        userId: uid,
+        planName: planName,
+        billingInterval: _isYearly ? 'yearly' : 'monthly',
+      );
+
+      if (!mounted) return;
+
+      if (result.resultCode != 0) {
+        setState(() => _loading = false);
+        _showError('Lỗi tạo đơn: ${result.message}');
+        return;
+      }
+
+      _pendingOrderId = result.orderId;
+
+      final launched = await PaymentService.launchMoMo(result);
+      if (!mounted) return;
+
+      if (!launched) {
+        setState(() => _loading = false);
+        _showError('Không thể mở ứng dụng MoMo. Vui lòng cài đặt MoMo và thử lại.');
+        return;
+      }
+
+      setState(() {
+        _loading = false;
+        _waitingForPayment = true;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      _showError('Không thể kết nối đến server: $e');
+    }
+  }
+
+  void _startPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(const Duration(seconds: 3), (_) async {
+      if (_pendingOrderId == null) return;
+      final status = await PaymentService.checkStatus(_pendingOrderId!);
+      if (status == 'completed') {
+        _pollTimer?.cancel();
+        if (!mounted) return;
+        setState(() => _waitingForPayment = false);
+        await context.read<AppState>().refreshPlan();
+        if (!mounted) return;
+        _showSuccess('Thanh toán thành công! Gói Premium đã được kích hoạt 🎉');
+        Navigator.pop(context);
+      } else if (status == 'failed') {
+        _pollTimer?.cancel();
+        if (!mounted) return;
+        setState(() => _waitingForPayment = false);
+        _showError('Thanh toán thất bại. Vui lòng thử lại.');
+      }
+    });
+
+    // Stop polling after 5 minutes
+    Future.delayed(const Duration(minutes: 5), () {
+      _pollTimer?.cancel();
+      if (mounted && _waitingForPayment) {
+        setState(() => _waitingForPayment = false);
+      }
+    });
+  }
+
+  void _onCtaTap(String planName, bool isDemoMode) {
+    if (isDemoMode) {
+      _startTrial(planName);
+    } else {
+      _payWithMoMo(planName);
+    }
+  }
+
+  void _showSuccess(String msg) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg),
+      backgroundColor: _kGreen,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ));
+  }
+
+  void _showError(String msg) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg),
+      backgroundColor: Colors.red,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ));
   }
 
   @override
   Widget build(BuildContext context) {
-    final appState = context.watch<AppState>();
+    final appState   = context.watch<AppState>();
+    final isDemoMode = appState.isDemoMode;
 
     return Scaffold(
       backgroundColor: _kBg,
@@ -69,211 +200,284 @@ class _PricingScreenState extends State<PricingScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Pricing Plans',
+          'Gói đăng ký',
           style: GoogleFonts.nunitoSans(
             fontSize: 18,
             fontWeight: FontWeight.w800,
             color: _kText,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.help_outline_rounded, color: _kTextMuted),
-            onPressed: () {},
-          ),
-        ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
-        child: Column(
-          children: [
-            const SizedBox(height: 8),
-            // Header
-            Text(
-              'Chọn gói phù hợp ☀️',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.nunitoSans(
-                fontSize: 26,
-                fontWeight: FontWeight.w900,
-                color: _kText,
-                letterSpacing: -0.5,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Đầu tư nhỏ, tương lai lớn',
-              style: GoogleFonts.nunitoSans(
-                fontSize: 15,
-                color: _kTextMuted,
-              ),
-            ),
-            const SizedBox(height: 20),
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
+            child: Column(
+              children: [
+                const SizedBox(height: 8),
+                Text(
+                  'Chọn gói phù hợp ☀️',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.nunitoSans(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w900,
+                    color: _kText,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Đầu tư nhỏ, tương lai lớn',
+                  style: GoogleFonts.nunitoSans(fontSize: 15, color: _kTextMuted),
+                ),
+                const SizedBox(height: 20),
 
-            // Billing toggle
+                // Billing toggle
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEEE0CF),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _ToggleBtn(
+                        label: 'Hàng tháng',
+                        active: !_isYearly,
+                        onTap: () => setState(() => _isYearly = false),
+                      ),
+                      _ToggleBtn(
+                        label: 'Hàng năm',
+                        badge: '-20%',
+                        active: _isYearly,
+                        onTap: () => setState(() => _isYearly = true),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Free plan
+                _PlanCard(
+                  emoji: '🌿',
+                  name: 'Cơ Bản',
+                  price: '0₫',
+                  priceLabel: '/ tháng',
+                  features: const [
+                    '3 bài học video',
+                    'Hệ thống 3 lọ tiền',
+                    'Tối đa 3 nhiệm vụ',
+                    'Chat AI Wisy (5 tin/ngày)',
+                    '2 mini-game',
+                  ],
+                  lockedFeatures: const ['Báo cáo AI thông minh', 'Savings Analytics'],
+                  cardColor: Colors.white,
+                  borderColor: _kBorder,
+                  ctaLabel: 'Đang dùng',
+                  ctaColor: null,
+                  onCta: null,
+                  isCurrentPlan: appState.planType == 'free',
+                ),
+                const SizedBox(height: 12),
+
+                // Premium plan
+                _PlanCard(
+                  emoji: '🚀',
+                  name: 'Nâng Cao',
+                  price: _isYearly ? _formatVND(749000) : _formatVND(79000),
+                  priceLabel: _isYearly ? '/ năm' : '/ tháng',
+                  subtitle: _isYearly
+                      ? '≈ 62.400₫/tháng'
+                      : '~2.600₫/ngày — ít hơn 1 tô phở!',
+                  savingBadge: _isYearly ? 'Tiết kiệm 200.000₫' : null,
+                  features: const [
+                    'Tất cả bài học (không giới hạn)',
+                    'Nhiệm vụ không giới hạn',
+                    'Chat AI không giới hạn',
+                    'Tất cả mini-game',
+                    'Báo cáo AI thông minh 📊',
+                    'Custom badge riêng',
+                  ],
+                  lockedFeatures: const [],
+                  cardColor: _kPurpleLight,
+                  borderColor: _kPurple,
+                  ctaLabel: isDemoMode
+                      ? 'Dùng thử 7 ngày MIỄN PHÍ →'
+                      : (_isYearly
+                          ? 'Thanh toán ${_formatVND(749000)} qua MoMo'
+                          : 'Thanh toán ${_formatVND(79000)}/tháng qua MoMo'),
+                  ctaColor: _kPurple,
+                  onCta: appState.isPremium
+                      ? null
+                      : () => _onCtaTap('premium', isDemoMode),
+                  badge: 'PHỔ BIẾN NHẤT',
+                  badgeColor: _kOrange,
+                  isCurrentPlan: appState.planType == 'premium',
+                  loading: _loading,
+                ),
+                const SizedBox(height: 12),
+
+                // Family plan
+                _PlanCard(
+                  emoji: '👨‍👩‍👧‍👦',
+                  name: 'Gia Đình',
+                  price: _isYearly ? _formatVND(1419000) : _formatVND(149000),
+                  priceLabel: _isYearly ? '/ năm' : '/ tháng',
+                  subtitle: _isYearly ? '≈ 118.250₫/tháng' : 'Tối đa 3 hồ sơ trẻ',
+                  savingBadge: _isYearly ? 'Tiết kiệm 369.000₫' : null,
+                  features: const [
+                    'Tất cả tính năng Nâng Cao',
+                    'Tối đa 3 hồ sơ trẻ',
+                    'Dashboard phụ huynh chia sẻ',
+                    'So sánh tiến độ các con',
+                  ],
+                  lockedFeatures: const [],
+                  cardColor: const Color(0xFFFFF3E0),
+                  borderColor: _kOrange,
+                  ctaLabel: isDemoMode
+                      ? 'Dùng thử 7 ngày MIỄN PHÍ →'
+                      : (_isYearly
+                          ? 'Thanh toán ${_formatVND(1419000)} qua MoMo'
+                          : 'Thanh toán ${_formatVND(149000)}/tháng qua MoMo'),
+                  ctaColor: _kOrangeDark,
+                  onCta: appState.planType == 'family'
+                      ? null
+                      : () => _onCtaTap('family', isDemoMode),
+                  isCurrentPlan: appState.planType == 'family',
+                  loading: _loading,
+                ),
+                const SizedBox(height: 28),
+
+                // MoMo badge (real mode only)
+                if (!isDemoMode)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: _kBorder),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text('📱', style: TextStyle(fontSize: 20)),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Thanh toán qua MoMo — An toàn & Bảo mật',
+                          style: GoogleFonts.nunitoSans(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: _kOrangeDark,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                const SizedBox(height: 16),
+
+                // Trust row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: const [
+                    _TrustItem(icon: Icons.lock_outline_rounded, label: 'Thanh toán\nan toàn'),
+                    _TrustItem(icon: Icons.cancel_outlined, label: 'Hủy bất cứ\nlúc nào'),
+                    _TrustItem(icon: Icons.card_giftcard_rounded, label: '7 ngày\nmiễn phí'),
+                  ],
+                ),
+                const SizedBox(height: 28),
+
+                // FAQ
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Câu hỏi thường gặp',
+                    style: GoogleFonts.nunitoSans(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: _kText,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ..._faqs.asMap().entries.map((e) => _FaqItem(
+                  index: e.key,
+                  q: e.value['q']!,
+                  a: e.value['a']!,
+                  isOpen: _openFaq == e.key,
+                  onToggle: () =>
+                      setState(() => _openFaq = _openFaq == e.key ? null : e.key),
+                )),
+                const SizedBox(height: 20),
+                Text(
+                  'Bằng cách đăng ký, bạn đồng ý với Điều khoản & Chính sách của GrowWise.',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.nunitoSans(fontSize: 11, color: _kTextMuted),
+                ),
+              ],
+            ),
+          ),
+
+          // Waiting for payment overlay
+          if (_waitingForPayment)
             Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: const Color(0xFFEEE0CF),
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _ToggleBtn(
-                    label: 'Hàng tháng',
-                    active: !_isYearly,
-                    onTap: () => setState(() => _isYearly = false),
+              color: Colors.black54,
+              child: Center(
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 32),
+                  padding: const EdgeInsets.all(28),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
                   ),
-                  _ToggleBtn(
-                    label: 'Hàng năm',
-                    badge: '-20%',
-                    active: _isYearly,
-                    onTap: () => setState(() => _isYearly = true),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('📱', style: TextStyle(fontSize: 48)),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Đang chờ xác nhận thanh toán...',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.nunitoSans(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: _kText,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Hoàn tất thanh toán trong ứng dụng MoMo rồi quay lại đây.',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.nunitoSans(
+                          fontSize: 13,
+                          color: _kTextMuted,
+                          height: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      const CircularProgressIndicator(color: _kOrange),
+                      const SizedBox(height: 16),
+                      TextButton(
+                        onPressed: () {
+                          _pollTimer?.cancel();
+                          setState(() => _waitingForPayment = false);
+                        },
+                        child: Text(
+                          'Hủy',
+                          style: GoogleFonts.nunitoSans(
+                            color: _kTextMuted,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Free plan card
-            _PlanCard(
-              emoji: '🌿',
-              name: 'Cơ Bản',
-              price: '0₫',
-              priceLabel: '/ tháng',
-              subtitle: null,
-              features: const [
-                '3 bài học video',
-                'Hệ thống 3 lọ tiền',
-                'Tối đa 3 nhiệm vụ',
-                'Chat AI Wisy (5 tin/ngày)',
-                '2 mini-game',
-              ],
-              lockedFeatures: const [
-                'Báo cáo AI thông minh',
-                'Savings Analytics',
-              ],
-              cardColor: Colors.white,
-              borderColor: _kBorder,
-              ctaLabel: 'Đang dùng',
-              ctaColor: null,
-              onCta: null,
-              badge: null,
-              isCurrentPlan: appState.planType == 'free',
-            ),
-            const SizedBox(height: 12),
-
-            // Premium plan card
-            _PlanCard(
-              emoji: '🚀',
-              name: 'Nâng Cao',
-              price: _isYearly ? _formatVND(749000) : _formatVND(79000),
-              priceLabel: _isYearly ? '/ năm' : '/ tháng',
-              subtitle: _isYearly
-                  ? '≈ 62.400₫/tháng'
-                  : '~2.600₫/ngày — ít hơn 1 tô phở!',
-              savingBadge: _isYearly ? 'Tiết kiệm 200.000₫' : null,
-              features: const [
-                'Tất cả bài học (không giới hạn)',
-                'Nhiệm vụ không giới hạn',
-                'Chat AI không giới hạn',
-                'Tất cả mini-game',
-                'Báo cáo AI thông minh 📊',
-                'Custom badge riêng',
-              ],
-              lockedFeatures: const [],
-              cardColor: _kPurpleLight,
-              borderColor: _kPurple,
-              ctaLabel: _isYearly
-                  ? 'Dùng thử 7 ngày • ${_formatVND(749000)}/năm'
-                  : 'Dùng thử 7 ngày miễn phí →',
-              ctaColor: _kPurple,
-              onCta: appState.isPremium ? null : () => _startTrial('premium'),
-              badge: 'PHỔ BIẾN NHẤT',
-              badgeColor: _kOrange,
-              isCurrentPlan: appState.planType == 'premium',
-              loading: _loading,
-            ),
-            const SizedBox(height: 12),
-
-            // Family plan card
-            _PlanCard(
-              emoji: '👨‍👩‍👧‍👦',
-              name: 'Gia Đình',
-              price: _isYearly ? _formatVND(1419000) : _formatVND(149000),
-              priceLabel: _isYearly ? '/ năm' : '/ tháng',
-              subtitle: _isYearly
-                  ? '≈ 118.250₫/tháng'
-                  : 'Tối đa 3 hồ sơ trẻ',
-              savingBadge: _isYearly ? 'Tiết kiệm 369.000₫' : null,
-              features: const [
-                'Tất cả tính năng Nâng Cao',
-                'Tối đa 3 hồ sơ trẻ',
-                'Dashboard phụ huynh chia sẻ',
-                'So sánh tiến độ các con',
-              ],
-              lockedFeatures: const [],
-              cardColor: const Color(0xFFFFF3E0),
-              borderColor: _kOrange,
-              ctaLabel: 'Chọn gói Gia Đình →',
-              ctaColor: _kOrangeDark,
-              onCta: appState.planType == 'family' ? null : () => _startTrial('family'),
-              badge: null,
-              isCurrentPlan: appState.planType == 'family',
-              loading: _loading,
-            ),
-            const SizedBox(height: 28),
-
-            // Trust row
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: const [
-                _TrustItem(icon: Icons.lock_outline_rounded, label: 'Thanh toán\nan toàn'),
-                _TrustItem(icon: Icons.cancel_outlined, label: 'Hủy bất cứ\nlúc nào'),
-                _TrustItem(icon: Icons.card_giftcard_rounded, label: '7 ngày\nmiễn phí'),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'MoMo · VNPay · ZaloPay · Thẻ ngân hàng',
-              style: GoogleFonts.nunitoSans(
-                fontSize: 12,
-                color: _kTextMuted,
-              ),
-            ),
-            const SizedBox(height: 28),
-
-            // FAQ
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Câu hỏi thường gặp',
-                style: GoogleFonts.nunitoSans(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: _kText,
                 ),
               ),
             ),
-            const SizedBox(height: 12),
-            ..._faqs.asMap().entries.map((e) => _FaqItem(
-              index: e.key,
-              q: e.value['q']!,
-              a: e.value['a']!,
-              isOpen: _openFaq == e.key,
-              onToggle: () => setState(() => _openFaq = _openFaq == e.key ? null : e.key),
-            )),
-            const SizedBox(height: 20),
-            Text(
-              'Bằng cách đăng ký, bạn đồng ý với Điều khoản & Chính sách của GrowWise.',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.nunitoSans(
-                fontSize: 11,
-                color: _kTextMuted,
-              ),
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }
@@ -283,7 +487,10 @@ const _faqs = [
   {'q': 'Tôi có thể hủy không?', 'a': 'Có, bạn có thể hủy bất kỳ lúc nào mà không mất thêm phí.'},
   {'q': 'Dùng thử có cần thẻ không?', 'a': 'Không cần! 7 ngày dùng thử hoàn toàn miễn phí, không yêu cầu thông tin thanh toán.'},
   {'q': 'Family package dùng được mấy điện thoại?', 'a': 'Mỗi hồ sơ trẻ được dùng trên 1 thiết bị. Gói Gia Đình cho tối đa 3 hồ sơ trẻ.'},
+  {'q': 'Thanh toán qua MoMo có an toàn không?', 'a': 'Có! Toàn bộ giao dịch được mã hóa và xử lý bởi MoMo — GrowWise không lưu thông tin thẻ hay ví của bạn.'},
 ];
+
+// ── Widgets ────────────────────────────────────────────────────────────────────
 
 class _ToggleBtn extends StatelessWidget {
   final String label;
@@ -323,7 +530,9 @@ class _ToggleBtn extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: active ? Colors.white.withValues(alpha: 0.3) : const Color(0xFF4CAF50),
+                  color: active
+                      ? Colors.white.withValues(alpha: 0.3)
+                      : const Color(0xFF4CAF50),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
@@ -331,7 +540,7 @@ class _ToggleBtn extends StatelessWidget {
                   style: GoogleFonts.nunitoSans(
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
-                    color: active ? Colors.white : Colors.white,
+                    color: Colors.white,
                   ),
                 ),
               ),
@@ -405,7 +614,6 @@ class _PlanCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Plan name + saving badge row
               Row(
                 children: [
                   Text(emoji, style: const TextStyle(fontSize: 24)),
@@ -439,7 +647,6 @@ class _PlanCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 8),
-              // Price
               RichText(
                 text: TextSpan(
                   children: [
@@ -474,7 +681,6 @@ class _PlanCard extends StatelessWidget {
                 ),
               ],
               const SizedBox(height: 14),
-              // Features
               ...features.map((f) => Padding(
                 padding: const EdgeInsets.only(bottom: 6),
                 child: Row(
@@ -505,17 +711,13 @@ class _PlanCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         f,
-                        style: GoogleFonts.nunitoSans(
-                          fontSize: 13,
-                          color: _kBorder,
-                        ),
+                        style: GoogleFonts.nunitoSans(fontSize: 13, color: _kBorder),
                       ),
                     ),
                   ],
                 ),
               )),
               const SizedBox(height: 16),
-              // CTA button
               SizedBox(
                 width: double.infinity,
                 child: ctaColor == null
@@ -523,7 +725,8 @@ class _PlanCard extends StatelessWidget {
                         onPressed: null,
                         style: OutlinedButton.styleFrom(
                           side: BorderSide(color: _kBorder),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(999)),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                         ),
                         child: Text(
@@ -541,19 +744,21 @@ class _PlanCard extends StatelessWidget {
                           backgroundColor: isCurrentPlan ? _kBorder : ctaColor,
                           foregroundColor: Colors.white,
                           elevation: 0,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(999)),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                         ),
                         child: loading
                             ? const SizedBox(
                                 width: 18,
                                 height: 18,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: Colors.white),
                               )
                             : Text(
                                 isCurrentPlan ? 'Gói hiện tại ✓' : ctaLabel,
                                 style: GoogleFonts.nunitoSans(
-                                  fontSize: 14,
+                                  fontSize: 13,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
@@ -562,7 +767,6 @@ class _PlanCard extends StatelessWidget {
             ],
           ),
         ),
-        // "PHỔ BIẾN NHẤT" badge
         if (badge != null)
           Positioned(
             top: -12,
@@ -599,7 +803,6 @@ class _PlanCard extends StatelessWidget {
 class _TrustItem extends StatelessWidget {
   final IconData icon;
   final String label;
-
   const _TrustItem({required this.icon, required this.label});
 
   @override
@@ -611,7 +814,12 @@ class _TrustItem extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white,
             shape: BoxShape.circle,
-            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.07), blurRadius: 8, offset: const Offset(0, 2))],
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.07),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2))
+            ],
           ),
           child: Icon(icon, size: 20, color: _kOrangeDark),
         ),
@@ -675,7 +883,9 @@ class _FaqItem extends StatelessWidget {
                     ),
                   ),
                   Icon(
-                    isOpen ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+                    isOpen
+                        ? Icons.keyboard_arrow_up_rounded
+                        : Icons.keyboard_arrow_down_rounded,
                     color: _kTextMuted,
                   ),
                 ],

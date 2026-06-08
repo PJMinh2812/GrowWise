@@ -101,6 +101,7 @@ class AppState extends ChangeNotifier {
 
   String get planType => _planType;
   bool get isPremium => _planType == 'premium' || _planType == 'family';
+
   int get maxDailyAiMessages => isPremium ? 999 : 5;
   int get maxActiveTasks => isPremium ? 999 : 3;
   int get unlockedLessons => isPremium ? 999 : 3;
@@ -127,6 +128,10 @@ class AppState extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  /// Force-reloads the subscription plan from Supabase.
+  /// Called after a successful MoMo payment.
+  Future<void> refreshPlan() => _loadPlan();
 
   // ── Initialize ─────────────────────────────────────────────────────────────
 

@@ -419,7 +419,16 @@ class _LessonCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 6),
-                      if (isLocked)
+                      if (isPremiumLocked)
+                        Text(
+                          'Nâng cấp Premium để xem 🚀',
+                          style: GoogleFonts.nunitoSans(
+                            fontSize: 11,
+                            color: const Color(0xFF6833EA),
+                            fontWeight: FontWeight.w700,
+                          ),
+                        )
+                      else if (isLocked)
                         Text(
                           'Hoàn thành bài trước để mở khóa',
                           style: GoogleFonts.nunitoSans(
