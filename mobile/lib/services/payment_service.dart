@@ -61,18 +61,10 @@ class PaymentService {
     );
   }
 
-  /// Opens the MoMo app via deeplink, falling back to payUrl in browser.
+  /// Opens MoMo payment in browser (works for both sandbox and production).
+  /// Deeplink is only used in production when MoMo app is confirmed installed.
   static Future<bool> launchMoMo(PaymentResult result) async {
-    if (result.deeplink != null && result.deeplink!.isNotEmpty) {
-      final uri = Uri.parse(result.deeplink!);
-      try {
-        if (await canLaunchUrl(uri)) {
-          return launchUrl(uri, mode: LaunchMode.externalApplication);
-        }
-      } catch (e) {
-        debugPrint('[PaymentService] deeplink failed: $e');
-      }
-    }
+    // Always use payUrl (browser) — works in sandbox and as universal fallback
     if (result.payUrl != null && result.payUrl!.isNotEmpty) {
       final uri = Uri.parse(result.payUrl!);
       if (await canLaunchUrl(uri)) {
