@@ -52,7 +52,7 @@ export interface UserSubscription {
   trial_ends_at: string | null
   current_period_start: string
   current_period_end: string | null
-  payment_method: 'momo' | 'vnpay' | 'zalopay' | 'card' | null
+  payment_method: 'momo' | 'vnpay' | 'zalopay' | 'card' | 'payos' | null
   created_at: string
   plan?: Plan
 }

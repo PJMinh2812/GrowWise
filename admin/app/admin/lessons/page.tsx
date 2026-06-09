@@ -2,23 +2,26 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import type { Lesson } from '@/lib/types'
 
-function getUserRole(): string {
-  if (typeof document === 'undefined') return ''
-  return document.cookie.split('; ').find(r => r.startsWith('x-user-role='))?.split('=')[1] ?? ''
+const CATEGORIES = ['Tiết kiệm', 'Đầu tư', 'Chi tiêu', 'Kiếm tiền']
+
+const AUDIENCE_ICON: Record<string, string> = {
+  child: 'child_care',
+  parent: 'family_history',
+}
+
+const AUDIENCE_LABEL: Record<string, string> = {
+  child: 'Trẻ em',
+  parent: 'Phụ huynh',
 }
 
 export default function LessonsPage() {
-  const router = useRouter()
   const [lessons, setLessons] = useState<Lesson[]>([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState<'all' | 'child' | 'parent'>('all')
-  const [role, setRole] = useState('')
-
-  useEffect(() => { setRole(getUserRole()) }, [])
+  const [audienceFilter, setAudienceFilter] = useState<'all' | 'child' | 'parent'>('all')
+  const [categoryFilter, setCategoryFilter] = useState<string>('all')
 
   useEffect(() => { fetchLessons() }, [])
 
@@ -45,120 +48,171 @@ export default function LessonsPage() {
     setLessons(prev => prev.filter(l => l.id !== id))
   }
 
-  async function handleLogout() {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push('/admin/login')
-  }
-
-  const filtered = filter === 'all' ? lessons : lessons.filter(l => l.audience === filter)
+  const filtered = lessons.filter(l => {
+    const matchAudience = audienceFilter === 'all' || l.audience === audienceFilter
+    const matchCategory = categoryFilter === 'all' || l.category === categoryFilter
+    return matchAudience && matchCategory
+  })
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+    <div className="p-6 max-w-[1440px] mx-auto">
+      {/* Title & Action */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div className="flex items-center gap-3">
-          <span className="text-2xl">🌱</span>
-          <h1 className="text-lg font-bold text-gray-900">GrowWise Admin</h1>
+          <h2 className="text-3xl font-bold text-on-surface">📚 Bài học</h2>
+          <span className="px-2 py-1 bg-surface-container-high rounded-full text-xs font-semibold text-outline">
+            {lessons.length} bài học
+          </span>
         </div>
-        <div className="flex items-center gap-4">
-          <span className="text-sm font-semibold text-violet-700">Bài học</span>
-          {role === 'admin' && (
-            <Link href="/admin/users" className="text-sm text-gray-500 hover:text-gray-700">Người dùng</Link>
-          )}
-          <button onClick={handleLogout} className="text-sm text-gray-400 hover:text-gray-600">Đăng xuất</button>
-        </div>
-      </header>
+        <Link
+          href="/admin/lessons/new"
+          className="flex items-center gap-2 bg-primary text-on-primary px-6 py-2 rounded-lg text-sm font-semibold hover:opacity-90 transition-all shadow-sm active:scale-95"
+        >
+          <span className="material-symbols-outlined text-[18px]">add</span>
+          Thêm bài học
+        </Link>
+      </div>
 
-      <main className="max-w-5xl mx-auto px-6 py-8">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-xl font-bold text-gray-900">Danh sách bài học</h2>
-            <p className="text-sm text-gray-500">{lessons.length} bài học</p>
-          </div>
-          <Link
-            href="/admin/lessons/new"
-            className="bg-violet-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-violet-700 transition"
+      {/* Filter Bar */}
+      <div className="flex flex-wrap items-center gap-4 mb-8">
+        {/* Audience dropdown */}
+        <div className="relative">
+          <select
+            value={audienceFilter}
+            onChange={e => setAudienceFilter(e.target.value as 'all' | 'child' | 'parent')}
+            className="flex items-center gap-2 px-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg text-sm text-on-surface hover:border-primary transition-colors outline-none pr-8 appearance-none cursor-pointer"
           >
-            + Thêm bài học
-          </Link>
+            <option value="all">Tất cả đối tượng</option>
+            <option value="child">Trẻ em</option>
+            <option value="parent">Phụ huynh</option>
+          </select>
+          <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px] pointer-events-none">expand_more</span>
         </div>
 
-        {/* Filter tabs */}
-        <div className="flex gap-2 mb-4">
-          {(['all', 'child', 'parent'] as const).map(f => (
+        {/* Category chips */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => setCategoryFilter('all')}
+            className={`px-4 py-2 rounded-full text-sm transition-colors ${
+              categoryFilter === 'all'
+                ? 'bg-primary/10 text-primary font-semibold'
+                : 'hover:bg-surface-container-high text-on-surface-variant'
+            }`}
+          >
+            Tất cả
+          </button>
+          {CATEGORIES.map(cat => (
             <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium transition ${
-                filter === f ? 'bg-violet-600 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+              key={cat}
+              onClick={() => setCategoryFilter(cat)}
+              className={`px-4 py-2 rounded-full text-sm transition-colors ${
+                categoryFilter === cat
+                  ? 'bg-primary/10 text-primary font-semibold'
+                  : 'hover:bg-surface-container-high text-on-surface-variant'
               }`}
             >
-              {f === 'all' ? 'Tất cả' : f === 'child' ? '👦 Trẻ em' : '👨‍👩‍👧 Phụ huynh'}
+              {cat}
             </button>
           ))}
         </div>
+      </div>
 
-        {loading ? (
-          <div className="text-center py-12 text-gray-400">Đang tải...</div>
-        ) : filtered.length === 0 ? (
-          <div className="text-center py-12 text-gray-400">
-            <div className="text-4xl mb-2">📭</div>
-            <p>Chưa có bài học nào</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {filtered.map(lesson => (
-              <div key={lesson.id} className="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-4">
-                <div className="text-3xl w-12 h-12 flex items-center justify-center bg-violet-50 rounded-xl flex-shrink-0">
-                  {lesson.thumbnail_emoji}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <h3 className="font-semibold text-gray-900 truncate">{lesson.title}</h3>
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                      lesson.is_published ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
-                    }`}>
-                      {lesson.is_published ? 'Đã đăng' : 'Nháp'}
+      {/* Lesson Grid */}
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[0,1,2,3,4,5].map(i => (
+            <div key={i} className="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden animate-pulse">
+              <div className="h-40 bg-surface-container" />
+              <div className="p-4 space-y-2">
+                <div className="h-5 bg-surface-container-high rounded w-3/4" />
+                <div className="h-4 bg-surface-container rounded w-1/2" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filtered.map(lesson => (
+            <div
+              key={lesson.id}
+              className="group bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden flex flex-col hover:-translate-y-1 hover:shadow-lg transition-all duration-200"
+            >
+              {/* Banner */}
+              <div className="h-40 bg-surface-container flex items-center justify-center relative overflow-hidden">
+                <span className="text-6xl z-10">{lesson.thumbnail_emoji || '📚'}</span>
+                {lesson.category && (
+                  <div className="absolute top-2 right-2">
+                    <span className="px-2 py-1 bg-surface-container-highest text-on-surface-variant rounded-full text-xs font-semibold">
+                      {lesson.category}
                     </span>
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-gray-500">
-                    <span>{lesson.audience === 'child' ? '👦 Trẻ em' : '👨‍👩‍👧 Phụ huynh'}</span>
-                    <span>•</span>
-                    <span>{lesson.category}</span>
-                    <span>•</span>
-                    <span>{Math.round(lesson.duration_seconds / 60)} phút</span>
+                )}
+              </div>
+
+              {/* Content */}
+              <div className="p-4 flex-1 flex flex-col">
+                <h3 className="text-base font-bold text-on-surface mb-2 line-clamp-2">{lesson.title}</h3>
+
+                {/* Meta */}
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="flex items-center gap-1 text-outline text-xs">
+                    <span className="material-symbols-outlined text-[14px]">schedule</span>
+                    {Math.round(lesson.duration_seconds / 60)} phút
+                  </div>
+                  <div className="flex items-center gap-1 text-outline text-xs">
+                    <span className="material-symbols-outlined text-[14px]">{AUDIENCE_ICON[lesson.audience] ?? 'person'}</span>
+                    {AUDIENCE_LABEL[lesson.audience] ?? lesson.audience}
                   </div>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <button
-                    onClick={() => togglePublish(lesson)}
-                    className={`text-xs px-3 py-1.5 rounded-lg font-medium transition ${
-                      lesson.is_published
-                        ? 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                        : 'bg-green-100 text-green-700 hover:bg-green-200'
-                    }`}
-                  >
-                    {lesson.is_published ? 'Gỡ đăng' : 'Đăng bài'}
-                  </button>
-                  <Link
-                    href={`/admin/lessons/${lesson.id}`}
-                    className="text-xs px-3 py-1.5 rounded-lg bg-violet-50 text-violet-700 hover:bg-violet-100 font-medium transition"
-                  >
-                    Chỉnh sửa
-                  </Link>
-                  <button
-                    onClick={() => deleteLesson(lesson.id!)}
-                    className="text-xs px-3 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 font-medium transition"
-                  >
-                    Xóa
-                  </button>
+
+                {/* Footer */}
+                <div className="mt-auto pt-3 border-t border-outline-variant flex items-center justify-between">
+                  {/* Toggle */}
+                  <label className="relative inline-flex items-center cursor-pointer gap-2">
+                    <input
+                      type="checkbox"
+                      checked={lesson.is_published}
+                      onChange={() => togglePublish(lesson)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-10 h-5 bg-surface-variant rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary relative" />
+                    <span className="text-xs text-outline">
+                      {lesson.is_published ? 'Đã đăng' : 'Bản nháp'}
+                    </span>
+                  </label>
+
+                  {/* Actions */}
+                  <div className="flex gap-1">
+                    <Link
+                      href={`/admin/lessons/${lesson.id}`}
+                      className="p-1.5 text-outline hover:text-primary hover:bg-surface-container-high rounded-full transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">edit</span>
+                    </Link>
+                    <button
+                      onClick={() => deleteLesson(lesson.id!)}
+                      className="p-1.5 text-outline hover:text-error hover:bg-error-container/10 rounded-full transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">delete</span>
+                    </button>
+                  </div>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-      </main>
+            </div>
+          ))}
+
+          {/* Create new placeholder */}
+          <Link
+            href="/admin/lessons/new"
+            className="group bg-surface-container-lowest border-2 border-dashed border-outline-variant rounded-xl flex flex-col items-center justify-center py-12 hover:border-primary hover:bg-surface-container transition-all cursor-pointer min-h-[300px]"
+          >
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-3 group-hover:scale-110 transition-transform">
+              <span className="material-symbols-outlined text-2xl">add</span>
+            </div>
+            <p className="text-sm font-medium text-outline group-hover:text-primary">Tạo bài học mới</p>
+          </Link>
+        </div>
+      )}
     </div>
   )
 }

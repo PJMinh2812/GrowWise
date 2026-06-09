@@ -24,12 +24,35 @@ class PaymentResult {
   bool get isSuccess => resultCode == 0;
 }
 
+class QRPaymentResult {
+  final String orderId;
+  final int orderCode;
+  final String qrCode;       // VietQR image URL
+  final String? checkoutUrl; // web fallback
+  final int amount;
+  final String description;  // bank transfer reference
+  final String? accountNumber;
+  final String? accountName;
+  final String? bankId;
+
+  const QRPaymentResult({
+    required this.orderId,
+    required this.orderCode,
+    required this.qrCode,
+    this.checkoutUrl,
+    required this.amount,
+    required this.description,
+    this.accountNumber,
+    this.accountName,
+    this.bankId,
+  });
+}
+
 class PaymentService {
   static String get _baseUrl =>
       dotenv.env['API_BASE_URL'] ?? 'http://localhost:3000';
 
   /// Creates a MoMo payment order via the Next.js API.
-  /// Returns a [PaymentResult] containing payUrl and deeplink.
   static Future<PaymentResult> createMoMoOrder({
     required String userId,
     required String planName,
@@ -61,9 +84,43 @@ class PaymentService {
     );
   }
 
+  /// Creates a PayOS VietQR bank-transfer order.
+  static Future<QRPaymentResult> createQROrder({
+    required String userId,
+    required String planName,
+    required String billingInterval,
+  }) async {
+    final uri = Uri.parse('$_baseUrl/api/payment/qr/create');
+    final response = await http.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'userId': userId,
+        'planName': planName,
+        'billingInterval': billingInterval,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Không thể tạo mã QR (${response.statusCode})');
+    }
+
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    return QRPaymentResult(
+      orderId:       data['orderId']       as String,
+      orderCode:     (data['orderCode']    as num).toInt(),
+      qrCode:        data['qrCode']        as String,
+      checkoutUrl:   data['checkoutUrl']   as String?,
+      amount:        (data['amount']       as num).toInt(),
+      description:   data['description']   as String,
+      accountNumber: data['accountNumber'] as String?,
+      accountName:   data['accountName']   as String?,
+      bankId:        data['bankId']        as String?,
+    );
+  }
+
   /// Opens MoMo UAT app via deeplink, falls back to browser payUrl.
   static Future<bool> launchMoMo(PaymentResult result) async {
-    // Try deeplink first — works when MoMo UAT app is installed
     if (result.deeplink != null && result.deeplink!.isNotEmpty) {
       try {
         final launched = await launchUrl(
@@ -75,7 +132,6 @@ class PaymentService {
         debugPrint('[PaymentService] deeplink failed, trying payUrl: $e');
       }
     }
-    // Fallback: open payUrl in browser
     if (result.payUrl != null && result.payUrl!.isNotEmpty) {
       try {
         return await launchUrl(
@@ -89,11 +145,15 @@ class PaymentService {
     return false;
   }
 
-  /// Polls the server for the payment status of the given orderId.
+  /// Polls the server for the payment status of [orderId].
+  /// [provider] selects the status endpoint ('momo' or 'qr').
   /// Returns 'pending' | 'completed' | 'failed' | null on error.
-  static Future<String?> checkStatus(String orderId) async {
+  static Future<String?> checkStatus(String orderId, {String provider = 'momo'}) async {
     try {
-      final uri = Uri.parse('$_baseUrl/api/payment/momo/status?orderId=$orderId');
+      final path = provider == 'qr'
+          ? '/api/payment/qr/status'
+          : '/api/payment/momo/status';
+      final uri = Uri.parse('$_baseUrl$path?orderId=$orderId');
       final response = await http.get(uri);
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
