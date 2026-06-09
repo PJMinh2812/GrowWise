@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS user_subscriptions (
   trial_ends_at         TIMESTAMPTZ,
   current_period_start  TIMESTAMPTZ NOT NULL DEFAULT now(),
   current_period_end    TIMESTAMPTZ,
-  payment_method        TEXT CHECK (payment_method IN ('momo', 'vnpay', 'zalopay', 'card')),
+  payment_method        TEXT CHECK (payment_method IN ('momo', 'vnpay', 'zalopay', 'card', 'payos')),
   created_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE(user_id)
 );
@@ -119,7 +119,7 @@ CREATE TABLE IF NOT EXISTS payment_transactions (
   status                  TEXT NOT NULL DEFAULT 'pending'
                             CHECK (status IN ('pending', 'completed', 'failed', 'cancelled')),
   provider                TEXT NOT NULL DEFAULT 'momo'
-                            CHECK (provider IN ('momo', 'vnpay', 'zalopay', 'card')),
+                            CHECK (provider IN ('momo', 'vnpay', 'zalopay', 'card', 'payos')),
   provider_transaction_id TEXT,
   created_at              TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at              TIMESTAMPTZ NOT NULL DEFAULT now()

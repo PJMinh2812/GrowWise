@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 
@@ -17,6 +16,28 @@ interface UserRow {
   } | null;
 }
 
+function relativeTime(iso: string | null) {
+  if (!iso) return "Chưa đăng nhập";
+  const diff = Date.now() - new Date(iso).getTime();
+  const h = Math.floor(diff / 3600000);
+  const d = Math.floor(diff / 86400000);
+  if (h < 1) return "Vừa mới xong";
+  if (h < 24) return `${h} giờ trước`;
+  if (d === 1) return "Hôm qua";
+  return `${d} ngày trước`;
+}
+
+function avatarColor(email: string) {
+  const colors = [
+    "bg-primary/20 text-primary",
+    "bg-secondary/20 text-secondary",
+    "bg-orange-100 text-orange-600",
+    "bg-blue-100 text-blue-600",
+    "bg-pink-100 text-pink-600",
+  ];
+  return colors[email.charCodeAt(0) % colors.length];
+}
+
 export default function AdminUsersPage() {
   const router = useRouter();
   const [users, setUsers] = useState<UserRow[]>([]);
@@ -28,25 +49,14 @@ export default function AdminUsersPage() {
   const [inviteError, setInviteError] = useState("");
   const [inviteSuccess, setInviteSuccess] = useState("");
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
+  useEffect(() => { fetchUsers(); }, []);
 
   async function fetchUsers() {
     setLoading(true);
     const res = await fetch("/api/admin/users");
-    if (!res.ok) {
-      router.push("/admin/lessons");
-      return;
-    }
+    if (!res.ok) { router.push("/admin/lessons"); return; }
     setUsers(await res.json());
     setLoading(false);
-  }
-
-  async function handleLogout() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/admin/login");
   }
 
   async function updateUser(id: string, patch: object) {
@@ -65,12 +75,7 @@ export default function AdminUsersPage() {
   }
 
   async function grantAccess(u: UserRow) {
-    await updateUser(u.id, {
-      email: u.email,
-      role: "staff",
-      is_banned: false,
-      access_granted: true,
-    });
+    await updateUser(u.id, { email: u.email, role: "staff", is_banned: false, access_granted: true });
   }
 
   async function handleInvite(e: React.FormEvent) {
@@ -94,192 +99,201 @@ export default function AdminUsersPage() {
     setInviting(false);
   }
 
+  const adminCount   = users.filter(u => u.profile?.role === "admin").length;
+  const staffCount   = users.filter(u => u.profile?.role === "staff").length;
+  const activeCount  = users.filter(u => u.profile?.access_granted && !u.profile?.is_banned).length;
+  const bannedCount  = users.filter(u => u.profile?.is_banned).length;
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="text-2xl">🌱</span>
-          <h1 className="text-lg font-bold text-gray-900">GrowWise Admin</h1>
-        </div>
-        <div className="flex items-center gap-4">
-          <Link
-            href="/admin/lessons"
-            className="text-sm text-gray-500 hover:text-gray-700"
-          >
-            Bài học
-          </Link>
-          <span className="text-sm font-semibold text-violet-700">
-            Người dùng
-          </span>
-          <button
-            onClick={handleLogout}
-            className="text-sm text-gray-400 hover:text-gray-600"
-          >
-            Đăng xuất
-          </button>
-        </div>
-      </header>
+    <div className="p-6 max-w-[1440px] mx-auto space-y-6">
+      {/* Page Header */}
+      <div className="mb-2">
+        <h2 className="text-3xl font-bold text-on-surface flex items-center gap-2">
+          <span className="material-symbols-outlined text-[32px]">group</span>
+          Người dùng
+        </h2>
+        <p className="text-sm text-on-surface-variant mt-1">Quản lý tài khoản admin và staff truy cập hệ thống</p>
+      </div>
 
-      <main className="max-w-5xl mx-auto px-6 py-8 space-y-6">
-        {/* Invite form */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6">
-          <h2 className="font-semibold text-gray-900 mb-4">
-            Mời thành viên mới
-          </h2>
-          <form onSubmit={handleInvite} className="flex gap-3 items-end">
-            <div className="flex-1">
-              <label className="block text-xs font-medium text-gray-600 mb-1">
-                Email
-              </label>
-              <input
-                type="email"
-                required
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-                placeholder="staff@example.com"
-                className="text-black w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">
-                Vai trò
-              </label>
-              <select
-                value={inviteRole}
-                onChange={(e) =>
-                  setInviteRole(e.target.value as "staff" | "admin")
-                }
-                className="text-black border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-              >
-                <option value="staff">Staff</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
-            <button
-              type="submit"
-              disabled={inviting}
-              className="bg-violet-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-violet-700 disabled:opacity-50 transition"
+      {/* Invite form */}
+      <div className="bg-surface-container-lowest rounded-xl border border-outline-variant p-6 shadow-sm">
+        <div className="flex items-center gap-2 mb-5">
+          <span className="material-symbols-outlined text-primary">person_add</span>
+          <h3 className="text-lg font-semibold text-on-surface">Mời thành viên mới</h3>
+        </div>
+        <form onSubmit={handleInvite} className="flex flex-col md:flex-row items-end gap-3">
+          <div className="flex-1 w-full">
+            <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1">Địa chỉ Email</label>
+            <input
+              type="email"
+              required
+              value={inviteEmail}
+              onChange={e => setInviteEmail(e.target.value)}
+              placeholder="example@growwise.vn"
+              className="w-full border border-outline-variant rounded-lg px-4 py-2.5 text-sm text-on-surface bg-surface-container-lowest outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+            />
+          </div>
+          <div className="w-full md:w-48">
+            <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1">Vai trò</label>
+            <select
+              value={inviteRole}
+              onChange={e => setInviteRole(e.target.value as "staff" | "admin")}
+              className="w-full border border-outline-variant rounded-lg px-4 py-2.5 text-sm text-on-surface bg-surface-container-lowest outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
             >
-              {inviting ? "Đang gửi..." : "Gửi lời mời"}
-            </button>
-          </form>
-          {inviteError && (
-            <p className="mt-2 text-xs text-red-600">{inviteError}</p>
-          )}
-          {inviteSuccess && (
-            <p className="mt-2 text-xs text-green-600">{inviteSuccess}</p>
-          )}
-        </div>
+              <option value="staff">Staff</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <button
+            type="submit"
+            disabled={inviting}
+            className="w-full md:w-auto px-6 py-2.5 bg-primary text-on-primary text-sm font-semibold rounded-lg hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 h-[42px]"
+          >
+            <span className="material-symbols-outlined text-[16px]">send</span>
+            {inviting ? "Đang gửi..." : "Gửi lời mời"}
+          </button>
+        </form>
+        {inviteError && <p className="mt-2 text-xs text-error">{inviteError}</p>}
+        {inviteSuccess && <p className="mt-2 text-xs text-secondary">{inviteSuccess}</p>}
+      </div>
 
-        {/* User list */}
-        <div>
-          <p className="text-sm text-gray-500 mb-3">{users.length} tài khoản</p>
-          {loading ? (
-            <div className="text-center py-12 text-gray-400">Đang tải...</div>
-          ) : (
-            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-700">
-                      Email
-                    </th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-700">
-                      Vai trò
-                    </th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-700">
-                      Trạng thái
-                    </th>
-                    <th className="text-left px-4 py-3 font-semibold text-gray-700">
-                      Đăng nhập gần nhất
-                    </th>
-                    <th className="px-4 py-3"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {users.map((u) => (
-                    <tr
-                      key={u.id}
-                      className={u.profile?.is_banned ? "bg-red-50" : ""}
-                    >
-                      <td className="px-4 py-3 text-gray-900 font-medium">
-                        {u.email}
-                      </td>
-                      <td className="px-4 py-3">
-                        {u.profile?.access_granted ? (
-                          <select
-                            value={u.profile.role}
-                            disabled={busy === u.id}
-                            onChange={(e) =>
-                              updateUser(u.id, {
-                                email: u.email,
-                                role: e.target.value,
-                                is_banned: u.profile!.is_banned,
-                                access_granted: true,
-                              })
-                            }
-                            className="text-black border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-violet-500 disabled:opacity-50"
-                          >
-                            <option value="staff">Staff</option>
-                            <option value="admin">Admin</option>
-                          </select>
-                        ) : (
-                          <button
-                            onClick={() => grantAccess(u)}
-                            disabled={busy === u.id}
-                            className="text-black text-xs px-3 py-1 rounded-lg bg-violet-50 text-violet-700 hover:bg-violet-100 font-medium transition disabled:opacity-50"
-                          >
-                            + Cấp quyền Staff
-                          </button>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`text-black text-xs px-2.5 py-1 rounded-full font-medium ${
-                            u.profile?.is_banned
-                              ? "bg-red-100 text-red-700"
-                              : "bg-green-100 text-green-700"
-                          }`}
-                        >
-                          {u.profile?.is_banned ? "Đã cấm" : "Hoạt động"}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-black text-xs">
-                        {u.last_sign_in_at
-                          ? new Date(u.last_sign_in_at).toLocaleDateString(
-                              "vi-VN",
-                            )
-                          : "Chưa đăng nhập"}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <button
-                          onClick={() =>
-                            updateUser(u.id, {
-                              email: u.email,
-                              role: u.profile?.role ?? "staff",
-                              is_banned: !(u.profile?.is_banned ?? false),
-                              access_granted:
-                                u.profile?.access_granted ?? false,
-                            })
-                          }
-                          disabled={busy === u.id}
-                          className={`text-black text-xs px-3 py-1.5 rounded-lg font-medium transition disabled:opacity-50 ${
-                            u.profile?.is_banned
-                              ? "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                              : "bg-red-50 text-red-600 hover:bg-red-100 border border-red-200"
-                          }`}
-                        >
-                          {u.profile?.is_banned ? "Bỏ cấm" : "Cấm"}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+      {/* User table */}
+      <div className="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden shadow-sm">
+        <div className="p-5 border-b border-outline-variant flex justify-between items-center bg-surface-container-lowest">
+          <h3 className="text-lg font-semibold text-on-surface">Danh sách nhân sự</h3>
+          <div className="flex items-center gap-2">
+            <button className="p-2 hover:bg-surface-container-high rounded-lg border border-outline-variant transition-colors flex items-center gap-1 text-on-surface-variant text-sm">
+              <span className="material-symbols-outlined text-[18px]">filter_list</span>
+              Lọc
+            </button>
+          </div>
         </div>
-      </main>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse text-sm">
+            <thead className="bg-surface-container-low">
+              <tr>
+                <th className="px-6 py-3 text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Thành viên</th>
+                <th className="px-6 py-3 text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Vai trò</th>
+                <th className="px-6 py-3 text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Trạng thái</th>
+                <th className="px-6 py-3 text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Đăng nhập lần cuối</th>
+                <th className="px-6 py-3 text-xs font-semibold text-on-surface-variant uppercase tracking-wider text-right">Hành động</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-outline-variant">
+              {loading && (
+                <tr>
+                  <td colSpan={5} className="px-6 py-10 text-center text-on-surface-variant">Đang tải...</td>
+                </tr>
+              )}
+              {!loading && users.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-6 py-10 text-center text-on-surface-variant">Chưa có thành viên nào</td>
+                </tr>
+              )}
+              {users.map(u => (
+                <tr key={u.id} className={`group hover:bg-surface-container-low/50 transition-colors ${u.profile?.is_banned ? "bg-error-container/5" : ""}`}>
+                  {/* Member */}
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-base flex-shrink-0 ${avatarColor(u.email)}`}>
+                        {u.email[0].toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="font-medium text-on-surface">{u.email.split("@")[0]}</p>
+                        <p className="text-xs text-on-surface-variant">{u.email}</p>
+                      </div>
+                    </div>
+                  </td>
+
+                  {/* Role */}
+                  <td className="px-6 py-4">
+                    {u.profile?.access_granted ? (
+                      <select
+                        value={u.profile.role}
+                        disabled={busy === u.id}
+                        onChange={e => updateUser(u.id, { email: u.email, role: e.target.value, is_banned: u.profile!.is_banned, access_granted: true })}
+                        className={`text-xs px-2 py-1 rounded-full border font-semibold outline-none cursor-pointer disabled:opacity-50 ${
+                          u.profile.role === "admin"
+                            ? "bg-primary/10 text-primary border-primary/20"
+                            : "bg-surface-variant text-on-surface-variant border-outline-variant"
+                        }`}
+                      >
+                        <option value="admin">Admin</option>
+                        <option value="staff">Staff</option>
+                      </select>
+                    ) : (
+                      <button
+                        onClick={() => grantAccess(u)}
+                        disabled={busy === u.id}
+                        className="text-xs px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 font-semibold hover:bg-primary/20 transition-colors disabled:opacity-50"
+                      >
+                        + Cấp quyền
+                      </button>
+                    )}
+                  </td>
+
+                  {/* Status */}
+                  <td className="px-6 py-4">
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
+                      u.profile?.is_banned
+                        ? "bg-error-container text-on-error-container"
+                        : "bg-secondary-container text-on-secondary-container"
+                    }`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${u.profile?.is_banned ? "bg-error" : "bg-secondary"}`} />
+                      {u.profile?.is_banned ? "Bị khóa" : "Hoạt động"}
+                    </span>
+                  </td>
+
+                  {/* Last login */}
+                  <td className="px-6 py-4 text-xs text-on-surface-variant">{relativeTime(u.last_sign_in_at)}</td>
+
+                  {/* Actions */}
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => updateUser(u.id, {
+                          email: u.email,
+                          role: u.profile?.role ?? "staff",
+                          is_banned: !(u.profile?.is_banned ?? false),
+                          access_granted: u.profile?.access_granted ?? false,
+                        })}
+                        disabled={busy === u.id}
+                        className={`text-xs px-2.5 py-1 font-medium rounded hover:underline disabled:opacity-50 ${
+                          u.profile?.is_banned ? "text-secondary" : "text-error"
+                        }`}
+                      >
+                        {u.profile?.is_banned ? "Mở khóa" : "Khóa"}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Stats mini-widgets */}
+      {!loading && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-surface-container-lowest rounded-xl border border-outline-variant p-4">
+            <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Tổng Admin</p>
+            <p className="text-3xl font-bold text-primary mt-1">{String(adminCount).padStart(2, "0")}</p>
+          </div>
+          <div className="bg-surface-container-lowest rounded-xl border border-outline-variant p-4">
+            <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Tổng Staff</p>
+            <p className="text-3xl font-bold text-on-surface mt-1">{String(staffCount).padStart(2, "0")}</p>
+          </div>
+          <div className="bg-surface-container-lowest rounded-xl border border-outline-variant p-4">
+            <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Đang hoạt động</p>
+            <p className="text-3xl font-bold text-secondary mt-1">{String(activeCount).padStart(2, "0")}</p>
+          </div>
+          <div className="bg-surface-container-lowest rounded-xl border border-outline-variant p-4">
+            <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Tài khoản khóa</p>
+            <p className="text-3xl font-bold text-error mt-1">{String(bannedCount).padStart(2, "0")}</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

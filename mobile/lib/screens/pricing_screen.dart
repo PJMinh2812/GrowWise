@@ -32,6 +32,8 @@ class _PricingScreenState extends State<PricingScreen>
 
   // Real payment tracking
   String? _pendingOrderId;
+  String _paymentProvider = 'momo'; // 'momo' | 'qr'
+  QRPaymentResult? _pendingQRResult;
   bool _waitingForPayment = false;
   Timer? _pollTimer;
 
@@ -105,7 +107,8 @@ class _PricingScreenState extends State<PricingScreen>
         return;
       }
 
-      _pendingOrderId = result.orderId;
+      _pendingOrderId  = result.orderId;
+      _paymentProvider = 'momo';
 
       final launched = await PaymentService.launchMoMo(result);
       if (!mounted) return;
@@ -131,7 +134,7 @@ class _PricingScreenState extends State<PricingScreen>
     _pollTimer?.cancel();
     _pollTimer = Timer.periodic(const Duration(seconds: 3), (_) async {
       if (_pendingOrderId == null) return;
-      final status = await PaymentService.checkStatus(_pendingOrderId!);
+      final status = await PaymentService.checkStatus(_pendingOrderId!, provider: _paymentProvider);
       if (status == 'completed') {
         _pollTimer?.cancel();
         if (!mounted) return;
@@ -161,7 +164,101 @@ class _PricingScreenState extends State<PricingScreen>
     if (isDemoMode) {
       _startTrial(planName);
     } else {
-      _payWithMoMo(planName);
+      _showPaymentMethodPicker(planName);
+    }
+  }
+
+  void _showPaymentMethodPicker(String planName) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                  color: _kBorder,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Chọn phương thức thanh toán',
+              style: GoogleFonts.nunitoSans(
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+                color: _kText,
+              ),
+            ),
+            const SizedBox(height: 16),
+            _PaymentMethodTile(
+              icon: '📱',
+              label: 'Ví MoMo',
+              subtitle: 'Mở app MoMo để thanh toán',
+              onTap: () {
+                Navigator.pop(context);
+                _payWithMoMo(planName);
+              },
+            ),
+            const SizedBox(height: 10),
+            _PaymentMethodTile(
+              icon: '🏦',
+              label: 'Chuyển khoản QR',
+              subtitle: 'Quét mã QR bằng app ngân hàng bất kỳ',
+              onTap: () {
+                Navigator.pop(context);
+                _payWithQR(planName);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _payWithQR(String planName) async {
+    if (_loading) return;
+    final uid = SupabaseService.userId;
+    if (uid == null) {
+      _showError('Vui lòng đăng nhập để thanh toán');
+      return;
+    }
+
+    setState(() => _loading = true);
+
+    try {
+      final result = await PaymentService.createQROrder(
+        userId: uid,
+        planName: planName,
+        billingInterval: _isYearly ? 'yearly' : 'monthly',
+      );
+
+      if (!mounted) return;
+
+      _pendingOrderId   = result.orderId;
+      _pendingQRResult  = result;
+      _paymentProvider  = 'qr';
+
+      setState(() {
+        _loading = false;
+        _waitingForPayment = true;
+      });
+
+      _startPolling();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      _showError('Không thể tạo mã QR: $e');
     }
   }
 
@@ -305,8 +402,8 @@ class _PricingScreenState extends State<PricingScreen>
                   ctaLabel: isDemoMode
                       ? 'Dùng thử 7 ngày MIỄN PHÍ →'
                       : (_isYearly
-                          ? 'Thanh toán ${_formatVND(749000)} qua MoMo'
-                          : 'Thanh toán ${_formatVND(79000)}/tháng qua MoMo'),
+                          ? 'Mua gói năm — ${_formatVND(749000)}'
+                          : 'Mua gói tháng — ${_formatVND(79000)}'),
                   ctaColor: _kPurple,
                   onCta: appState.isPremium
                       ? null
@@ -338,8 +435,8 @@ class _PricingScreenState extends State<PricingScreen>
                   ctaLabel: isDemoMode
                       ? 'Dùng thử 7 ngày MIỄN PHÍ →'
                       : (_isYearly
-                          ? 'Thanh toán ${_formatVND(1419000)} qua MoMo'
-                          : 'Thanh toán ${_formatVND(149000)}/tháng qua MoMo'),
+                          ? 'Mua gói năm — ${_formatVND(1419000)}'
+                          : 'Mua gói tháng — ${_formatVND(149000)}'),
                   ctaColor: _kOrangeDark,
                   onCta: appState.planType == 'family'
                       ? null
@@ -349,7 +446,7 @@ class _PricingScreenState extends State<PricingScreen>
                 ),
                 const SizedBox(height: 28),
 
-                // MoMo badge (real mode only)
+                // Payment badge (real mode only)
                 if (!isDemoMode)
                   Container(
                     width: double.infinity,
@@ -362,12 +459,14 @@ class _PricingScreenState extends State<PricingScreen>
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text('📱', style: TextStyle(fontSize: 20)),
+                        const Text('📱', style: TextStyle(fontSize: 18)),
+                        const SizedBox(width: 6),
+                        const Text('🏦', style: TextStyle(fontSize: 18)),
                         const SizedBox(width: 8),
                         Text(
-                          'Thanh toán qua MoMo — An toàn & Bảo mật',
+                          'MoMo · Chuyển khoản QR — An toàn & Bảo mật',
                           style: GoogleFonts.nunitoSans(
-                            fontSize: 13,
+                            fontSize: 12,
                             fontWeight: FontWeight.w700,
                             color: _kOrangeDark,
                           ),
@@ -426,54 +525,63 @@ class _PricingScreenState extends State<PricingScreen>
               color: Colors.black54,
               child: Center(
                 child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 32),
-                  padding: const EdgeInsets.all(28),
+                  margin: const EdgeInsets.symmetric(horizontal: 24),
+                  padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(24),
                   ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text('📱', style: TextStyle(fontSize: 48)),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Đang chờ xác nhận thanh toán...',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.nunitoSans(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: _kText,
+                  child: _paymentProvider == 'qr' && _pendingQRResult != null
+                      ? _QRPaymentOverlay(
+                          result: _pendingQRResult!,
+                          formatVND: _formatVND,
+                          onCancel: () {
+                            _pollTimer?.cancel();
+                            setState(() => _waitingForPayment = false);
+                          },
+                        )
+                      : Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text('📱', style: TextStyle(fontSize: 48)),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Đang chờ xác nhận thanh toán...',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.nunitoSans(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                color: _kText,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Hoàn tất thanh toán trong ứng dụng MoMo rồi quay lại đây.',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.nunitoSans(
+                                fontSize: 13,
+                                color: _kTextMuted,
+                                height: 1.5,
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            const CircularProgressIndicator(color: _kOrange),
+                            const SizedBox(height: 16),
+                            TextButton(
+                              onPressed: () {
+                                _pollTimer?.cancel();
+                                setState(() => _waitingForPayment = false);
+                              },
+                              child: Text(
+                                'Hủy',
+                                style: GoogleFonts.nunitoSans(
+                                  color: _kTextMuted,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Hoàn tất thanh toán trong ứng dụng MoMo rồi quay lại đây.',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.nunitoSans(
-                          fontSize: 13,
-                          color: _kTextMuted,
-                          height: 1.5,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      const CircularProgressIndicator(color: _kOrange),
-                      const SizedBox(height: 16),
-                      TextButton(
-                        onPressed: () {
-                          _pollTimer?.cancel();
-                          setState(() => _waitingForPayment = false);
-                        },
-                        child: Text(
-                          'Hủy',
-                          style: GoogleFonts.nunitoSans(
-                            color: _kTextMuted,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
               ),
             ),
@@ -905,6 +1013,209 @@ class _FaqItem extends StatelessWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _QRPaymentOverlay extends StatelessWidget {
+  final QRPaymentResult result;
+  final String Function(int) formatVND;
+  final VoidCallback onCancel;
+
+  const _QRPaymentOverlay({
+    required this.result,
+    required this.formatVND,
+    required this.onCancel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Step indicator
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 24, height: 24,
+              decoration: const BoxDecoration(
+                color: _kGreen,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.check, color: Colors.white, size: 14),
+            ),
+            Container(width: 24, height: 2, color: _kBorder),
+            Container(
+              width: 24, height: 24,
+              decoration: const BoxDecoration(
+                color: _kOrange,
+                shape: BoxShape.circle,
+              ),
+              child: const Center(
+                child: Text('2', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800)),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'Quét mã QR để thanh toán',
+          style: GoogleFonts.nunitoSans(
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+            color: _kText,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Mở app ngân hàng và quét mã bên dưới',
+          style: GoogleFonts.nunitoSans(fontSize: 12, color: _kTextMuted),
+        ),
+        const SizedBox(height: 14),
+        // QR image
+        ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Image.network(
+            result.qrCode,
+            width: 200,
+            height: 200,
+            fit: BoxFit.contain,
+            loadingBuilder: (_, child, progress) => progress == null
+                ? child
+                : const SizedBox(
+                    width: 200, height: 200,
+                    child: Center(child: CircularProgressIndicator(color: _kOrange)),
+                  ),
+            errorBuilder: (ctx, err, stack) => const SizedBox(
+              width: 200, height: 200,
+              child: Center(child: Icon(Icons.qr_code, size: 80, color: _kBorder)),
+            ),
+          ),
+        ),
+        const SizedBox(height: 14),
+        // Payment info
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFF3E0),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: _kOrange.withValues(alpha: 0.4)),
+          ),
+          child: Column(
+            children: [
+              _InfoRow(label: 'SỐ TIỀN', value: '${formatVND(result.amount)} VNĐ', valueColor: _kOrange),
+              const SizedBox(height: 6),
+              _InfoRow(label: 'NỘI DUNG', value: result.description, valueColor: _kOrange),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            const SizedBox(
+              width: 16, height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2, color: _kOrange),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Đang chờ xác nhận... gói tự kích hoạt sau khi chuyển khoản',
+                style: GoogleFonts.nunitoSans(fontSize: 11, color: _kTextMuted),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        TextButton(
+          onPressed: onCancel,
+          child: Text(
+            'Hủy thanh toán',
+            style: GoogleFonts.nunitoSans(color: _kTextMuted, fontWeight: FontWeight.w600, fontSize: 13),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color valueColor;
+
+  const _InfoRow({required this.label, required this.value, required this.valueColor});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: GoogleFonts.nunitoSans(fontSize: 11, color: _kTextMuted, fontWeight: FontWeight.w700)),
+        Text(value, style: GoogleFonts.nunitoSans(fontSize: 13, color: valueColor, fontWeight: FontWeight.w800)),
+      ],
+    );
+  }
+}
+
+class _PaymentMethodTile extends StatelessWidget {
+  final String icon;
+  final String label;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _PaymentMethodTile({
+    required this.icon,
+    required this.label,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            border: Border.all(color: _kBorder),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: [
+              Text(icon, style: const TextStyle(fontSize: 28)),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: GoogleFonts.nunitoSans(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: _kText,
+                      ),
+                    ),
+                    Text(
+                      subtitle,
+                      style: GoogleFonts.nunitoSans(
+                        fontSize: 12,
+                        color: _kTextMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded, color: _kBorder),
+            ],
+          ),
+        ),
       ),
     );
   }

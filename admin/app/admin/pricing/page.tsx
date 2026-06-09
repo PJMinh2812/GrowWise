@@ -102,22 +102,15 @@ export default function PricingAdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-muted/30">
-      {/* Header */}
-      <div className="bg-white border-b border-border px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link href="/admin/lessons" className="text-sm text-muted-foreground hover:text-foreground">
-            ← Bài học
-          </Link>
-          <h1 className="text-xl font-bold">💰 Quản lý Pricing</h1>
-        </div>
-        <div className="text-sm text-muted-foreground">
-          Revenue tháng này:{" "}
-          <span className="font-bold text-green-600">{formatVND(monthlyRevenue)}</span>
-        </div>
-      </div>
-
+    <div className="bg-muted/30">
       <div className="max-w-6xl mx-auto px-6 py-8 space-y-10">
+        <div>
+          <h2 className="text-xl font-bold text-gray-900">💰 Quản lý Pricing</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Revenue tháng này:{" "}
+            <span className="font-bold text-green-600">{formatVND(monthlyRevenue)}</span>
+          </p>
+        </div>
         {/* Plan cards */}
         <section>
           <h2 className="text-lg font-bold mb-4">Gói hiện tại</h2>
