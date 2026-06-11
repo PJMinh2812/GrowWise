@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
   // 5. Subscribers per plan
   const planMap: Record<string, { display_name: string; monthly: number; yearly: number; free: number }> = {}
   subs?.forEach(s => {
-    const plan = s.plan as { name: string; display_name: string } | null
+    const plan = (s.plan as unknown) as { name: string; display_name: string } | null
     if (!plan) return
     if (!planMap[plan.name]) planMap[plan.name] = { display_name: plan.display_name, monthly: 0, yearly: 0, free: 0 }
     if (s.status === 'active') {
