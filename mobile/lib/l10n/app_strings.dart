@@ -284,7 +284,7 @@ class AppStrings {
   // ── Parent Create Task ────────────────────────────────────────────────────
   String get createTaskTitle    => isEn ? 'New Task!'                      : 'Nhiệm vụ mới!';
   String get createTaskSub      => isEn ? 'What task to assign today?'     : 'Hôm nay giao việc gì cho con?';
-  String get savedTemplates     => isEn ? '⭐ Saved Templates'              : '⭐ Mẫu đã lưu';
+  String get savedTemplates     => isEn ? '⭐ Active Tasks'                 : '⭐ Nhiệm vụ đang giao';
   String get quickIdeas         => isEn ? 'Quick Ideas'                    : 'Ý tưởng nhanh';
   String get customTask         => isEn ? 'Create Custom Task'             : 'Tạo nhiệm vụ tùy chỉnh';
   String get taskNameLabel      => isEn ? 'Task name'                      : 'Tên nhiệm vụ';

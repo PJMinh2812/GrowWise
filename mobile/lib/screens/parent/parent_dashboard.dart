@@ -740,7 +740,7 @@ class _AllTasksSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tasks = app.pendingTasks;
+    final tasks = app.childViewTasks;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

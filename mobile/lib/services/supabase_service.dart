@@ -153,6 +153,7 @@ class SupabaseService {
     return List<Map<String, dynamic>>.from(data);
   }
 
+  /// Creates a task template (parent creates once, child submits multiple times).
   static Future<Map<String, dynamic>> createTask({
     required String familyId,
     required String childId,
@@ -161,6 +162,10 @@ class SupabaseService {
     required String category,
     required String icon,
     required int coinReward,
+    DateTime? dueDate,
+    bool hasPenalty = false,
+    int penaltyPercent = 10,
+    int? autoApproveAfter,
   }) async {
     final uid = userId;
     if (uid == null) throw Exception('Not authenticated');
@@ -175,12 +180,103 @@ class SupabaseService {
           'category': category,
           'icon': icon,
           'coin_reward': coinReward,
+          'is_template': true,
+          'is_active': true,
+          'approval_count': 0,
+          if (dueDate != null) 'due_date': dueDate.toIso8601String(),
+          'has_penalty': hasPenalty,
+          'penalty_percent': penaltyPercent,
+          if (autoApproveAfter != null) 'auto_approve_after': autoApproveAfter,
         })
         .select()
         .single();
     return data;
   }
 
+  /// Gets active task templates for a child.
+  static Future<List<Map<String, dynamic>>> getTaskTemplates({
+    required String familyId,
+    String? childId,
+  }) async {
+    var query = client
+        .from('tasks')
+        .select()
+        .eq('family_id', familyId)
+        .eq('is_template', true)
+        .eq('is_active', true);
+    if (childId != null) query = query.eq('child_id', childId);
+    final data = await query.order('created_at', ascending: false);
+    return List<Map<String, dynamic>>.from(data);
+  }
+
+  /// Creates a new submission for a task template (child starts a task).
+  static Future<Map<String, dynamic>> createSubmission({
+    required String taskId,
+    required String childId,
+  }) async {
+    final data = await client
+        .from('task_submissions')
+        .insert({
+          'task_id': taskId,
+          'child_id': childId,
+          'status': 'pending',
+        })
+        .select()
+        .single();
+    return data;
+  }
+
+  /// Gets submissions for a child (optionally filtered by status).
+  static Future<List<Map<String, dynamic>>> getSubmissions({
+    required String childId,
+    String? status,
+  }) async {
+    var query = client
+        .from('task_submissions')
+        .select()
+        .eq('child_id', childId)
+        .neq('status', 'rejected');
+    if (status != null) query = query.eq('status', status);
+    final data = await query.order('created_at', ascending: false);
+    return List<Map<String, dynamic>>.from(data);
+  }
+
+  /// Updates submission status (submit, approve, reject).
+  static Future<void> updateSubmissionStatus(
+    String submissionId,
+    String status, {
+    String? parentNote,
+    String? proofImageUrl,
+    int? qualityRating,
+    int? coinEarned,
+    bool autoApproved = false,
+  }) async {
+    final updates = <String, dynamic>{'status': status};
+    if (status == 'submitted') {
+      updates['submitted_at'] = DateTime.now().toIso8601String();
+      if (proofImageUrl != null) updates['proof_image_url'] = proofImageUrl;
+    }
+    if (status == 'approved' || status == 'rejected') {
+      updates['reviewed_at'] = DateTime.now().toIso8601String();
+    }
+    if (parentNote != null) updates['parent_note'] = parentNote;
+    if (qualityRating != null) updates['quality_rating'] = qualityRating;
+    if (coinEarned != null) updates['coin_earned'] = coinEarned;
+    if (autoApproved) updates['auto_approved'] = true;
+    await client.from('task_submissions').update(updates).eq('id', submissionId);
+  }
+
+  /// Increments the approval_count on a task template after a submission is approved.
+  static Future<void> incrementApprovalCount(String taskId) async {
+    await client.rpc('increment_task_approval_count', params: {'p_task_id': taskId});
+  }
+
+  /// Deactivates a task template (soft delete).
+  static Future<void> deactivateTask(String taskId) async {
+    await client.from('tasks').update({'is_active': false}).eq('id', taskId);
+  }
+
+  // Legacy: kept for backward compatibility with non-template tasks
   static Future<void> updateTaskStatus(
     String taskId,
     String status, {
@@ -197,6 +293,16 @@ class SupabaseService {
     }
     if (parentNote != null) updates['parent_note'] = parentNote;
     await client.from('tasks').update(updates).eq('id', taskId);
+  }
+
+  /// Deletes all submissions belonging to a task template.
+  /// Must run BEFORE deleteTask — task_submissions.task_id is a FK to tasks(id).
+  static Future<void> deleteSubmissionsForTask(String taskId) async {
+    await client.from('task_submissions').delete().eq('task_id', taskId);
+  }
+
+  static Future<void> deleteTask(String taskId) async {
+    await client.from('tasks').delete().eq('id', taskId);
   }
 
   /// Uploads a proof image (bytes) to Supabase Storage bucket 'task-proofs'.

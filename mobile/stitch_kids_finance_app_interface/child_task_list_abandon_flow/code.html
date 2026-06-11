@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+
+<html class="light" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PiggyBank Quest - Task List</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#904d00",
+                        "on-tertiary-fixed-variant": "#4f00d0",
+                        "on-surface-variant": "#564334",
+                        "on-secondary-fixed-variant": "#005313",
+                        "tertiary-container": "#b29bff",
+                        "secondary-fixed-dim": "#78dc77",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary-container": "#4600bb",
+                        "inverse-primary": "#ffb77d",
+                        "error": "#ba1a1a",
+                        "surface-variant": "#eee0cf",
+                        "surface-container": "#faecda",
+                        "on-surface": "#211b10",
+                        "on-secondary-fixed": "#002204",
+                        "surface-bright": "#fff8f3",
+                        "tertiary-fixed-dim": "#cdbdff",
+                        "surface-container-high": "#f4e6d5",
+                        "on-primary-fixed-variant": "#6e3900",
+                        "on-primary-container": "#623200",
+                        "on-background": "#211b10",
+                        "surface-container-highest": "#eee0cf",
+                        "outline-variant": "#ddc1ae",
+                        "on-error-container": "#93000a",
+                        "outline": "#897362",
+                        "surface-tint": "#904d00",
+                        "primary-fixed-dim": "#ffb77d",
+                        "inverse-on-surface": "#fdefdd",
+                        "surface-dim": "#e5d8c7",
+                        "surface": "#fff8f3",
+                        "on-primary": "#ffffff",
+                        "on-primary-fixed": "#2f1500",
+                        "secondary-fixed": "#94f990",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary": "#006e1c",
+                        "secondary-container": "#91f78e",
+                        "surface-container-low": "#fff2e1",
+                        "error-container": "#ffdad6",
+                        "background": "#fff8f3",
+                        "primary-fixed": "#ffdcc3",
+                        "on-secondary-container": "#00731e",
+                        "tertiary-fixed": "#e8deff",
+                        "on-tertiary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "tertiary": "#6833ea",
+                        "on-tertiary-fixed": "#20005f",
+                        "inverse-surface": "#372f24",
+                        "primary-container": "#ff8c00"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px",
+                        "4xl": "2rem"
+                    },
+                    spacing: {
+                        "stack-md": "16px",
+                        "stack-lg": "32px",
+                        "container-padding": "24px",
+                        "stack-sm": "8px",
+                        "unit": "4px",
+                        "gutter": "16px"
+                    },
+                    fontFamily: {
+                        "headline-md": ["Nunito Sans"],
+                        "body-md": ["Nunito Sans"],
+                        "headline-lg-mobile": ["Nunito Sans"],
+                        "label-lg": ["Nunito Sans"],
+                        "headline-xl": ["Nunito Sans"],
+                        "body-lg": ["Nunito Sans"],
+                        "headline-lg": ["Nunito Sans"]
+                    },
+                    fontSize: {
+                        "headline-md": ["24px", { lineHeight: "32px", fontWeight: "800" }],
+                        "body-md": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+                        "headline-lg-mobile": ["28px", { lineHeight: "36px", fontWeight: "800" }],
+                        "label-lg": ["14px", { lineHeight: "20px", fontWeight: "700" }],
+                        "headline-xl": ["40px", { lineHeight: "48px", letterSpacing: "-0.02em", fontWeight: "900" }],
+                        "body-lg": ["18px", { lineHeight: "28px", fontWeight: "600" }],
+                        "headline-lg": ["32px", { lineHeight: "40px", letterSpacing: "-0.01em", fontWeight: "800" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined[data-weight="fill"] {
+            font-variation-settings: 'FILL' 1;
+        }
+        
+        @keyframes pulse-amber {
+            0%, 100% { background-color: rgba(255, 140, 0, 1); box-shadow: 0 0 0 0 rgba(255, 140, 0, 0.4); }
+            50% { background-color: rgba(255, 160, 50, 1); box-shadow: 0 0 0 6px rgba(255, 140, 0, 0); }
+        }
+        .animate-pulse-amber {
+            animation: pulse-amber 2s infinite;
+        }
+        
+        .diagonal-stripe {
+            background-image: repeating-linear-gradient(
+                -45deg,
+                rgba(255, 255, 255, 0.2),
+                rgba(255, 255, 255, 0.2) 10px,
+                transparent 10px,
+                transparent 20px
+            );
+            background-size: 28px 28px;
+            animation: move-stripes 2s linear infinite;
+        }
+        
+        @keyframes move-stripes {
+            0% { background-position: 0 0; }
+            100% { background-position: 28px 0; }
+        }
+        
+        .bottom-sheet-enter {
+            transform: translateY(100%);
+        }
+        .bottom-sheet-enter-active {
+            transform: translateY(0);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .bottom-sheet-exit {
+            transform: translateY(0);
+        }
+        .bottom-sheet-exit-active {
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col font-body-md relative overflow-x-hidden">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-surface-container-low w-full top-0 sticky shadow-[0_4px_0_0_rgba(0,0,0,0.05)] z-40">
+<div class="flex items-center justify-between px-margin-mobile h-16 w-full max-w-[1200px] mx-auto px-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden bg-primary-container/20 flex items-center justify-center border-2 border-primary-container">
+<img alt="Child Avatar" class="w-full h-full object-cover" data-alt="A close-up, high-quality photograph of a happy child's face serving as an avatar in a gamified application. The child is smiling brightly, reflecting a positive, engaging, and playful modern style. The lighting is bright and warm, casting soft highlights that enhance the cheerful mood. The background is slightly blurred to keep the focus on the vibrant and lively expression." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCh3xuHXbya2q8YouVBL4plQua66qdsy28A21Zf0FCttN7vLL1TDNweSC9wTyvMSteCzYBd5zvO7X2k-JschGSWNReP-ntooyYJWEWDN6c7shz2FCieTjXyIYkaRf42Y2pnHgdEfhDErDIOiu8fbqqaQNc64hCa8-qznznP5ZnsTdmcl9udSJc7LRQHKh1wdY3rkgBB_P9dvsvey7XzEBfZD5y2TGSqEs0rRCk1UqMhwS3XxcYYKv6N5_srYeMkphUTqzhwXfGhFj0"/>
+</div>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-primary tracking-tight">PiggyBank Quest</h1>
+</div>
+<button class="text-primary hover:scale-105 transition-transform active:translate-y-0.5 active:shadow-none transition-all duration-150 w-10 h-10 flex items-center justify-center rounded-full bg-primary-container/10">
+<span class="material-symbols-outlined text-2xl" data-icon="stars" data-weight="fill">stars</span>
+</button>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="flex-1 w-full max-w-[1200px] mx-auto px-4 md:px-6 pt-6 pb-32 flex flex-col gap-6">
+<!-- Header Section -->
+<section class="flex flex-col gap-2">
+<h2 class="font-headline-md text-headline-md text-on-surface">Nhiệm vụ của con</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Hoàn thành để nhận xu mua quà nhé!</p>
+</section>
+<!-- Task List Container -->
+<div class="flex flex-col gap-4">
+<!-- Task Card 1 (Urgent) -->
+<article class="bg-surface-container-lowest rounded-[24px] p-4 flex flex-col gap-4 shadow-[0_4px_12px_rgba(144,77,0,0.08)] relative border-l-4 border-l-primary-container overflow-hidden">
+<!-- Soft top gradient -->
+<div class="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-primary-container/5 to-transparent pointer-events-none"></div>
+<div class="flex justify-between items-start z-10">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-2xl bg-primary-container/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-3xl" data-icon="cleaning_services" data-weight="fill">cleaning_services</span>
+</div>
+<div>
+<h3 class="font-body-lg text-body-lg text-on-surface">Dọn phòng ngủ</h3>
+<div class="flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-[16px] text-primary" data-icon="savings" data-weight="fill">savings</span>
+<span class="font-label-lg text-label-lg text-primary">+15 xu</span>
+</div>
+</div>
+</div>
+<!-- DEADLINE BADGE -->
+<div class="animate-pulse-amber text-on-primary rounded-full px-3 py-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="schedule">schedule</span>
+<span class="font-label-lg text-[12px] font-bold">Còn 1h20p</span>
+</div>
+</div>
+<div class="flex items-center justify-between mt-2 z-10 pt-4 border-t border-surface-variant/50">
+<!-- Abandon Button -->
+<button class="text-on-surface-variant flex items-center gap-1 px-3 py-2 rounded-xl hover:bg-surface-variant/50 transition-colors" id="btn-abandon">
+<span class="material-symbols-outlined text-[18px]" data-icon="cancel">cancel</span>
+<span class="font-label-lg text-label-lg">Bỏ task</span>
+</button>
+<!-- Submit Action -->
+<button class="bg-primary text-on-primary px-6 py-3 rounded-full font-label-lg text-label-lg shadow-[0_2px_0_0_#623200] active:shadow-none active:translate-y-[2px] transition-all flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px]" data-icon="check_circle">check_circle</span>
+                        Nộp bài
+                    </button>
+</div>
+</article>
+<!-- Task Card 2 (Normal) -->
+<article class="bg-surface-container-lowest rounded-[24px] p-4 flex flex-col gap-4 shadow-[0_4px_12px_rgba(0,110,28,0.05)] relative border-l-4 border-l-tertiary-container overflow-hidden">
+<div class="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-tertiary-container/5 to-transparent pointer-events-none"></div>
+<div class="flex justify-between items-start z-10">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-2xl bg-tertiary-container/20 flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-3xl" data-icon="menu_book" data-weight="fill">menu_book</span>
+</div>
+<div>
+<h3 class="font-body-lg text-body-lg text-on-surface">Đọc 1 chương sách</h3>
+<div class="flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-[16px] text-tertiary" data-icon="savings" data-weight="fill">savings</span>
+<span class="font-label-lg text-label-lg text-tertiary">+20 xu</span>
+</div>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between mt-2 z-10 pt-4 border-t border-surface-variant/50">
+<button class="text-on-surface-variant flex items-center gap-1 px-3 py-2 rounded-xl hover:bg-surface-variant/50 transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="cancel">cancel</span>
+<span class="font-label-lg text-label-lg">Bỏ task</span>
+</button>
+<button class="bg-tertiary text-on-tertiary px-6 py-3 rounded-full font-label-lg text-label-lg shadow-[0_2px_0_0_#20005f] active:shadow-none active:translate-y-[2px] transition-all flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px]" data-icon="play_arrow">play_arrow</span>
+                        Bắt đầu
+                    </button>
+</div>
+</article>
+</div>
+<!-- Progress Bar for Auto-approve -->
+<section class="mt-8 bg-surface-container rounded-3xl p-6 shadow-sm border border-surface-variant flex flex-col gap-3">
+<div class="flex justify-between items-end">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-primary-container/20 flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined text-[18px]" data-icon="verified" data-weight="fill">verified</span>
+</div>
+<span class="font-body-md font-bold text-on-surface">Tiến độ Auto-approve</span>
+</div>
+<span class="font-label-lg text-label-lg text-on-surface-variant">8/10</span>
+</div>
+<!-- Thick Progress Bar -->
+<div class="w-full h-4 bg-surface-variant rounded-full overflow-hidden shadow-inner relative">
+<div class="h-full bg-primary-container rounded-full diagonal-stripe" style="width: 80%;"></div>
+</div>
+<p class="font-label-lg text-[12px] text-on-surface-variant text-center mt-1">Làm tốt 2 task nữa để tự động duyệt bài!</p>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-30 flex justify-around items-center px-4 pb-4 pt-2 bg-surface-container-lowest border-t-4 border-surface-variant shadow-[0_-4px_12px_rgba(0,0,0,0.08)] rounded-t-2xl md:hidden">
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container-high transition-colors rounded-xl" href="#">
+<span class="material-symbols-outlined text-[24px]" data-icon="auto_stories">auto_stories</span>
+<span class="font-label-sm text-[12px] mt-1 font-bold">Learn</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary rounded-xl px-5 py-2 shadow-[0_2px_0_0_#684000] active:translate-y-0.5 active:shadow-none transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[24px]" data-icon="sports_esports" data-weight="fill">sports_esports</span>
+<span class="font-label-sm text-[12px] mt-1 font-bold">Play</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container-high transition-colors rounded-xl" href="#">
+<span class="material-symbols-outlined text-[24px]" data-icon="savings">savings</span>
+<span class="font-label-sm text-[12px] mt-1 font-bold">Goals</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container-high transition-colors rounded-xl" href="#">
+<span class="material-symbols-outlined text-[24px]" data-icon="shopping_basket">shopping_basket</span>
+<span class="font-label-sm text-[12px] mt-1 font-bold">Store</span>
+</a>
+</nav>
+<!-- ABANDON BOTTOM SHEET (Hidden by default) -->
+<div class="fixed inset-0 bg-inverse-surface/40 backdrop-blur-sm z-50 hidden opacity-0 transition-opacity duration-300" id="abandon-overlay">
+<div class="absolute bottom-0 left-0 w-full bg-surface-container-lowest rounded-t-[32px] p-6 pb-10 shadow-[0_-8px_24px_rgba(0,0,0,0.1)] flex flex-col gap-6 transform translate-y-full transition-transform duration-300" id="abandon-sheet">
+<!-- Handle -->
+<div class="w-12 h-1.5 bg-surface-variant rounded-full mx-auto -mt-2"></div>
+<div class="flex flex-col items-center text-center gap-4 mt-2">
+<div class="w-16 h-16 bg-error-container rounded-full flex items-center justify-center text-error mb-2">
+<span class="material-symbols-outlined text-[40px]" data-icon="warning" data-weight="fill">warning</span>
+</div>
+<h3 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Bỏ task này? ⚠️</h3>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-[280px]">Con đã nhận task này. Nếu bỏ, con sẽ bị trừ 5 xu.</p>
+<div class="bg-surface-container py-3 px-6 rounded-2xl border border-error/20 flex flex-col items-center my-2">
+<span class="font-headline-xl text-headline-xl text-error">-5 xu 💸</span>
+</div>
+<p class="font-label-lg text-label-lg text-on-surface px-4 py-2 bg-primary-container/10 rounded-xl text-primary-container font-bold">
+                    Ước mơ còn thiếu 45 xu → sẽ còn thiếu 50 xu
+                </p>
+</div>
+<div class="flex flex-col gap-3 mt-4">
+<button class="w-full bg-primary-container text-on-primary py-4 rounded-full font-label-lg text-[16px] shadow-[0_3px_0_0_#623200] active:shadow-none active:translate-y-[3px] transition-all flex justify-center items-center gap-2" id="btn-keep">
+<span class="material-symbols-outlined" data-icon="check">check</span>
+                    Giữ lại task
+                </button>
+<button class="w-full border-2 border-error text-error py-4 rounded-full font-label-lg text-[16px] hover:bg-error-container/50 active:bg-error-container transition-colors flex justify-center items-center gap-2" id="btn-confirm-abandon">
+<span class="material-symbols-outlined" data-icon="delete_forever">delete_forever</span>
+                    Xác nhận bỏ task
+                </button>
+</div>
+</div>
+</div>
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const btnAbandon = document.getElementById('btn-abandon');
+            const overlay = document.getElementById('abandon-overlay');
+            const sheet = document.getElementById('abandon-sheet');
+            const btnKeep = document.getElementById('btn-keep');
+            const btnConfirm = document.getElementById('btn-confirm-abandon');
+
+            const openSheet = () => {
+                overlay.classList.remove('hidden');
+                // Trigger reflow
+                void overlay.offsetWidth;
+                overlay.classList.remove('opacity-0');
+                sheet.classList.remove('translate-y-full');
+            };
+
+            const closeSheet = () => {
+                overlay.classList.add('opacity-0');
+                sheet.classList.add('translate-y-full');
+                setTimeout(() => {
+                    overlay.classList.add('hidden');
+                }, 300);
+            };
+
+            btnAbandon.addEventListener('click', openSheet);
+            btnKeep.addEventListener('click', closeSheet);
+            btnConfirm.addEventListener('click', closeSheet);
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    closeSheet();
+                }
+            });
+        });
+    </script>
+</body></html>

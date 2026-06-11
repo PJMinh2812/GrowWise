@@ -4,6 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../l10n/app_strings.dart';
 import '../models/task_model.dart';
+import '../models/task_submission.dart';
 import '../models/video_lesson_model.dart';
 import '../services/notification_service.dart';
 import '../services/supabase_service.dart';
@@ -49,8 +50,10 @@ class AppState extends ChangeNotifier {
   String? _familyId;
   String? _childId;
 
-  // Task list
+  // Task templates (parent creates once)
   List<TaskModel> _tasks = [];
+  // Submissions (each time child starts/completes a task)
+  List<TaskSubmission> _submissions = [];
 
   // Child profile
   String _childName = '';
@@ -200,9 +203,18 @@ class AppState extends ChangeNotifier {
       }).toList();
     }
 
-    // Load tasks
-    final taskRows = await SupabaseService.getTasks(familyId: _familyId!);
-    _tasks = taskRows.map((row) => TaskModel.fromJson(row)).toList();
+    // Load task templates
+    final templateRows = await SupabaseService.getTaskTemplates(
+      familyId: _familyId!,
+      childId: _childId,
+    );
+    _tasks = templateRows.map((row) => TaskModel.fromJson(row)).toList();
+
+    // Load submissions for this child
+    if (_childId != null) {
+      final subRows = await SupabaseService.getSubmissions(childId: _childId!);
+      _submissions = subRows.map((r) => TaskSubmission.fromJson(r)).toList();
+    }
     _recomputeCategoryTaskCounts();
 
     // Load memories
@@ -289,17 +301,88 @@ class AppState extends ChangeNotifier {
   String get locale => _locale;
   AppStrings get strings => AppStrings.of(_locale);
 
-  List<TaskModel> get templateTasks =>
-      _tasks.where((t) => t.isTemplate).toList();
+  List<TaskModel> get templateTasks => List.unmodifiable(_tasks);
+
+  /// All active templates — for parent template chips (regardless of assignment state).
+  List<TaskModel> get activeTemplates =>
+      _tasks.where((t) => t.isActive).toList();
+
+  /// Only templates that have been ASSIGNED (have an active pending/submitted submission).
+  /// Child only sees tasks here — parent controls when tasks appear.
+  List<TaskModel> get childViewTasks {
+    return _tasks.where((t) => t.isActive).expand((template) {
+      final activeSub = _submissions
+          .where((s) => s.taskId == template.id &&
+              (s.status == TaskStatus.pending || s.status == TaskStatus.submitted))
+          .fold<TaskSubmission?>(null, (latest, s) =>
+              latest == null || s.createdAt.isAfter(latest.createdAt) ? s : latest);
+
+      // No active submission → not yet assigned → invisible to child
+      if (activeSub == null) return <TaskModel>[];
+
+      return [template.copyWith(
+        submissionId: activeSub.id,
+        status: activeSub.status,
+        proofImageUrl: activeSub.proofImageUrl,
+        parentNote: activeSub.parentNote,
+        submittedAt: activeSub.submittedAt,
+        reviewedAt: activeSub.reviewedAt,
+        qualityRating: activeSub.qualityRating,
+        autoApproved: activeSub.autoApproved,
+      )];
+    }).toList();
+  }
+
+  /// Approved submissions merged with template data — for child history tab.
+  List<TaskModel> get approvedTasks {
+    return _submissions
+        .where((s) => s.status == TaskStatus.approved)
+        .map((sub) {
+          final template = _tasks.firstWhere(
+            (t) => t.id == sub.taskId,
+            orElse: () => TaskModel(
+              id: sub.taskId, title: '?', description: '', coinReward: 0, icon: '📋',
+            ),
+          );
+          return template.copyWith(
+            submissionId: sub.id,
+            status: TaskStatus.approved,
+            reviewedAt: sub.reviewedAt,
+            qualityRating: sub.qualityRating,
+            autoApproved: sub.autoApproved,
+          );
+        })
+        .toList();
+  }
+
+  /// Submissions waiting for parent approval, merged with template data.
+  List<TaskModel> get parentPendingSubmissions {
+    return _submissions
+        .where((s) => s.status == TaskStatus.submitted)
+        .map((sub) {
+          final template = _tasks.firstWhere(
+            (t) => t.id == sub.taskId,
+            orElse: () => TaskModel(
+              id: sub.taskId, title: '?', description: '', coinReward: 0, icon: '📋',
+            ),
+          );
+          return template.copyWith(
+            submissionId: sub.id,
+            status: sub.status,
+            proofImageUrl: sub.proofImageUrl,
+            submittedAt: sub.submittedAt,
+          );
+        })
+        .toList();
+  }
+
   List<TaskModel> get pendingTasks =>
-      _tasks.where((t) => t.status == TaskStatus.pending).toList();
+      childViewTasks.where((t) => t.status == TaskStatus.pending).toList();
   List<TaskModel> get submittedTasks =>
-      _tasks.where((t) => t.status == TaskStatus.submitted).toList();
-  List<TaskModel> get approvedTasks =>
-      _tasks.where((t) => t.status == TaskStatus.approved).toList();
-  int get totalCoinsRewarded => _tasks
-      .where((t) => t.status == TaskStatus.approved)
-      .fold(0, (sum, t) => sum + t.coinReward);
+      childViewTasks.where((t) => t.status == TaskStatus.submitted).toList();
+  int get totalCoinsRewarded => _submissions
+      .where((s) => s.status == TaskStatus.approved)
+      .fold(0, (sum, s) => sum + (s.coinEarned ?? 0));
 
   // ── Auth actions ───────────────────────────────────────────────────────────
 
@@ -390,21 +473,26 @@ class AppState extends ChangeNotifier {
 
   // ── Task actions ───────────────────────────────────────────────────────────
 
+  /// Creates a task template (parent). Child must call [startTask] to begin.
   Future<void> addTask(TaskModel task) async {
     if (_familyId == null || _childId == null) return;
     if (isDemoMode) {
-      _tasks.insert(
-        0,
-        TaskModel(
-          id: 'demo-${DateTime.now().millisecondsSinceEpoch}',
-          title: task.title,
-          description: task.description,
-          category: task.category,
-          icon: task.icon,
-          coinReward: task.coinReward,
-          createdAt: DateTime.now(),
-        ),
+      final demoTemplate = TaskModel(
+        id: 'demo-${DateTime.now().millisecondsSinceEpoch}',
+        title: task.title,
+        description: task.description,
+        category: task.category,
+        icon: task.icon,
+        coinReward: task.coinReward,
+        isTemplate: true,
+        isActive: true,
+        createdAt: DateTime.now(),
+        dueDate: task.dueDate,
+        hasPenalty: task.hasPenalty,
+        penaltyPercent: task.penaltyPercent,
+        autoApproveAfter: task.autoApproveAfter,
       );
+      _tasks.insert(0, demoTemplate);
       notifyListeners();
       return;
     }
@@ -416,96 +504,195 @@ class AppState extends ChangeNotifier {
       category: task.category,
       icon: task.icon,
       coinReward: task.coinReward,
+      dueDate: task.dueDate,
+      hasPenalty: task.hasPenalty,
+      penaltyPercent: task.penaltyPercent,
+      autoApproveAfter: task.autoApproveAfter,
     );
     _tasks.insert(0, TaskModel.fromJson(row));
     notifyListeners();
   }
 
-  Future<void> submitTask(String taskId, {Uint8List? proofImageBytes}) async {
-    final index = _tasks.indexWhere((t) => t.id == taskId);
-    if (index == -1) return;
+  /// Parent assigns a task template to the child — creates a pending submission.
+  Future<void> assignTask(String templateId) => startTask(templateId);
 
+  /// Child starts a task template — creates a new pending submission.
+  Future<void> startTask(String templateId) async {
+    final templateIdx = _tasks.indexWhere((t) => t.id == templateId);
+    if (templateIdx == -1) return;
+
+    // Guard: don't create a duplicate if an active submission already exists
+    final alreadyActive = _submissions.any(
+      (s) => s.taskId == templateId &&
+          (s.status == TaskStatus.pending || s.status == TaskStatus.submitted),
+    );
+    if (alreadyActive) return;
+
+    if (isDemoMode) {
+      _submissions.add(TaskSubmission(
+        id: 'demo-sub-${DateTime.now().millisecondsSinceEpoch}',
+        taskId: templateId,
+        childId: _childId ?? '',
+        status: TaskStatus.pending,
+        createdAt: DateTime.now(),
+      ));
+      notifyListeners();
+      return;
+    }
+
+    final row = await SupabaseService.createSubmission(
+      taskId: templateId,
+      childId: _childId!,
+    );
+    _submissions.add(TaskSubmission.fromJson(row));
+    notifyListeners();
+  }
+
+  /// Child submits proof. If template has reached auto-approve threshold,
+  /// the submission is approved immediately without waiting for parent.
+  Future<void> submitTask(String templateId, {Uint8List? proofImageBytes}) async {
+    final templateIdx = _tasks.indexWhere((t) => t.id == templateId);
+    if (templateIdx == -1) return;
+    final template = _tasks[templateIdx];
+
+    final subIdx = _submissions.indexWhere(
+      (s) => s.taskId == templateId && s.status == TaskStatus.pending,
+    );
+    if (subIdx == -1) return;
+    final sub = _submissions[subIdx];
+
+    // Upload proof image
     String? proofImageUrl;
     if (proofImageBytes != null) {
-      // Always keep bytes in memory for instant display this session
-      _taskProofImages[taskId] = proofImageBytes;
-
+      _taskProofImages[templateId] = proofImageBytes;
       if (!isDemoMode) {
-        // Try Supabase Storage first
         proofImageUrl = await SupabaseService.uploadProofImage(
-          taskId: taskId,
+          taskId: sub.id,
           imageBytes: proofImageBytes,
         );
-        // If Storage fails, fall back to base64 stored in DB
-        if (proofImageUrl == null) {
-          debugPrint('[AppState] Storage upload failed, falling back to base64');
-          proofImageUrl = 'data:image/jpeg;base64,${base64Encode(proofImageBytes)}';
-        }
+        proofImageUrl ??= 'data:image/jpeg;base64,${base64Encode(proofImageBytes)}';
       }
     }
 
-    _tasks[index] = _tasks[index].copyWith(
-      status: TaskStatus.submitted,
-      submittedAt: DateTime.now(),
-      proofImageUrl: proofImageUrl,
-    );
-    notifyListeners();
-    if (!isDemoMode) {
-      await SupabaseService.updateTaskStatus(
-        taskId,
-        'submitted',
+    final willAutoApprove = template.canAutoApprove;
+
+    if (willAutoApprove) {
+      // Auto-approve: coin vào ngay, không cần parent
+      final earnedCoins = template.coinReward;
+      _submissions[subIdx] = sub.copyWith(
+        status: TaskStatus.approved,
+        submittedAt: DateTime.now(),
+        reviewedAt: DateTime.now(),
+        proofImageUrl: proofImageUrl,
+        autoApproved: true,
+        coinEarned: earnedCoins,
+      );
+      _tasks[templateIdx] = template.copyWith(
+        approvalCount: template.approvalCount + 1,
+      );
+      notifyListeners();
+
+      if (!isDemoMode) {
+        await SupabaseService.updateSubmissionStatus(
+          sub.id, 'approved',
+          proofImageUrl: proofImageUrl,
+          autoApproved: true,
+          coinEarned: earnedCoins,
+        );
+        await SupabaseService.incrementApprovalCount(templateId);
+      }
+      _addCoins(earnedCoins);
+      _addXp(15);
+      _incrementStreak();
+      _justApprovedTask = template;
+    } else {
+      // Normal flow: chờ parent duyệt
+      _submissions[subIdx] = sub.copyWith(
+        status: TaskStatus.submitted,
+        submittedAt: DateTime.now(),
         proofImageUrl: proofImageUrl,
       );
+      notifyListeners();
+
+      if (!isDemoMode) {
+        await SupabaseService.updateSubmissionStatus(
+          sub.id, 'submitted', proofImageUrl: proofImageUrl,
+        );
+      }
+      _addXp(10);
     }
-    _addXp(10);
+    notifyListeners();
   }
 
-  Future<void> approveTask(String taskId) async {
-    final index = _tasks.indexWhere((t) => t.id == taskId);
-    if (index == -1) return;
+  /// Parent approves a submission by template ID (uses submissionId from childViewTasks).
+  Future<void> approveTask(String templateId, {int rating = 2, String? submissionId}) async {
+    final templateIdx = _tasks.indexWhere((t) => t.id == templateId);
+    if (templateIdx == -1) return;
+    final template = _tasks[templateIdx];
 
-    final task = _tasks[index];
-    _tasks[index] = task.copyWith(
+    // Find the submitted submission
+    final subId = submissionId ??
+        _submissions
+            .where((s) => s.taskId == templateId && s.status == TaskStatus.submitted)
+            .fold<TaskSubmission?>(null, (latest, s) =>
+                latest == null || s.createdAt.isAfter(latest.createdAt) ? s : latest)
+            ?.id;
+    if (subId == null) return;
+
+    final subIdx = _submissions.indexWhere((s) => s.id == subId);
+    if (subIdx == -1) return;
+
+    final multiplier = rating == 1 ? 0.8 : (rating == 3 ? 1.2 : 1.0);
+    final earnedCoins = (template.coinReward * multiplier).round();
+    final newApprovalCount = template.approvalCount + 1;
+
+    _submissions[subIdx] = _submissions[subIdx].copyWith(
       status: TaskStatus.approved,
       reviewedAt: DateTime.now(),
+      qualityRating: rating,
+      coinEarned: earnedCoins,
     );
+    _tasks[templateIdx] = template.copyWith(approvalCount: newApprovalCount);
     notifyListeners();
 
     if (!isDemoMode) {
-      await SupabaseService.updateTaskStatus(taskId, 'approved');
+      await SupabaseService.updateSubmissionStatus(
+        subId, 'approved', qualityRating: rating, coinEarned: earnedCoins,
+      );
+      await SupabaseService.incrementApprovalCount(templateId);
     }
-    _addCoins(task.coinReward);
+    _addCoins(earnedCoins);
     _addXp(15);
     _incrementStreak();
-    _justApprovedTask = task;
-    _categoryTaskCounts[task.category] =
-        (_categoryTaskCounts[task.category] ?? 0) + 1;
+    _justApprovedTask = template;
+    _categoryTaskCounts[template.category] =
+        (_categoryTaskCounts[template.category] ?? 0) + 1;
     NotificationService.showTaskApproved(
-      taskTitle: task.title,
-      coins: task.coinReward,
+      taskTitle: template.title,
+      coins: earnedCoins,
     );
-    _checkCategoryBadge(task.category);
+    _checkCategoryBadge(template.category);
 
     // Add memory
     if (_familyId != null && _childId != null) {
-      final proofUrl = task.proofImageUrl ?? '';
+      final proofUrl = _submissions[subIdx].proofImageUrl ?? '';
       if (!isDemoMode) {
         await SupabaseService.addMemory(
           familyId: _familyId!,
           childId: _childId!,
-          taskTitle: task.title,
-          emoji: task.icon,
+          taskTitle: template.title,
+          emoji: template.icon,
           note: 'Hoàn thành xuất sắc!',
           proofImageUrl: proofUrl.isEmpty ? null : proofUrl,
         );
       }
       _memories.insert(0, {
         'date': _formatDate(DateTime.now().toIso8601String()),
-        'task': task.title,
-        'emoji': task.icon,
+        'task': template.title,
+        'emoji': template.icon,
         'note': 'Hoàn thành xuất sắc!',
-        'taskId': task.id,
-        'category': task.category,
+        'taskId': template.id,
+        'category': template.category,
         'proofImageUrl': proofUrl,
         'mood': '',
       });
@@ -516,8 +703,22 @@ class AppState extends ChangeNotifier {
   void toggleTemplate(String taskId) {
     final idx = _tasks.indexWhere((t) => t.id == taskId);
     if (idx == -1) return;
-    _tasks[idx] = _tasks[idx].copyWith(isTemplate: !_tasks[idx].isTemplate);
+    _tasks[idx] = _tasks[idx].copyWith(isActive: !_tasks[idx].isActive);
     notifyListeners();
+    if (!isDemoMode) {
+      SupabaseService.deactivateTask(taskId);
+    }
+  }
+
+  Future<void> deleteTemplate(String taskId) async {
+    _tasks = _tasks.where((t) => t.id != taskId).toList();
+    _submissions = _submissions.where((s) => s.taskId != taskId).toList();
+    notifyListeners();
+    if (!isDemoMode) {
+      // Submissions reference the task via FK — delete them first, then the task.
+      await SupabaseService.deleteSubmissionsForTask(taskId);
+      await SupabaseService.deleteTask(taskId);
+    }
   }
 
   void recordTaskMood(String taskId, String mood) {
@@ -528,13 +729,51 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  Future<void> rejectTask(String taskId) async {
-    final index = _tasks.indexWhere((t) => t.id == taskId);
-    if (index == -1) return;
-    _tasks[index] = _tasks[index].copyWith(status: TaskStatus.rejected);
+  /// Child abandons their active submission. Template stays active for next attempt.
+  Future<void> abandonTask(String templateId) async {
+    final templateIdx = _tasks.indexWhere((t) => t.id == templateId);
+    if (templateIdx == -1) return;
+    final template = _tasks[templateIdx];
+
+    // Find active submission (pending or submitted)
+    final subIdx = _submissions.indexWhere(
+      (s) => s.taskId == templateId &&
+          (s.status == TaskStatus.pending || s.status == TaskStatus.submitted),
+    );
+
+    if (subIdx != -1) {
+      final sub = _submissions[subIdx];
+      _submissions[subIdx] = sub.copyWith(status: TaskStatus.rejected);
+      notifyListeners();
+      if (!isDemoMode) {
+        await SupabaseService.updateSubmissionStatus(sub.id, 'rejected');
+      }
+    }
+
+    if (template.hasPenalty) {
+      final penalty = (template.coinReward * template.penaltyPercent / 100).round();
+      _addCoins(-penalty);
+    }
+    notifyListeners();
+  }
+
+  /// Parent rejects a submission. Template stays active; child can try again.
+  Future<void> rejectTask(String templateId, {String? submissionId}) async {
+    final subId = submissionId ??
+        _submissions
+            .where((s) => s.taskId == templateId && s.status == TaskStatus.submitted)
+            .fold<TaskSubmission?>(null, (latest, s) =>
+                latest == null || s.createdAt.isAfter(latest.createdAt) ? s : latest)
+            ?.id;
+    if (subId == null) return;
+
+    final subIdx = _submissions.indexWhere((s) => s.id == subId);
+    if (subIdx == -1) return;
+
+    _submissions[subIdx] = _submissions[subIdx].copyWith(status: TaskStatus.rejected);
     notifyListeners();
     if (!isDemoMode) {
-      await SupabaseService.updateTaskStatus(taskId, 'rejected');
+      await SupabaseService.updateSubmissionStatus(subId, 'rejected');
     }
   }
 
@@ -905,10 +1144,15 @@ class AppState extends ChangeNotifier {
 
   void _recomputeCategoryTaskCounts() {
     _categoryTaskCounts = {};
-    for (final t in _tasks) {
-      if (t.status == TaskStatus.approved) {
-        _categoryTaskCounts[t.category] =
-            (_categoryTaskCounts[t.category] ?? 0) + 1;
+    for (final sub in _submissions) {
+      if (sub.status == TaskStatus.approved) {
+        final template = _tasks.firstWhere(
+          (t) => t.id == sub.taskId,
+          orElse: () => TaskModel(id: '', title: '', description: '', coinReward: 0, icon: ''),
+        );
+        if (template.id.isEmpty) continue;
+        _categoryTaskCounts[template.category] =
+            (_categoryTaskCounts[template.category] ?? 0) + 1;
       }
     }
   }
@@ -978,91 +1222,102 @@ class AppState extends ChangeNotifier {
     _notificationsEnabled = true;
 
     final now = DateTime.now();
+
+    // Templates (parent creates once, reusable)
     _tasks = [
       TaskModel(
-        id: 'demo-1',
+        id: 'demo-1', isTemplate: true, isActive: true,
         title: 'Rửa bát sau bữa tối',
         description: 'Rửa sạch chén đĩa sau bữa tối và cất gọn vào tủ.',
-        category: 'Việc nhà',
-        icon: '🍽️',
-        coinReward: 20,
-        status: TaskStatus.submitted,
+        category: 'Việc nhà', icon: '🍽️', coinReward: 20,
+        approvalCount: 7, autoApproveAfter: 10,
         createdAt: now.subtract(const Duration(hours: 1)),
       ),
       TaskModel(
-        id: 'demo-2',
+        id: 'demo-2', isTemplate: true, isActive: true,
         title: 'Đọc sách 30 phút',
         description: 'Đọc một chương sách yêu thích và kể lại cho bố mẹ.',
-        category: 'Học tập',
-        icon: '📚',
-        coinReward: 25,
-        status: TaskStatus.pending,
+        category: 'Học tập', icon: '📚', coinReward: 25,
+        dueDate: now.add(const Duration(hours: 2)),
+        hasPenalty: true, penaltyPercent: 10,
         createdAt: now.subtract(const Duration(hours: 3)),
       ),
       TaskModel(
-        id: 'demo-3',
+        id: 'demo-3', isTemplate: true, isActive: true,
         title: 'Tưới cây ban công',
         description: 'Tưới đều các chậu cây trên ban công.',
-        category: 'Việc nhà',
-        icon: '🌱',
-        coinReward: 15,
-        status: TaskStatus.pending,
+        category: 'Việc nhà', icon: '🌱', coinReward: 15,
+        dueDate: now.add(const Duration(minutes: 25)),
+        hasPenalty: true, penaltyPercent: 10,
         createdAt: now.subtract(const Duration(hours: 5)),
       ),
       TaskModel(
-        id: 'demo-4',
+        id: 'demo-4', isTemplate: true, isActive: true,
         title: 'Tập thể dục buổi sáng',
         description: 'Tập 15 phút bài thể dục buổi sáng.',
-        category: 'Sức khỏe',
-        icon: '🏃',
-        coinReward: 20,
-        status: TaskStatus.approved,
+        category: 'Sức khỏe', icon: '🏃', coinReward: 20,
+        approvalCount: 4,
         createdAt: now.subtract(const Duration(hours: 10)),
-        reviewedAt: now.subtract(const Duration(hours: 8)),
       ),
       TaskModel(
-        id: 'demo-5',
+        id: 'demo-5', isTemplate: true, isActive: true,
         title: 'Gấp quần áo',
         description: 'Gấp gọn quần áo đã giặt và cất vào tủ.',
-        category: 'Việc nhà',
-        icon: '👕',
-        coinReward: 15,
-        status: TaskStatus.approved,
+        category: 'Việc nhà', icon: '👕', coinReward: 15,
+        approvalCount: 3,
         createdAt: now.subtract(const Duration(days: 1)),
-        reviewedAt: now.subtract(const Duration(hours: 22)),
       ),
       TaskModel(
-        id: 'demo-6',
+        id: 'demo-6', isTemplate: true, isActive: true,
         title: 'Học bài ôn tập Toán',
         description: 'Ôn lại bài Toán chương 3 trước khi thi.',
-        category: 'Học tập',
-        icon: '✏️',
-        coinReward: 30,
-        status: TaskStatus.approved,
+        category: 'Học tập', icon: '✏️', coinReward: 30,
+        approvalCount: 2,
         createdAt: now.subtract(const Duration(days: 2)),
+      ),
+    ];
+
+    // Submissions — each represents one attempt by the child
+    _submissions = [
+      // demo-1: child submitted proof, awaiting parent approval
+      TaskSubmission(
+        id: 'sub-1', taskId: 'demo-1', childId: 'demo-child',
+        status: TaskStatus.submitted,
+        submittedAt: now.subtract(const Duration(hours: 1)),
+        createdAt: now.subtract(const Duration(hours: 1)),
+      ),
+      // demo-2: child started but hasn't submitted yet
+      TaskSubmission(
+        id: 'sub-2', taskId: 'demo-2', childId: 'demo-child',
+        status: TaskStatus.pending,
+        createdAt: now.subtract(const Duration(hours: 3)),
+      ),
+      // demo-4: already approved (past session)
+      TaskSubmission(
+        id: 'sub-4', taskId: 'demo-4', childId: 'demo-child',
+        status: TaskStatus.approved,
+        submittedAt: now.subtract(const Duration(hours: 9)),
+        reviewedAt: now.subtract(const Duration(hours: 8)),
+        coinEarned: 20,
+        createdAt: now.subtract(const Duration(hours: 10)),
+      ),
+      // demo-5: approved
+      TaskSubmission(
+        id: 'sub-5', taskId: 'demo-5', childId: 'demo-child',
+        status: TaskStatus.approved,
+        submittedAt: now.subtract(const Duration(hours: 23)),
+        reviewedAt: now.subtract(const Duration(hours: 22)),
+        coinEarned: 15,
+        createdAt: now.subtract(const Duration(days: 1)),
+      ),
+      // demo-6: approved
+      TaskSubmission(
+        id: 'sub-6', taskId: 'demo-6', childId: 'demo-child',
+        status: TaskStatus.approved,
+        submittedAt: now.subtract(const Duration(days: 1, hours: 21)),
         reviewedAt: now.subtract(const Duration(days: 1, hours: 20)),
-      ),
-      TaskModel(
-        id: 'demo-7',
-        title: 'Vẽ tranh tặng bà',
-        description: 'Vẽ một bức tranh đẹp tặng bà nhân dịp sinh nhật.',
-        category: 'Sáng tạo',
-        icon: '🎨',
-        coinReward: 25,
-        status: TaskStatus.approved,
-        createdAt: now.subtract(const Duration(days: 3)),
-        reviewedAt: now.subtract(const Duration(days: 2, hours: 16)),
-      ),
-      TaskModel(
-        id: 'demo-8',
-        title: 'Quét nhà và lau sàn',
-        description: 'Quét sạch toàn bộ nhà và lau sàn phòng khách.',
-        category: 'Việc nhà',
-        icon: '🧹',
-        coinReward: 20,
-        status: TaskStatus.approved,
-        createdAt: now.subtract(const Duration(days: 4)),
-        reviewedAt: now.subtract(const Duration(days: 3, hours: 18)),
+        coinEarned: 30,
+        createdAt: now.subtract(const Duration(days: 2)),
       ),
     ];
 

@@ -21,13 +21,14 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
 
-  static const _pageEmojis = ['🌱', '🏦', '🗺️', '🤖', '⭐'];
+  static const _pageEmojis = ['🌱', '🏦', '🗺️', '🤖', '⭐', '🏺'];
   static const _pageGradients = [
     [Color(0xFF3DBE6E), Color(0xFF22A65B)],
     [Color(0xFF5B5BD6), Color(0xFF4040C0)],
     [Color(0xFFF59E0B), Color(0xFFD97706)],
     [Color(0xFFEC4899), Color(0xFFDB2777)],
     [Color(0xFFA855F7), Color(0xFF7C3AED)],
+    [Color(0xFF3DBE6E), Color(0xFF00A859)],
   ];
   static const _pageBgColors = [
     Color(0xFFE8F8EF),
@@ -35,7 +36,12 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     Color(0xFFFEF3C7),
     Color(0xFFFCE7F3),
     Color(0xFFF3E8FF),
+    Color(0xFFF0FFF5),
   ];
+
+  String _dreamEmoji = '🧸';
+  final _dreamNameCtrl = TextEditingController();
+  final _dreamPriceCtrl = TextEditingController();
 
   @override
   void initState() {
@@ -56,6 +62,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   void dispose() {
     _pageController.dispose();
     _contentCtrl.dispose();
+    _dreamNameCtrl.dispose();
+    _dreamPriceCtrl.dispose();
     super.dispose();
   }
 
@@ -71,6 +79,12 @@ class _OnboardingScreenState extends State<OnboardingScreen>
         curve: Curves.easeInOutCubic,
       );
     } else {
+      // Saving goal step — save dream if user entered data
+      final name = _dreamNameCtrl.text.trim();
+      final price = int.tryParse(_dreamPriceCtrl.text.replaceAll('.', '').replaceAll(',', '')) ?? 0;
+      if (name.isNotEmpty && price > 0) {
+        context.read<AppState>().addDream(name, price, _dreamEmoji);
+      }
       _finish();
     }
   }
@@ -141,14 +155,27 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                   controller: _pageController,
                   onPageChanged: _onPageChanged,
                   itemCount: _pageEmojis.length,
-                  itemBuilder: (context, i) => _OnboardingPageView(
-                    emoji: _pageEmojis[i],
-                    title: titles[i],
-                    description: descs[i],
-                    gradient: _pageGradients[i],
-                    fadeAnim: _fadeAnim,
-                    slideAnim: _slideAnim,
-                  ),
+                  itemBuilder: (context, i) {
+                    if (i == 5) {
+                      return _SavingGoalPage(
+                        selectedEmoji: _dreamEmoji,
+                        onEmojiChanged: (e) => setState(() => _dreamEmoji = e),
+                        nameCtrl: _dreamNameCtrl,
+                        priceCtrl: _dreamPriceCtrl,
+                        gradient: _pageGradients[5],
+                        fadeAnim: _fadeAnim,
+                        slideAnim: _slideAnim,
+                      );
+                    }
+                    return _OnboardingPageView(
+                      emoji: _pageEmojis[i],
+                      title: titles[i],
+                      description: descs[i],
+                      gradient: _pageGradients[i],
+                      fadeAnim: _fadeAnim,
+                      slideAnim: _slideAnim,
+                    );
+                  },
                 ),
               ),
 
@@ -187,7 +214,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                           ),
                           child: Text(
                             _currentPage == _pageEmojis.length - 1
-                                ? s.getStarted
+                                ? 'Bắt đầu hành trình! 🚀'
                                 : s.next,
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 16,
@@ -337,6 +364,171 @@ class _DotIndicator extends StatelessWidget {
           ),
         );
       }),
+    );
+  }
+}
+
+class _SavingGoalPage extends StatefulWidget {
+  final String selectedEmoji;
+  final ValueChanged<String> onEmojiChanged;
+  final TextEditingController nameCtrl;
+  final TextEditingController priceCtrl;
+  final List<Color> gradient;
+  final Animation<double> fadeAnim;
+  final Animation<Offset> slideAnim;
+
+  const _SavingGoalPage({
+    required this.selectedEmoji,
+    required this.onEmojiChanged,
+    required this.nameCtrl,
+    required this.priceCtrl,
+    required this.gradient,
+    required this.fadeAnim,
+    required this.slideAnim,
+  });
+
+  @override
+  State<_SavingGoalPage> createState() => _SavingGoalPageState();
+}
+
+class _SavingGoalPageState extends State<_SavingGoalPage> {
+  static const _emojis = ['🧸', '🎮', '📚', '🚲', '👟', '🎨', '🎯', '🎵', '⚽'];
+
+  @override
+  void initState() {
+    super.initState();
+    widget.priceCtrl.addListener(_rebuild);
+  }
+
+  void _rebuild() => setState(() {});
+
+  @override
+  void dispose() {
+    widget.priceCtrl.removeListener(_rebuild);
+    super.dispose();
+  }
+
+  int? get _estimateWeeks {
+    final raw = widget.priceCtrl.text.replaceAll('.', '').replaceAll(',', '');
+    final price = int.tryParse(raw);
+    if (price == null || price <= 0) return null;
+    const coinsPerWeek = 40 * 7; // 2 tasks/day × 20 xu × 7 days
+    return (price / coinsPerWeek).ceil();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: widget.fadeAnim,
+      child: SlideTransition(
+        position: widget.slideAnim,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+          child: Column(
+            children: [
+              const Text('🏺', style: TextStyle(fontSize: 72)),
+              const SizedBox(height: 12),
+              ShaderMask(
+                shaderCallback: (b) => LinearGradient(colors: widget.gradient).createShader(b),
+                child: Text(
+                  'Con muốn dành dụm\nđể mua gì? 🌟',
+                  style: GoogleFonts.plusJakartaSans(fontSize: 22, fontWeight: FontWeight.w800, color: Colors.white),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Hãy đặt một ước mơ — GrowWise sẽ giúp con đạt được!',
+                style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppTheme.textSecondary, height: 1.5),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [BoxShadow(color: AppTheme.green.withValues(alpha: 0.12), blurRadius: 24, offset: const Offset(0, 8))],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Chọn biểu tượng:',
+                      style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.textSecondary)),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      height: 52,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _emojis.length,
+                        separatorBuilder: (_, _) => const SizedBox(width: 8),
+                        itemBuilder: (_, i) {
+                          final selected = widget.selectedEmoji == _emojis[i];
+                          return GestureDetector(
+                            onTap: () => widget.onEmojiChanged(_emojis[i]),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 150),
+                              width: 48, height: 48,
+                              decoration: BoxDecoration(
+                                color: selected ? AppTheme.greenLight : AppTheme.bg,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: selected ? AppTheme.green : AppTheme.border, width: selected ? 2 : 1),
+                              ),
+                              child: Center(child: Text(_emojis[i], style: const TextStyle(fontSize: 24))),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    TextField(
+                      controller: widget.nameCtrl,
+                      textCapitalization: TextCapitalization.sentences,
+                      decoration: InputDecoration(
+                        hintText: 'Tên món đồ mơ ước...',
+                        filled: true, fillColor: AppTheme.bg,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppTheme.border)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppTheme.border)),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: widget.gradient.first, width: 2)),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: widget.priceCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        hintText: 'Mục tiêu... xu',
+                        suffixText: 'xu',
+                        filled: true, fillColor: AppTheme.bg,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppTheme.border)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppTheme.border)),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: widget.gradient.first, width: 2)),
+                      ),
+                    ),
+                    if (_estimateWeeks != null) ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(color: AppTheme.greenLight, borderRadius: BorderRadius.circular(12)),
+                        child: Row(children: [
+                          const Icon(Icons.lightbulb_outline_rounded, color: AppTheme.green, size: 16),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              '≈ $_estimateWeeks tuần nếu con làm 2 nhiệm vụ/ngày',
+                              style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppTheme.green, fontStyle: FontStyle.italic),
+                            ),
+                          ),
+                        ]),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

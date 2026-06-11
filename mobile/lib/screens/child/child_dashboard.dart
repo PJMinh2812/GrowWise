@@ -12,6 +12,7 @@ import 'child_dream_jar.dart';
 import 'micro_lesson_dialog.dart';
 import 'child_learn_screen.dart';
 import 'achievement_screen.dart';
+import 'family_achievement_board.dart';
 import '../login_screen.dart';
 import '../ai_chat_screen.dart';
 import '../../utils/age_group.dart';
@@ -332,7 +333,74 @@ class _HomeTab extends StatelessWidget {
             .animate(delay: 300.ms)
             .fadeIn()
             .slideY(begin: 0.05),
+        const SizedBox(height: 20),
+        _AchievementBoardBanner()
+            .animate(delay: 400.ms)
+            .fadeIn()
+            .slideY(begin: 0.05),
       ],
+    );
+  }
+}
+
+class _AchievementBoardBanner extends StatelessWidget {
+  const _AchievementBoardBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const FamilyAchievementBoard()),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFFFD700), Color(0xFFFF8C00)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFFF8C00).withValues(alpha: 0.35),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            const Text('🏆', style: TextStyle(fontSize: 40)),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Bảng Vàng Gia Đình',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  ),
+                  Text(
+                    'Xem thứ hạng & thành tích của gia đình',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white.withValues(alpha: 0.85),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded, color: Colors.white, size: 28),
+          ],
+        ),
+      ),
     );
   }
 }
