@@ -25,6 +25,14 @@ export async function GET(request: NextRequest) {
   const now = new Date()
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
 
+  // Auto-expire pending transactions older than 15 minutes
+  const cutoff = new Date(now.getTime() - 15 * 60 * 1000).toISOString()
+  await admin
+    .from('payment_transactions')
+    .update({ status: 'cancelled', updated_at: now.toISOString() })
+    .eq('status', 'pending')
+    .lt('created_at', cutoff)
+
   // 1. All app users (auth.users)
   const { data: { users: allUsers } } = await admin.auth.admin.listUsers({ perPage: 1000 })
   const totalUsers = allUsers.length

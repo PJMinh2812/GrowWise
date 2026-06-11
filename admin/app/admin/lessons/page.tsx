@@ -5,16 +5,9 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 import type { Lesson } from '@/lib/types'
 
-const CATEGORIES = ['Tiết kiệm', 'Đầu tư', 'Chi tiêu', 'Kiếm tiền']
-
-const AUDIENCE_ICON: Record<string, string> = {
-  child: 'child_care',
-  parent: 'family_history',
-}
-
 const AUDIENCE_LABEL: Record<string, string> = {
-  child: 'Trẻ em',
-  parent: 'Phụ huynh',
+  child: '👦 Trẻ em',
+  parent: '👨‍👩‍👧 Phụ huynh',
 }
 
 export default function LessonsPage() {
@@ -22,6 +15,11 @@ export default function LessonsPage() {
   const [loading, setLoading] = useState(true)
   const [audienceFilter, setAudienceFilter] = useState<'all' | 'child' | 'parent'>('all')
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
+
+  // Derive unique categories from actual lesson data
+  const categories = Array.from(
+    new Set(lessons.map(l => l.category).filter(Boolean))
+  ).sort()
 
   useEffect(() => { fetchLessons() }, [])
 
@@ -33,6 +31,7 @@ export default function LessonsPage() {
       .order('order_index')
     setLessons(data ?? [])
     setLoading(false)
+    setCategoryFilter('all')
   }
 
   async function togglePublish(lesson: Lesson) {
@@ -66,31 +65,27 @@ export default function LessonsPage() {
         </div>
         <Link
           href="/admin/lessons/new"
-          className="flex items-center gap-2 bg-primary text-on-primary px-6 py-2 rounded-lg text-sm font-semibold hover:opacity-90 transition-all shadow-sm active:scale-95"
+          className="inline-flex items-center gap-2 bg-primary text-on-primary px-5 py-2 rounded-lg text-sm font-semibold hover:opacity-90 transition-all shadow-sm"
         >
-          <span className="material-symbols-outlined text-[18px]">add</span>
-          Thêm bài học
+          + Thêm bài học
         </Link>
       </div>
 
       {/* Filter Bar */}
-      <div className="flex flex-wrap items-center gap-4 mb-8">
-        {/* Audience dropdown */}
-        <div className="relative">
-          <select
-            value={audienceFilter}
-            onChange={e => setAudienceFilter(e.target.value as 'all' | 'child' | 'parent')}
-            className="flex items-center gap-2 px-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg text-sm text-on-surface hover:border-primary transition-colors outline-none pr-8 appearance-none cursor-pointer"
-          >
-            <option value="all">Tất cả đối tượng</option>
-            <option value="child">Trẻ em</option>
-            <option value="parent">Phụ huynh</option>
-          </select>
-          <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px] pointer-events-none">expand_more</span>
-        </div>
+      <div className="flex flex-wrap items-center gap-3 mb-8">
+        {/* Audience dropdown — native select, no custom icon overlay */}
+        <select
+          value={audienceFilter}
+          onChange={e => setAudienceFilter(e.target.value as 'all' | 'child' | 'parent')}
+          className="px-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg text-sm text-on-surface hover:border-primary transition-colors outline-none cursor-pointer"
+        >
+          <option value="all">Tất cả đối tượng</option>
+          <option value="child">Trẻ em</option>
+          <option value="parent">Phụ huynh</option>
+        </select>
 
         {/* Category chips */}
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setCategoryFilter('all')}
             className={`px-4 py-2 rounded-full text-sm transition-colors ${
@@ -101,7 +96,7 @@ export default function LessonsPage() {
           >
             Tất cả
           </button>
-          {CATEGORIES.map(cat => (
+          {categories.map(cat => (
             <button
               key={cat}
               onClick={() => setCategoryFilter(cat)}
@@ -154,15 +149,9 @@ export default function LessonsPage() {
                 <h3 className="text-base font-bold text-on-surface mb-2 line-clamp-2">{lesson.title}</h3>
 
                 {/* Meta */}
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="flex items-center gap-1 text-outline text-xs">
-                    <span className="material-symbols-outlined text-[14px]">schedule</span>
-                    {Math.round(lesson.duration_seconds / 60)} phút
-                  </div>
-                  <div className="flex items-center gap-1 text-outline text-xs">
-                    <span className="material-symbols-outlined text-[14px]">{AUDIENCE_ICON[lesson.audience] ?? 'person'}</span>
-                    {AUDIENCE_LABEL[lesson.audience] ?? lesson.audience}
-                  </div>
+                <div className="flex items-center gap-4 mb-4 text-xs text-outline">
+                  <span>⏱ {Math.round(lesson.duration_seconds / 60)} phút</span>
+                  <span>{AUDIENCE_LABEL[lesson.audience] ?? lesson.audience}</span>
                 </div>
 
                 {/* Footer */}
@@ -185,15 +174,17 @@ export default function LessonsPage() {
                   <div className="flex gap-1">
                     <Link
                       href={`/admin/lessons/${lesson.id}`}
-                      className="p-1.5 text-outline hover:text-primary hover:bg-surface-container-high rounded-full transition-colors"
+                      className="p-1.5 text-outline hover:text-primary hover:bg-surface-container-high rounded-full transition-colors text-base"
+                      title="Chỉnh sửa"
                     >
-                      <span className="material-symbols-outlined text-[18px]">edit</span>
+                      ✏️
                     </Link>
                     <button
                       onClick={() => deleteLesson(lesson.id!)}
-                      className="p-1.5 text-outline hover:text-error hover:bg-error-container/10 rounded-full transition-colors"
+                      className="p-1.5 text-outline hover:text-error hover:bg-error-container/10 rounded-full transition-colors text-base"
+                      title="Xóa"
                     >
-                      <span className="material-symbols-outlined text-[18px]">delete</span>
+                      🗑️
                     </button>
                   </div>
                 </div>
@@ -206,8 +197,8 @@ export default function LessonsPage() {
             href="/admin/lessons/new"
             className="group bg-surface-container-lowest border-2 border-dashed border-outline-variant rounded-xl flex flex-col items-center justify-center py-12 hover:border-primary hover:bg-surface-container transition-all cursor-pointer min-h-[300px]"
           >
-            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-3 group-hover:scale-110 transition-transform">
-              <span className="material-symbols-outlined text-2xl">add</span>
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-2xl mb-3 group-hover:scale-110 transition-transform">
+              ➕
             </div>
             <p className="text-sm font-medium text-outline group-hover:text-primary">Tạo bài học mới</p>
           </Link>

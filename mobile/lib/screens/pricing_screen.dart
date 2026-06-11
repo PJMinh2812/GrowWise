@@ -6,16 +6,16 @@ import '../providers/app_state.dart';
 import '../services/payment_service.dart';
 import '../services/supabase_service.dart';
 
-// Stitch design token colors
-const _kBg          = Color(0xFFFFF8F3);
-const _kOrange      = Color(0xFFFF8C00);
-const _kOrangeDark  = Color(0xFF904D00);
+// Parent theme colors (matching parent dashboard)
+const _kBg          = Color(0xFFF5F0FF);  // light purple bg
+const _kOrange      = Color(0xFF6B38D4);  // vibrantPrimary purple
+const _kOrangeDark  = Color(0xFF5516BE);  // onPrimaryFixedVariant
 const _kPurple      = Color(0xFF6833EA);
 const _kPurpleLight = Color(0xFFEDE7F6);
 const _kGreen       = Color(0xFF006E1C);
-const _kText        = Color(0xFF211B10);
-const _kTextMuted   = Color(0xFF564334);
-const _kBorder      = Color(0xFFDDC1AE);
+const _kText        = Color(0xFF1A1A2E);
+const _kTextMuted   = Color(0xFF64748B);
+const _kBorder      = Color(0xFFD0BCFF);  // primaryFixedDim
 
 class PricingScreen extends StatefulWidget {
   const PricingScreen({super.key});
@@ -430,7 +430,7 @@ class _PricingScreenState extends State<PricingScreen>
                     'So sánh tiến độ các con',
                   ],
                   lockedFeatures: const [],
-                  cardColor: const Color(0xFFFFF3E0),
+                  cardColor: const Color(0xFFE9DDFF),
                   borderColor: _kOrange,
                   ctaLabel: isDemoMode
                       ? 'Dùng thử 7 ngày MIỄN PHÍ →'

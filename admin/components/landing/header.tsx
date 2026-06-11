@@ -8,29 +8,29 @@ export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-md border-b border-border">
+    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg">G</span>
+            <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center">
+              <span className="text-white font-bold text-lg">G</span>
             </div>
-            <span className="font-bold text-xl text-foreground">GrowWise</span>
+            <span className="font-bold text-xl text-gray-900">GrowWise</span>
           </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-8">
-            <Link href="#how-it-works" className="text-muted-foreground hover:text-foreground transition-colors">
+            <Link href="#how-it-works" className="text-gray-500 hover:text-gray-900 transition-colors">
               Cách hoạt động
             </Link>
-            <Link href="#features" className="text-muted-foreground hover:text-foreground transition-colors">
+            <Link href="#features" className="text-gray-500 hover:text-gray-900 transition-colors">
               Tính năng
             </Link>
-            <Link href="#testimonials" className="text-muted-foreground hover:text-foreground transition-colors">
+            <Link href="#testimonials" className="text-gray-500 hover:text-gray-900 transition-colors">
               Đánh giá
             </Link>
-            <Link href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
+            <Link href="#pricing" className="text-gray-500 hover:text-gray-900 transition-colors font-medium">
               Bảng giá
             </Link>
           </nav>
@@ -39,7 +39,7 @@ export function Header() {
           <div className="hidden md:block">
             <Link
               href="#download"
-              className="bg-primary text-primary-foreground px-5 py-2.5 rounded-full font-medium hover:bg-primary/90 transition-colors"
+              className="bg-secondary text-white px-5 py-2.5 rounded-full font-medium hover:bg-secondary/90 transition-colors"
             >
               Tải ứng dụng
             </Link>
@@ -47,7 +47,7 @@ export function Header() {
 
           {/* Mobile Menu Button */}
           <button
-            className="md:hidden p-2 text-foreground"
+            className="md:hidden p-2 text-gray-900"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label="Toggle menu"
           >
@@ -57,39 +57,39 @@ export function Header() {
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <nav className="md:hidden py-4 border-t border-border">
+          <nav className="md:hidden py-4 border-t border-gray-200">
             <div className="flex flex-col gap-4">
               <Link
                 href="#how-it-works"
-                className="text-muted-foreground hover:text-foreground transition-colors"
+                className="text-gray-500 hover:text-gray-900 transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Cách hoạt động
               </Link>
               <Link
                 href="#features"
-                className="text-muted-foreground hover:text-foreground transition-colors"
+                className="text-gray-500 hover:text-gray-900 transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Tính năng
               </Link>
               <Link
                 href="#testimonials"
-                className="text-muted-foreground hover:text-foreground transition-colors"
+                className="text-gray-500 hover:text-gray-900 transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Đánh giá
               </Link>
               <Link
                 href="#pricing"
-                className="text-muted-foreground hover:text-foreground transition-colors font-medium"
+                className="text-gray-500 hover:text-gray-900 transition-colors font-medium"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Bảng giá
               </Link>
               <Link
                 href="#download"
-                className="bg-primary text-primary-foreground px-5 py-2.5 rounded-full font-medium hover:bg-primary/90 transition-colors text-center"
+                className="bg-secondary text-white px-5 py-2.5 rounded-full font-medium hover:bg-secondary/90 transition-colors text-center"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Tải ứng dụng

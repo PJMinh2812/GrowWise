@@ -48,6 +48,9 @@ export default function AdminUsersPage() {
   const [inviting, setInviting] = useState(false);
   const [inviteError, setInviteError] = useState("");
   const [inviteSuccess, setInviteSuccess] = useState("");
+  const [filterRole, setFilterRole] = useState<"all" | "admin" | "staff" | "none">("all");
+  const [filterStatus, setFilterStatus] = useState<"all" | "active" | "banned">("all");
+  const [showFilter, setShowFilter] = useState(false);
 
   useEffect(() => { fetchUsers(); }, []);
 
@@ -104,13 +107,23 @@ export default function AdminUsersPage() {
   const activeCount  = users.filter(u => u.profile?.access_granted && !u.profile?.is_banned).length;
   const bannedCount  = users.filter(u => u.profile?.is_banned).length;
 
+  const filteredUsers = users.filter(u => {
+    if (filterRole === "admin"  && u.profile?.role !== "admin")  return false;
+    if (filterRole === "staff"  && u.profile?.role !== "staff")  return false;
+    if (filterRole === "none"   && u.profile?.access_granted)    return false;
+    if (filterStatus === "active" && u.profile?.is_banned)       return false;
+    if (filterStatus === "banned" && !u.profile?.is_banned)      return false;
+    return true;
+  });
+
+  const isFiltered = filterRole !== "all" || filterStatus !== "all";
+
   return (
     <div className="p-6 max-w-[1440px] mx-auto space-y-6">
       {/* Page Header */}
       <div className="mb-2">
         <h2 className="text-3xl font-bold text-on-surface flex items-center gap-2">
-          <span className="material-symbols-outlined text-[32px]">group</span>
-          Người dùng
+          👥 Người dùng
         </h2>
         <p className="text-sm text-on-surface-variant mt-1">Quản lý tài khoản admin và staff truy cập hệ thống</p>
       </div>
@@ -118,7 +131,7 @@ export default function AdminUsersPage() {
       {/* Invite form */}
       <div className="bg-surface-container-lowest rounded-xl border border-outline-variant p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-5">
-          <span className="material-symbols-outlined text-primary">person_add</span>
+          <span className="text-lg">➕</span>
           <h3 className="text-lg font-semibold text-on-surface">Mời thành viên mới</h3>
         </div>
         <form onSubmit={handleInvite} className="flex flex-col md:flex-row items-end gap-3">
@@ -149,7 +162,6 @@ export default function AdminUsersPage() {
             disabled={inviting}
             className="w-full md:w-auto px-6 py-2.5 bg-primary text-on-primary text-sm font-semibold rounded-lg hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 h-[42px]"
           >
-            <span className="material-symbols-outlined text-[16px]">send</span>
             {inviting ? "Đang gửi..." : "Gửi lời mời"}
           </button>
         </form>
@@ -158,17 +170,74 @@ export default function AdminUsersPage() {
       </div>
 
       {/* User table */}
-      <div className="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden shadow-sm">
+      <div className="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm">
         <div className="p-5 border-b border-outline-variant flex justify-between items-center bg-surface-container-lowest">
-          <h3 className="text-lg font-semibold text-on-surface">Danh sách nhân sự</h3>
-          <div className="flex items-center gap-2">
-            <button className="p-2 hover:bg-surface-container-high rounded-lg border border-outline-variant transition-colors flex items-center gap-1 text-on-surface-variant text-sm">
-              <span className="material-symbols-outlined text-[18px]">filter_list</span>
-              Lọc
+          <div className="flex items-center gap-3">
+            <h3 className="text-lg font-semibold text-on-surface">Danh sách nhân sự</h3>
+            {isFiltered && (
+              <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full font-medium">
+                {filteredUsers.length}/{users.length}
+              </span>
+            )}
+          </div>
+          <div className="relative">
+            <button
+              onClick={() => setShowFilter(v => !v)}
+              className={`px-3 py-1.5 rounded-lg border transition-colors flex items-center gap-1.5 text-sm font-medium ${
+                isFiltered
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-outline-variant hover:bg-surface-container-high text-on-surface-variant"
+              }`}
+            >
+              <span>⚙</span> Lọc {isFiltered && "•"}
             </button>
+            {showFilter && (
+              <div className="absolute right-0 top-9 z-20 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg p-4 w-56 space-y-4">
+                <div>
+                  <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-2">Vai trò</p>
+                  <div className="flex flex-col gap-1">
+                    {(["all", "admin", "staff", "none"] as const).map(v => (
+                      <label key={v} className="flex items-center gap-2 cursor-pointer text-sm text-on-surface hover:text-primary">
+                        <input
+                          type="radio"
+                          name="filterRole"
+                          checked={filterRole === v}
+                          onChange={() => setFilterRole(v)}
+                          className="accent-primary"
+                        />
+                        {{ all: "Tất cả", admin: "Admin", staff: "Staff", none: "Chưa cấp quyền" }[v]}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-2">Trạng thái</p>
+                  <div className="flex flex-col gap-1">
+                    {(["all", "active", "banned"] as const).map(v => (
+                      <label key={v} className="flex items-center gap-2 cursor-pointer text-sm text-on-surface hover:text-primary">
+                        <input
+                          type="radio"
+                          name="filterStatus"
+                          checked={filterStatus === v}
+                          onChange={() => setFilterStatus(v)}
+                          className="accent-primary"
+                        />
+                        {{ all: "Tất cả", active: "Hoạt động", banned: "Bị khóa" }[v]}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <button
+                  onClick={() => { setFilterRole("all"); setFilterStatus("all"); setShowFilter(false); }}
+                  className="w-full text-xs text-on-surface-variant hover:text-error text-center pt-1 border-t border-outline-variant"
+                >
+                  Xóa bộ lọc
+                </button>
+              </div>
+            )}
           </div>
         </div>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto overflow-y-visible rounded-b-xl">
           <table className="w-full text-left border-collapse text-sm">
             <thead className="bg-surface-container-low">
               <tr>
@@ -190,7 +259,7 @@ export default function AdminUsersPage() {
                   <td colSpan={5} className="px-6 py-10 text-center text-on-surface-variant">Chưa có thành viên nào</td>
                 </tr>
               )}
-              {users.map(u => (
+              {filteredUsers.map(u => (
                 <tr key={u.id} className={`group hover:bg-surface-container-low/50 transition-colors ${u.profile?.is_banned ? "bg-error-container/5" : ""}`}>
                   {/* Member */}
                   <td className="px-6 py-4">
@@ -249,7 +318,7 @@ export default function AdminUsersPage() {
 
                   {/* Actions */}
                   <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center justify-end gap-2">
                       <button
                         onClick={() => updateUser(u.id, {
                           email: u.email,

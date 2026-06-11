@@ -64,6 +64,44 @@ function ProviderBadge({ provider }: { provider: string }) {
   )
 }
 
+function exportCSV(stats: Stats) {
+  const todayStr = new Date().toLocaleDateString('vi-VN').replace(/\//g, '-')
+
+  // Sheet 1: tổng quan
+  const summary = [
+    ['Chỉ số', 'Giá trị'],
+    ['Tổng người dùng', stats.totalUsers],
+    ['Người dùng mới tháng này', stats.newUsersThisMonth],
+    ['Đang dùng Premium', stats.activeSubs],
+    ['Dùng thử', stats.trialSubs],
+    ['Đã hủy', stats.canceledSubs],
+    ['Doanh thu tháng này (VNĐ)', stats.monthlyRevenue],
+    [],
+    ['Gói', 'Hàng tháng', 'Hàng năm', 'Tổng'],
+    ...stats.planSummary.map(p => [p.display_name, p.monthly, p.yearly, p.monthly + p.yearly]),
+    [],
+    ['Mã đơn', 'Gói', 'Số tiền (VNĐ)', 'Phương thức', 'Chu kỳ', 'Trạng thái', 'Ngày tạo'],
+    ...stats.recentTxns.map(t => [
+      t.order_id,
+      t.plan_name,
+      t.amount,
+      t.provider?.toUpperCase(),
+      t.billing_interval === 'yearly' ? 'Hàng năm' : 'Hàng tháng',
+      t.status === 'completed' ? 'Thành công' : t.status === 'pending' ? 'Đang chờ' : 'Thất bại',
+      new Date(t.created_at).toLocaleDateString('vi-VN'),
+    ]),
+  ]
+
+  const csv = summary.map(row => row.map(v => `"${v ?? ''}"`).join(',')).join('\n')
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `growwise-baocao-${todayStr}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
 export default function DashboardPage() {
   const router = useRouter()
   const [stats, setStats] = useState<Stats | null>(null)
@@ -109,15 +147,13 @@ export default function DashboardPage() {
         </div>
         <div className="flex gap-2">
           <button
-            onClick={() => window.print()}
+            onClick={() => exportCSV(stats)}
             className="flex items-center gap-2 px-4 py-2 border border-outline-variant rounded-lg text-sm text-on-surface-variant hover:bg-surface-container transition-colors"
           >
-            <span className="material-symbols-outlined text-[18px]">file_download</span>
-            Xuất báo cáo
+            ⬇️ Xuất báo cáo
           </button>
           <button className="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-lg text-sm font-semibold hover:opacity-90 active:scale-95 transition-all">
-            <span className="material-symbols-outlined text-[18px]">add</span>
-            Tạo chiến dịch
+            + Tạo chiến dịch
           </button>
         </div>
       </div>
@@ -127,8 +163,8 @@ export default function DashboardPage() {
         {/* Revenue */}
         <div className="group bg-surface-container-lowest p-6 rounded-xl border border-outline-variant flex flex-col gap-3 hover:-translate-y-0.5 hover:shadow-md transition-all cursor-default">
           <div className="flex justify-between items-start">
-            <div className="p-2 bg-secondary/10 rounded-lg">
-              <span className="material-symbols-outlined text-secondary">payments</span>
+            <div className="p-2 bg-secondary/10 rounded-lg text-xl">
+              💰
             </div>
             <span className="text-xs font-semibold text-secondary bg-secondary/10 px-2 py-0.5 rounded">+12.5%</span>
           </div>
@@ -141,8 +177,8 @@ export default function DashboardPage() {
         {/* Total users */}
         <div className="group bg-surface-container-lowest p-6 rounded-xl border border-outline-variant flex flex-col gap-3 hover:-translate-y-0.5 hover:shadow-md transition-all cursor-default">
           <div className="flex justify-between items-start">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <span className="material-symbols-outlined text-blue-600">group</span>
+            <div className="p-2 bg-blue-100 rounded-lg text-xl">
+              👥
             </div>
             <span className="text-xs font-semibold text-blue-600 bg-blue-100 px-2 py-0.5 rounded">+5.2%</span>
           </div>
@@ -155,8 +191,8 @@ export default function DashboardPage() {
         {/* Active premium */}
         <div className="group bg-surface-container-lowest p-6 rounded-xl border border-outline-variant flex flex-col gap-3 hover:-translate-y-0.5 hover:shadow-md transition-all cursor-default">
           <div className="flex justify-between items-start">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <span className="material-symbols-outlined text-primary">star</span>
+            <div className="p-2 bg-primary/10 rounded-lg text-xl">
+              ⭐
             </div>
             <span className="text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded">
               {stats.totalUsers > 0 ? Math.round((stats.activeSubs / stats.totalUsers) * 100) : 0}% tỷ lệ
@@ -171,8 +207,8 @@ export default function DashboardPage() {
         {/* New users */}
         <div className="group bg-surface-container-lowest p-6 rounded-xl border border-outline-variant flex flex-col gap-3 hover:-translate-y-0.5 hover:shadow-md transition-all cursor-default">
           <div className="flex justify-between items-start">
-            <div className="p-2 bg-orange-100 rounded-lg">
-              <span className="material-symbols-outlined text-orange-600">person_add</span>
+            <div className="p-2 bg-orange-100 rounded-lg text-xl">
+              🆕
             </div>
           </div>
           <div>
@@ -239,7 +275,6 @@ export default function DashboardPage() {
           <div className="px-6 py-4 border-b border-outline-variant flex justify-between items-center">
             <h4 className="text-base font-semibold text-on-surface">Giao dịch gần đây</h4>
             <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary text-[20px]">filter_list</span>
               <a href="/admin/pricing" className="text-sm text-primary hover:underline">Tất cả →</a>
             </div>
           </div>
@@ -285,8 +320,8 @@ export default function DashboardPage() {
             Xem phân tích sâu
           </button>
         </div>
-        <div className="absolute right-[-40px] top-[-40px] opacity-20 pointer-events-none">
-          <span className="material-symbols-outlined" style={{ fontSize: '280px', lineHeight: 1 }}>lightbulb</span>
+        <div className="absolute right-[-20px] top-[-20px] opacity-20 pointer-events-none text-[200px] leading-none select-none">
+          💡
         </div>
       </div>
     </div>

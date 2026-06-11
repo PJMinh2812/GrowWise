@@ -30,13 +30,13 @@ export function Testimonials() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-12 sm:mb-16">
-          <span className="inline-block bg-accent text-accent-foreground px-4 py-1.5 rounded-full text-sm font-medium mb-4">
+          <span className="inline-block bg-amber-100 text-amber-700 px-4 py-1.5 rounded-full text-sm font-medium mb-4">
             Phụ huynh nói gì
           </span>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground text-balance">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 text-balance">
             Được tin tưởng bởi hàng ngàn gia đình
           </h2>
-          <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="mt-4 text-lg text-gray-500 max-w-2xl mx-auto">
             Xem những câu chuyện thành công từ các gia đình đang sử dụng GrowWise
           </p>
         </div>
@@ -46,10 +46,10 @@ export function Testimonials() {
           {testimonials.map((testimonial, index) => (
             <div
               key={index}
-              className="bg-background rounded-3xl p-6 sm:p-8 border border-border hover:border-primary/50 transition-colors relative"
+              className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200 hover:border-secondary/50 transition-colors relative"
             >
               {/* Quote icon */}
-              <Quote className="absolute top-6 right-6 w-8 h-8 text-primary/20" />
+              <Quote className="absolute top-6 right-6 w-8 h-8 text-secondary/20" />
 
               {/* Rating */}
               <div className="flex gap-1 mb-4">
@@ -59,18 +59,18 @@ export function Testimonials() {
               </div>
 
               {/* Content */}
-              <p className="text-foreground leading-relaxed mb-6">
+              <p className="text-gray-900 leading-relaxed mb-6">
                 {`"${testimonial.content}"`}
               </p>
 
               {/* Author */}
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center text-2xl">
+                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-2xl">
                   {testimonial.avatar}
                 </div>
                 <div>
-                  <div className="font-semibold text-foreground">{testimonial.name}</div>
-                  <div className="text-sm text-muted-foreground">{testimonial.role}</div>
+                  <div className="font-semibold text-gray-900">{testimonial.name}</div>
+                  <div className="text-sm text-gray-500">{testimonial.role}</div>
                 </div>
               </div>
             </div>
