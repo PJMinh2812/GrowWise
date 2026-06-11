@@ -17,6 +17,16 @@
   <img src="https://img.shields.io/badge/license-Internal-lightgrey" alt="license" />
 </p>
 
+<p align="center">
+  <a href="https://appdistribution.firebase.google.com/testerapps/1:1003285431197:android:b7903b7b3abc48e4676574/releases/275pm2e3lskp8?utm_source=firebase-console">
+    <img src="https://img.shields.io/badge/Download%20APK-v2.2.0-34A853?style=for-the-badge&logo=android&logoColor=white" alt="Download APK" />
+  </a>
+  &nbsp;
+  <a href="https://grow-wise-blue.vercel.app/">
+    <img src="https://img.shields.io/badge/Website-grow--wise--blue.vercel.app-000000?style=for-the-badge&logo=vercel&logoColor=white" alt="Website" />
+  </a>
+</p>
+
 ---
 
 ## Giới thiệu
