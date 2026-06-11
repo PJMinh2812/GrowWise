@@ -8,6 +8,7 @@ import '../../widgets/paywall_dialog.dart';
 import '../../theme/app_theme.dart';
 import '../../models/task_model.dart';
 import '../../utils/validators.dart';
+import 'parent_task_detail.dart';
 import '../../utils/age_group.dart';
 
 class ParentCreateTask extends StatefulWidget {
@@ -26,6 +27,10 @@ class _ParentCreateTaskState extends State<ParentCreateTask> {
   String _category = 'Việc nhà';
   bool _loadingAi = false;
   List<Map<String, dynamic>>? _aiSuggestions;
+  bool _deadlineEnabled = false;
+  DateTime? _dueDate;
+  bool _hasPenalty = false;
+  bool _autoApproveEnabled = false;
 
   static const _allQuickIdeas = [
     // Việc nhà
@@ -227,6 +232,8 @@ class _ParentCreateTaskState extends State<ParentCreateTask> {
                 _buildCategorySelector(),
                 const SizedBox(height: 24),
                 _buildRewardCard(),
+                const SizedBox(height: 24),
+                _buildDeadlineSection(),
               ],
             ),
           ),
@@ -306,7 +313,7 @@ class _ParentCreateTaskState extends State<ParentCreateTask> {
   Widget _buildSavedTemplates() {
     return Consumer<AppState>(
       builder: (context, app, _) {
-        final templates = app.templateTasks;
+        final templates = app.activeTemplates;
         if (templates.isEmpty) return const SizedBox.shrink();
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -325,12 +332,11 @@ class _ParentCreateTaskState extends State<ParentCreateTask> {
                 children: templates.map((t) {
                   return GestureDetector(
                     onTap: () {
-                      _titleCtrl.text = t.title;
-                      _descCtrl.text = t.description;
-                      setState(() {
-                        _coins = t.coinReward;
-                        _category = t.category;
-                      });
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(
+                          builder: (_) => ParentTaskDetail(task: t),
+                        ),
+                      );
                     },
                     child: Container(
                       margin: const EdgeInsets.only(right: 10),
@@ -662,6 +668,183 @@ class _ParentCreateTaskState extends State<ParentCreateTask> {
     );
   }
 
+  Widget _buildDeadlineSection() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppTheme.surfaceContainer, width: 2),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text('⏰', style: TextStyle(fontSize: 20)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text('Đặt thời hạn hoàn thành',
+                  style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
+              ),
+              Switch(
+                value: _deadlineEnabled,
+                onChanged: (v) => setState(() {
+                  _deadlineEnabled = v;
+                  if (!v) { _dueDate = null; _hasPenalty = false; }
+                }),
+                activeThumbColor: AppTheme.vibrantPrimary,
+                activeTrackColor: AppTheme.primaryFixed,
+              ),
+            ],
+          ),
+          const Divider(height: 24),
+          Row(
+            children: [
+              const Text('⚡', style: TextStyle(fontSize: 18)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Tự động duyệt sau 10 lần',
+                      style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
+                    Text('Hệ thống tự xử lý sau 10 lần được duyệt',
+                      style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppTheme.textSecondary)),
+                  ],
+                ),
+              ),
+              Switch(
+                value: _autoApproveEnabled,
+                onChanged: (v) => setState(() => _autoApproveEnabled = v),
+                activeThumbColor: AppTheme.vibrantPrimary,
+                activeTrackColor: AppTheme.primaryFixed,
+              ),
+            ],
+          ),
+          if (_deadlineEnabled) ...[
+            const SizedBox(height: 14),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _quickChip('1 giờ', () => setState(() => _dueDate = DateTime.now().add(const Duration(hours: 1)))),
+                _quickChip('Trước bữa tối', () => setState(() {
+                  final now = DateTime.now();
+                  _dueDate = DateTime(now.year, now.month, now.day, 18, 0);
+                })),
+                _quickChip('Trước khi ngủ', () => setState(() {
+                  final now = DateTime.now();
+                  _dueDate = DateTime(now.year, now.month, now.day, 21, 0);
+                })),
+                _quickChip('Ngày mai', () => setState(() {
+                  final now = DateTime.now();
+                  _dueDate = DateTime(now.year, now.month, now.day + 1, 8, 0);
+                })),
+                _quickChip('Tự chọn...', () async {
+                  final picked = await showDateTimePicker(context);
+                  if (picked != null) setState(() => _dueDate = picked);
+                }),
+              ],
+            ),
+            if (_dueDate != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(color: const Color(0xFFFFFBEB), borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppTheme.amber.withValues(alpha: 0.4))),
+                child: Row(children: [
+                  const Icon(Icons.access_time_rounded, color: AppTheme.amber, size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '⏰ Con cần hoàn thành trước ${_formatDueDate(_dueDate!)}',
+                      style: GoogleFonts.plusJakartaSans(fontSize: 13, color: const Color(0xFF92400E), fontWeight: FontWeight.w600),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ]),
+              ),
+            ],
+            const SizedBox(height: 14),
+            GestureDetector(
+              onTap: () => setState(() => _hasPenalty = !_hasPenalty),
+              child: Row(children: [
+                Checkbox(
+                  value: _hasPenalty,
+                  onChanged: (v) => setState(() => _hasPenalty = v ?? false),
+                  fillColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                    if (states.contains(WidgetState.selected)) return AppTheme.vibrantPrimary;
+                    return null;
+                  }),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                ),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text('Trừ 10% xu nếu trẻ bỏ task sau khi đã nhận',
+                    style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppTheme.textSecondary, fontWeight: FontWeight.w600)),
+                ),
+              ]),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _quickChip(String label, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppTheme.primaryFixed,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppTheme.primaryFixedDim, width: 1.5),
+        ),
+        child: Text(label, style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.vibrantPrimary)),
+      ),
+    );
+  }
+
+  String _formatDueDate(DateTime dt) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final dateOnly = DateTime(dt.year, dt.month, dt.day);
+    final timeStr = '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    if (dateOnly == today) return '$timeStr hôm nay';
+    if (dateOnly == today.add(const Duration(days: 1))) return '$timeStr ngày mai';
+    return '$timeStr ${dt.day}/${dt.month}';
+  }
+
+  Future<DateTime?> showDateTimePicker(BuildContext ctx) async {
+    final date = await showDatePicker(
+      context: ctx,
+      initialDate: DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 30)),
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(
+          textScaler: const TextScaler.linear(1.0),
+        ),
+        child: child!,
+      ),
+    );
+    if (date == null || !ctx.mounted) return null;
+    final time = await showTimePicker(
+      context: ctx,
+      initialTime: TimeOfDay.now(),
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(
+          textScaler: const TextScaler.linear(1.0),
+        ),
+        child: child!,
+      ),
+    );
+    if (time == null) return null;
+    return DateTime(date.year, date.month, date.day, time.hour, time.minute);
+  }
+
   Widget _buildBottomActionArea() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -751,8 +934,12 @@ class _ParentCreateTaskState extends State<ParentCreateTask> {
               ? 'Nhiệm vụ mới từ bố mẹ'
               : _descCtrl.text.trim(),
           coinReward: _coins,
-          icon: icon, // note: Using emoji or icon logic as required by model
+          icon: icon,
           category: _category,
+          dueDate: _deadlineEnabled ? _dueDate : null,
+          hasPenalty: _deadlineEnabled && _hasPenalty,
+          penaltyPercent: 10,
+          autoApproveAfter: _autoApproveEnabled ? 10 : null,
         ),
       );
       if (!mounted) return;

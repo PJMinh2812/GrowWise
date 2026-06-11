@@ -8,6 +8,7 @@ import '../../providers/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../models/task_model.dart';
 import '../../utils/age_group.dart';
+import 'child_task_market.dart';
 
 class ChildTaskList extends StatefulWidget {
   const ChildTaskList({super.key});
@@ -107,19 +108,17 @@ class _ChildTaskListState extends State<ChildTaskList>
                 ],
               ),
               GestureDetector(
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(s.parentOnlyMsg),
-                    ),
-                  );
-                },
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ChildTaskMarket(),
+                  ),
+                ),
                 child: Container(
-                  width: 48,
-                  height: 48,
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
                     color: AppTheme.primaryContainer,
-                    shape: BoxShape.circle,
+                    borderRadius: BorderRadius.circular(20),
                     boxShadow: const [
                       BoxShadow(
                         color: AppTheme.onPrimaryFixedVariant,
@@ -127,9 +126,21 @@ class _ChildTaskListState extends State<ChildTaskList>
                       ),
                     ],
                   ),
-                  child: const Icon(
-                    Icons.add,
-                    color: AppTheme.onTertiaryContainer,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.storefront_rounded,
+                          color: AppTheme.onTertiaryContainer, size: 18),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Chợ 🏪',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: AppTheme.onTertiaryContainer,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -299,6 +310,25 @@ class _TaskCardItem extends StatelessWidget {
 
   const _TaskCardItem({required this.task, required this.showAction});
 
+  Color get _deadlineBadgeColor {
+    if (task.dueDate == null) return Colors.transparent;
+    final remaining = task.dueDate!.difference(DateTime.now());
+    if (remaining.isNegative) return const Color(0xFFEF4444);
+    if (remaining.inMinutes < 30) return const Color(0xFFEF4444);
+    if (remaining.inHours < 2) return AppTheme.amber;
+    return AppTheme.green;
+  }
+
+  String get _deadlineBadgeText {
+    if (task.dueDate == null) return '';
+    final remaining = task.dueDate!.difference(DateTime.now());
+    if (remaining.isNegative) return '❌ Đã quá hạn';
+    final h = remaining.inHours;
+    final m = remaining.inMinutes % 60;
+    if (h > 0) return '⏰ còn ${h}g ${m}p';
+    return '⏰ còn ${m}p';
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = context.watch<AppState>().strings;
@@ -307,14 +337,18 @@ class _TaskCardItem extends StatelessWidget {
         : (task.status == TaskStatus.submitted
               ? AppTheme.vibrantSecondary
               : AppTheme.vibrantTertiary);
+    final isOverdue = task.dueDate != null && task.dueDate!.isBefore(DateTime.now());
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceContainerLowest,
+        color: isOverdue ? const Color(0xFFFEF2F2) : AppTheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppTheme.surfaceContainerHigh, width: 2),
+        border: Border.all(
+          color: isOverdue ? const Color(0xFFFECACA) : AppTheme.surfaceContainerHigh,
+          width: 2,
+        ),
       ),
       child: Column(
         children: [
@@ -348,90 +382,131 @@ class _TaskCardItem extends StatelessWidget {
                       children: [
                         Text(
                           task.category,
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 13,
-                            color: AppTheme.outline,
-                          ),
+                          style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppTheme.outline),
                         ),
                         const SizedBox(width: 6),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: AppTheme.surfaceContainerHigh,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            taskDifficultyLabel(task.coinReward),
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.textSecondary,
-                            ),
-                          ),
+                          decoration: BoxDecoration(color: AppTheme.surfaceContainerHigh, borderRadius: BorderRadius.circular(8)),
+                          child: Text(taskDifficultyLabel(task.coinReward),
+                            style: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.w600, color: AppTheme.textSecondary)),
                         ),
                       ],
                     ),
+                    if (task.dueDate != null) ...[
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: _deadlineBadgeColor.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: _deadlineBadgeColor.withValues(alpha: 0.4)),
+                        ),
+                        child: Text(_deadlineBadgeText,
+                          style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w700, color: _deadlineBadgeColor)),
+                      ),
+                    ],
                   ],
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: AppTheme.secondaryFixed,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Text(
-                  '+${task.coinReward} ${s.coins}',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800,
-                    color: AppTheme.onSecondaryFixed,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(color: AppTheme.secondaryFixed, borderRadius: BorderRadius.circular(16)),
+                    child: Text('+${task.coinReward} ${s.coins}',
+                      style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w800, color: AppTheme.onSecondaryFixed)),
                   ),
-                ),
+                  if (task.autoApproveAfter != null && task.approvalCount >= task.autoApproveAfter!) ...[
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(color: AppTheme.primaryFixed, borderRadius: BorderRadius.circular(10)),
+                      child: Text('⚡ Tự duyệt', style: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.w700, color: AppTheme.vibrantPrimary)),
+                    ),
+                  ],
+                ],
               ),
             ],
           ),
           if (showAction && task.status == TaskStatus.pending) ...[
-            const SizedBox(height: 16),
-            GestureDetector(
-              onTap: () => showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
-                builder: (_) => _SubmitProofSheet(task: task),
-              ),
-              child: Container(
+            const SizedBox(height: 12),
+            // submissionId == null → task not started yet → show "Bắt đầu"
+            if (task.submissionId == null)
+              SizedBox(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  color: AppTheme.surfaceBright,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppTheme.vibrantPrimary, width: 2),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.camera_alt_outlined,
+                child: GestureDetector(
+                  onTap: () async {
+                    await context.read<AppState>().startTask(task.id);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    decoration: BoxDecoration(
                       color: AppTheme.vibrantPrimary,
-                      size: 18,
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      s.submitProofBtn,
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.vibrantPrimary,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 20),
+                        const SizedBox(width: 8),
+                        Text('Bắt đầu làm!', style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white)),
+                      ],
+                    ),
+                  ),
+                ),
+              )
+            else
+              // submissionId != null → in progress → show submit + abandon
+              Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (_) => _SubmitProofSheet(task: task),
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(
+                          color: AppTheme.surfaceBright,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppTheme.vibrantPrimary, width: 2),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.camera_alt_outlined, color: AppTheme.vibrantPrimary, size: 18),
+                            const SizedBox(width: 8),
+                            Text(s.submitProofBtn, style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: AppTheme.vibrantPrimary)),
+                          ],
+                        ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () => showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (_) => _AbandonTaskSheet(task: task),
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.bg,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppTheme.border, width: 1.5),
+                      ),
+                      child: Text('Bỏ task', style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textSecondary)),
+                    ),
+                  ),
+                ],
               ),
-            ),
           ],
           if (task.status == TaskStatus.submitted) ...[
             const SizedBox(height: 16),
@@ -457,6 +532,113 @@ class _TaskCardItem extends StatelessWidget {
               ],
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+// ── Abandon Task Bottom Sheet ─────────────────────────────────────────────────
+
+class _AbandonTaskSheet extends StatefulWidget {
+  final TaskModel task;
+  const _AbandonTaskSheet({required this.task});
+
+  @override
+  State<_AbandonTaskSheet> createState() => _AbandonTaskSheetState();
+}
+
+class _AbandonTaskSheetState extends State<_AbandonTaskSheet> {
+  bool _loading = false;
+
+  int get _penaltyCoins => widget.task.hasPenalty
+      ? (widget.task.coinReward * widget.task.penaltyPercent / 100).round()
+      : 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasPenalty = widget.task.hasPenalty;
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      padding: EdgeInsets.fromLTRB(24, 12, 24, MediaQuery.of(context).viewInsets.bottom + 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(width: 40, height: 4, decoration: BoxDecoration(color: AppTheme.border, borderRadius: BorderRadius.circular(2))),
+          const SizedBox(height: 20),
+          const Text('⚠️', style: TextStyle(fontSize: 48)),
+          const SizedBox(height: 12),
+          Text('Bỏ task này?', style: GoogleFonts.plusJakartaSans(fontSize: 20, fontWeight: FontWeight.w800, color: AppTheme.textPrimary)),
+          const SizedBox(height: 8),
+          Text(
+            hasPenalty
+                ? 'Con đã nhận task này. Nếu bỏ, con sẽ bị trừ xu.'
+                : 'Con đã nhận task này. Bỏ task sẽ không thể hoàn tác.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.plusJakartaSans(fontSize: 14, color: AppTheme.textSecondary, height: 1.5),
+          ),
+          if (hasPenalty) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(color: const Color(0xFFFEF2F2), borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFFECACA))),
+              child: Column(children: [
+                Text('-$_penaltyCoins xu 💸', style: GoogleFonts.plusJakartaSans(fontSize: 24, fontWeight: FontWeight.w800, color: const Color(0xFFEF4444))),
+                const SizedBox(height: 4),
+                Text('${widget.task.penaltyPercent}% phần thưởng bị trừ', style: GoogleFonts.plusJakartaSans(fontSize: 12, color: const Color(0xFFDC2626))),
+              ]),
+            ),
+          ],
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: OutlinedButton(
+              onPressed: _loading ? null : () async {
+                setState(() => _loading = true);
+                final nav = Navigator.of(context);
+                final messenger = ScaffoldMessenger.of(context);
+                await context.read<AppState>().abandonTask(widget.task.id);
+                if (!mounted) return;
+                nav.pop();
+                messenger.showSnackBar(SnackBar(
+                  content: Text(hasPenalty ? '-$_penaltyCoins xu bị trừ 😔' : 'Đã bỏ task'),
+                  backgroundColor: hasPenalty ? const Color(0xFFEF4444) : AppTheme.textSecondary,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ));
+              },
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFFEF4444),
+                side: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              child: _loading
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFEF4444)))
+                  : Text('Xác nhận bỏ task', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: const Color(0xFFEF4444))),
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: DecoratedBox(
+              decoration: BoxDecoration(gradient: AppTheme.gradientGreen, borderRadius: BorderRadius.circular(14)),
+              child: FilledButton(
+                onPressed: () => Navigator.pop(context),
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.transparent, shadowColor: Colors.transparent,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                child: Text('Giữ lại task', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: Colors.white)),
+              ),
+            ),
+          ),
         ],
       ),
     );

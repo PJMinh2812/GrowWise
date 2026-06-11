@@ -463,12 +463,15 @@ class _PricingScreenState extends State<PricingScreen>
                         const SizedBox(width: 6),
                         const Text('🏦', style: TextStyle(fontSize: 18)),
                         const SizedBox(width: 8),
-                        Text(
-                          'MoMo · Chuyển khoản QR — An toàn & Bảo mật',
-                          style: GoogleFonts.nunitoSans(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: _kOrangeDark,
+                        Flexible(
+                          child: Text(
+                            'MoMo · Chuyển khoản QR — An toàn & Bảo mật',
+                            style: GoogleFonts.nunitoSans(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: _kOrangeDark,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],

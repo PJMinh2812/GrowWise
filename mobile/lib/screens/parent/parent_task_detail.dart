@@ -15,7 +15,13 @@ class ParentTaskDetail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final s = context.watch<AppState>().strings;
+    final app = context.watch<AppState>();
+    final s = app.strings;
+    // Live task: prefer version from childViewTasks (has submissionId), else raw template
+    final liveTask = app.childViewTasks.firstWhere(
+      (t) => t.id == task.id,
+      orElse: () => task,
+    );
     return Theme(
       data: AppTheme.parentTheme(),
       child: Scaffold(
@@ -24,7 +30,7 @@ class ParentTaskDetail extends StatelessWidget {
           elevation: 0,
           iconTheme: const IconThemeData(color: AppTheme.textPrimary),
           title: Text(
-            task.title,
+            liveTask.title,
             style: GoogleFonts.plusJakartaSans(
               fontWeight: FontWeight.w700,
               color: AppTheme.textPrimary,
@@ -36,10 +42,15 @@ class ParentTaskDetail extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _TaskHero(task: task),
+              _TaskHero(task: liveTask),
               const SizedBox(height: 24),
 
-              if (task.description.isNotEmpty) ...[
+              if (liveTask.autoApproveAfter != null) ...[
+                _AutoApproveProgress(task: liveTask),
+                const SizedBox(height: 20),
+              ],
+
+              if (liveTask.description.isNotEmpty) ...[
                 Text(
                   s.taskDescSection,
                   style: GoogleFonts.plusJakartaSans(
@@ -56,7 +67,7 @@ class ParentTaskDetail extends StatelessWidget {
                     boxShadow: AppTheme.cardShadow,
                   ),
                   child: Text(
-                    task.description,
+                    liveTask.description,
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 15, height: 1.6, color: AppTheme.textSecondary,
                     ),
@@ -65,15 +76,15 @@ class ParentTaskDetail extends StatelessWidget {
                 const SizedBox(height: 24),
               ],
 
-              if (task.status == TaskStatus.submitted) ...[
-                _ProofSection(taskId: task.id, submittedAt: task.submittedAt, proofImageUrl: task.proofImageUrl),
+              if (liveTask.status == TaskStatus.submitted) ...[
+                _ProofSection(taskId: liveTask.id, submittedAt: liveTask.submittedAt, proofImageUrl: liveTask.proofImageUrl),
                 const SizedBox(height: 20),
                 _PraiseSection(),
                 const SizedBox(height: 28),
-                _ActionButtons(task: task),
+                _ActionButtons(task: liveTask),
               ],
 
-              if (task.status == TaskStatus.approved) ...[
+              if (liveTask.status == TaskStatus.approved) ...[
                 _StatusBanner(
                   emoji: '✅',
                   title: s.approvedStatus,
@@ -81,27 +92,10 @@ class ParentTaskDetail extends StatelessWidget {
                   color: AppTheme.green,
                   bgColor: AppTheme.greenLight,
                 ),
-                const SizedBox(height: 8),
-                Consumer<AppState>(
-                  builder: (context, app, _) {
-                    final current = app.tasks.firstWhere((t) => t.id == task.id, orElse: () => task);
-                    final isSaved = current.isTemplate;
-                    final s2 = app.strings;
-                    return TextButton.icon(
-                      onPressed: () => app.toggleTemplate(task.id),
-                      icon: Icon(isSaved ? Icons.star : Icons.star_border, size: 18,
-                        color: isSaved ? AppTheme.vibrantSecondary : AppTheme.outline),
-                      label: Text(
-                        isSaved ? s2.savedTemplate : s2.saveTemplate,
-                        style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w600,
-                          color: isSaved ? AppTheme.vibrantSecondary : AppTheme.outline),
-                      ),
-                    );
-                  },
-                ),
+                const SizedBox(height: 12),
               ],
 
-              if (task.status == TaskStatus.rejected)
+              if (liveTask.status == TaskStatus.rejected)
                 _StatusBanner(
                   emoji: '❌',
                   title: s.rejectedStatus,
@@ -110,7 +104,10 @@ class ParentTaskDetail extends StatelessWidget {
                   bgColor: const Color(0xFFFEF2F2),
                 ),
 
-              if (task.status == TaskStatus.pending)
+              // Not yet assigned → show assign button
+              if (liveTask.submissionId == null) ...[
+                _AssignButton(taskId: liveTask.id),
+              ] else if (liveTask.status == TaskStatus.pending) ...[
                 _StatusBanner(
                   emoji: '⏳',
                   title: s.pendingStatus,
@@ -118,6 +115,10 @@ class ParentTaskDetail extends StatelessWidget {
                   color: AppTheme.textSecondary,
                   bgColor: AppTheme.bg,
                 ),
+              ],
+
+              const SizedBox(height: 16),
+              _DeactivateButton(task: liveTask),
             ],
           ),
         ),
@@ -356,14 +357,14 @@ class _ActionButtons extends StatelessWidget {
               boxShadow: AppTheme.shadowMd(AppTheme.green),
             ),
             child: FilledButton.icon(
-              onPressed: () => _showApprovalDialog(context, s),
+              onPressed: () => _showQualityRatingSheet(context, s),
               style: FilledButton.styleFrom(
                 backgroundColor: Colors.transparent, shadowColor: Colors.transparent,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
-              icon: const Icon(Icons.check_rounded, color: Colors.white),
-              label: Text(s.approveCoins(task.coinReward), style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: Colors.white)),
+              icon: const Icon(Icons.star_rounded, color: Colors.white),
+              label: Text('Đánh giá & Duyệt', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: Colors.white)),
             ),
           ),
         ),
@@ -419,56 +420,124 @@ class _ActionButtons extends StatelessWidget {
     );
   }
 
-  void _showApprovalDialog(BuildContext outerCtx, dynamic s) {
-    showDialog(
+  void _showQualityRatingSheet(BuildContext outerCtx, dynamic s) {
+    showModalBottomSheet(
       context: outerCtx,
-      builder: (dialogCtx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        content: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text('🎉', style: TextStyle(fontSize: 56))
-                    .animate().scale(begin: const Offset(0.2, 0.2), duration: 600.ms, curve: Curves.elasticOut).fadeIn(duration: 300.ms),
-                const SizedBox(height: 14),
-                Text(s.wellDone, style: GoogleFonts.plusJakartaSans(fontSize: 22, fontWeight: FontWeight.w800, color: AppTheme.textPrimary)),
-                const SizedBox(height: 8),
-                Text(
-                  s.approvalMsg(task.coinReward, outerCtx.read<AppState>().childName),
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.plusJakartaSans(fontSize: 14, color: AppTheme.textSecondary, height: 1.5),
-                ).animate(delay: 200.ms).slideY(begin: 0.3).fadeIn(),
-              ],
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _QualityRatingSheet(task: task, outerCtx: outerCtx, s: s),
+    );
+  }
+
+}
+
+class _QualityRatingSheet extends StatefulWidget {
+  final TaskModel task;
+  final BuildContext outerCtx;
+  final dynamic s;
+  const _QualityRatingSheet({required this.task, required this.outerCtx, required this.s});
+
+  @override
+  State<_QualityRatingSheet> createState() => _QualityRatingSheetState();
+}
+
+class _QualityRatingSheetState extends State<_QualityRatingSheet> {
+  int _rating = 2;
+  bool _loading = false;
+
+  static const _ratingData = [
+    (emoji: '😐', label: 'Làm cho xong', pct: '80%', multiplier: 0.8, color: Color(0xFFF59E0B), bg: Color(0xFFFFFBEB)),
+    (emoji: '🙂', label: 'Hoàn thành tốt', pct: '100%', multiplier: 1.0, color: Color(0xFF3DBE6E), bg: Color(0xFFEBF9F1)),
+    (emoji: '🎉', label: 'Xuất sắc!', pct: '120%', multiplier: 1.2, color: Color(0xFF6B38D4), bg: Color(0xFFEDE9FF)),
+  ];
+
+  static const _praises = [
+    'Con làm xong rồi nhưng có thể làm tốt hơn, lần sau cố lên nhé! 💪',
+    'Cảm ơn con, đã hoàn thành nhiệm vụ đúng hạn! 👍',
+    'Bố mẹ rất tự hào về con! Con thực sự xuất sắc! 🎉',
+  ];
+
+  int get _earnedCoins => (widget.task.coinReward * _ratingData[_rating - 1].multiplier).round();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      padding: EdgeInsets.fromLTRB(20, 12, 20, MediaQuery.of(context).viewInsets.bottom + 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppTheme.border, borderRadius: BorderRadius.circular(2))),
+          ),
+          const SizedBox(height: 20),
+          Text('Đánh giá chất lượng hoàn thành',
+            style: GoogleFonts.plusJakartaSans(fontSize: 17, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
+          const SizedBox(height: 4),
+          Text('Chọn mức độ để tính xu thưởng',
+            style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppTheme.textSecondary)),
+          const SizedBox(height: 16),
+          Row(
+            children: List.generate(3, (i) {
+              final d = _ratingData[i];
+              final selected = _rating == i + 1;
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() => _rating = i + 1),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    margin: EdgeInsets.only(right: i < 2 ? 8 : 0),
+                    padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+                    decoration: BoxDecoration(
+                      color: selected ? d.bg : AppTheme.bg,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: selected ? d.color : AppTheme.border, width: selected ? 2 : 1),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(d.emoji, style: const TextStyle(fontSize: 28)),
+                        const SizedBox(height: 6),
+                        Text(d.label, style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.w700, color: AppTheme.textPrimary), textAlign: TextAlign.center),
+                        const SizedBox(height: 4),
+                        Text(d.pct, style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w800, color: d.color)),
+                        Text('xu', style: GoogleFonts.plusJakartaSans(fontSize: 10, color: AppTheme.textHint)),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ),
+          const SizedBox(height: 14),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(color: AppTheme.bg, borderRadius: BorderRadius.circular(12)),
+            child: Text(
+              _praises[_rating - 1],
+              style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppTheme.textSecondary, fontStyle: FontStyle.italic, height: 1.5),
             ),
-            ..._confettiParticles(),
-          ],
-        ),
-        actions: [
+          ),
+          const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
             child: DecoratedBox(
               decoration: BoxDecoration(gradient: AppTheme.gradientGreen, borderRadius: BorderRadius.circular(14)),
               child: FilledButton(
-                onPressed: () async {
-                  await outerCtx.read<AppState>().approveTask(task.id);
-                  if (!dialogCtx.mounted) return;
-                  Navigator.pop(dialogCtx);
-                  if (!outerCtx.mounted) return;
-                  final badge = outerCtx.read<AppState>().pendingStreakBadge;
-                  if (badge != null) {
-                    outerCtx.read<AppState>().consumeStreakBadge();
-                    await _showStreakDialog(outerCtx, badge, s);
-                  }
-                  if (outerCtx.mounted) Navigator.pop(outerCtx);
-                },
+                onPressed: _loading ? null : _onConfirm,
                 style: FilledButton.styleFrom(
                   backgroundColor: Colors.transparent, shadowColor: Colors.transparent,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
-                child: Text(s.done, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: Colors.white)),
+                child: _loading
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : Text('Duyệt & Gửi 🪙 $_earnedCoins xu',
+                        style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: Colors.white, fontSize: 15)),
               ),
             ),
           ),
@@ -477,49 +546,235 @@ class _ActionButtons extends StatelessWidget {
     );
   }
 
-  List<Widget> _confettiParticles() {
-    const colors = [Color(0xFFFBBF24), Color(0xFF34D399), Color(0xFF60A5FA), Color(0xFFF472B6), Color(0xFFA78BFA), Color(0xFFFB923C)];
-    return List.generate(6, (i) => Positioned(
-      left: 10.0 + i * 28.0, top: -10,
-      child: Container(width: 8, height: 8, decoration: BoxDecoration(color: colors[i % colors.length], shape: BoxShape.circle))
-          .animate(delay: (i * 50).ms)
-          .moveY(begin: -20, end: 60, duration: 700.ms, curve: Curves.easeIn)
-          .fadeOut(delay: 400.ms, duration: 300.ms),
-    ));
+  Future<void> _onConfirm() async {
+    setState(() => _loading = true);
+    final outerCtx = widget.outerCtx;
+    final s = widget.s;
+    await outerCtx.read<AppState>().approveTask(widget.task.id, rating: _rating);
+    if (!mounted) return;
+    Navigator.pop(context); // close sheet
+    if (!outerCtx.mounted) return;
+    final badge = outerCtx.read<AppState>().pendingStreakBadge;
+    if (badge != null) {
+      outerCtx.read<AppState>().consumeStreakBadge();
+      await _showStreakDialog(outerCtx, badge, s);
+    }
+    if (outerCtx.mounted) Navigator.pop(outerCtx);
+  }
+}
+
+Future<void> _showStreakDialog(BuildContext ctx, String badge, dynamic s) async {
+  await showDialog(
+    context: ctx,
+    builder: (dialogCtx) => AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(badge.split(' ').first, style: const TextStyle(fontSize: 72))
+              .animate().scale(begin: const Offset(0.1, 0.1), duration: 700.ms, curve: Curves.elasticOut).fadeIn(duration: 300.ms),
+          const SizedBox(height: 12),
+          Text(badge.split(' ').sublist(1).join(' '),
+            style: GoogleFonts.plusJakartaSans(fontSize: 20, fontWeight: FontWeight.w800, color: AppTheme.textPrimary))
+              .animate(delay: 300.ms).fadeIn().slideY(begin: 0.2),
+          const SizedBox(height: 8),
+          Text(s.streakBadgeMsg, textAlign: TextAlign.center,
+            style: GoogleFonts.plusJakartaSans(fontSize: 14, color: AppTheme.textSecondary))
+              .animate(delay: 400.ms).fadeIn(),
+        ],
+      ),
+      actions: [
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppTheme.vibrantPrimary,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+            child: Text(s.excellent, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: Colors.white)),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _AutoApproveProgress extends StatelessWidget {
+  final TaskModel task;
+  const _AutoApproveProgress({required this.task});
+
+  @override
+  Widget build(BuildContext context) {
+    final target = task.autoApproveAfter!;
+    final count = task.approvalCount;
+    final reached = count >= target;
+    final progress = (count / target).clamp(0.0, 1.0);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: reached ? AppTheme.greenLight : AppTheme.primaryFixed,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: reached ? AppTheme.green : AppTheme.primaryFixedDim),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Text(reached ? '✅' : '⚡', style: const TextStyle(fontSize: 16)),
+            const SizedBox(width: 8),
+            Text(
+              reached ? 'Task này đã bật Auto-approve!' : 'Tiến độ Auto-approve',
+              style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700,
+                color: reached ? AppTheme.green : AppTheme.vibrantPrimary),
+            ),
+          ]),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 8,
+              backgroundColor: Colors.white.withValues(alpha: 0.6),
+              valueColor: AlwaysStoppedAnimation<Color>(reached ? AppTheme.green : AppTheme.vibrantPrimary),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            reached ? 'Các lần nộp tiếp theo sẽ tự được duyệt' : 'Đã duyệt $count/$target lần — còn ${target - count} lần nữa',
+            style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppTheme.textSecondary),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AssignButton extends StatefulWidget {
+  final String taskId;
+  const _AssignButton({required this.taskId});
+
+  @override
+  State<_AssignButton> createState() => _AssignButtonState();
+}
+
+class _AssignButtonState extends State<_AssignButton> {
+  bool _loading = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: FilledButton.icon(
+        onPressed: _loading ? null : _assign,
+        icon: _loading
+            ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+            : const Icon(Icons.send_rounded, size: 18),
+        label: Text(
+          'Giao cho con',
+          style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w700),
+        ),
+        style: FilledButton.styleFrom(
+          backgroundColor: AppTheme.primaryContainer,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        ),
+      ),
+    );
   }
 
-  Future<void> _showStreakDialog(BuildContext ctx, String badge, dynamic s) async {
-    await showDialog(
-      context: ctx,
-      builder: (dialogCtx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(badge.split(' ').first, style: const TextStyle(fontSize: 72))
-                .animate().scale(begin: const Offset(0.1, 0.1), duration: 700.ms, curve: Curves.elasticOut).fadeIn(duration: 300.ms),
-            const SizedBox(height: 12),
-            Text(badge.split(' ').sublist(1).join(' '),
-              style: GoogleFonts.plusJakartaSans(fontSize: 20, fontWeight: FontWeight.w800, color: AppTheme.textPrimary))
-                .animate(delay: 300.ms).fadeIn().slideY(begin: 0.2),
-            const SizedBox(height: 8),
-            Text(s.streakBadgeMsg, textAlign: TextAlign.center,
-              style: GoogleFonts.plusJakartaSans(fontSize: 14, color: AppTheme.textSecondary))
-                .animate(delay: 400.ms).fadeIn(),
-          ],
+  Future<void> _assign() async {
+    setState(() => _loading = true);
+    await context.read<AppState>().assignTask(widget.taskId);
+    if (mounted) setState(() => _loading = false);
+  }
+}
+
+class _DeactivateButton extends StatelessWidget {
+  final TaskModel task;
+  const _DeactivateButton({required this.task});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        TextButton.icon(
+          onPressed: () => _confirmDeactivate(context),
+          icon: const Icon(Icons.pause_circle_outline, size: 18, color: AppTheme.outline),
+          label: Text('Tạm dừng',
+              style: GoogleFonts.plusJakartaSans(
+                  fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.outline)),
+        ),
+        const SizedBox(width: 8),
+        TextButton.icon(
+          onPressed: () => _confirmDelete(context),
+          icon: const Icon(Icons.delete_outline, size: 18, color: Color(0xFFEF4444)),
+          label: Text('Xóa hẳn',
+              style: GoogleFonts.plusJakartaSans(
+                  fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFFEF4444))),
+        ),
+      ],
+    );
+  }
+
+  void _confirmDeactivate(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Tạm dừng nhiệm vụ?',
+            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+        content: Text(
+          'Nhiệm vụ sẽ bị ẩn khỏi danh sách của con. Lịch sử hoàn thành vẫn được giữ lại.',
+          style: GoogleFonts.plusJakartaSans(fontSize: 14, color: AppTheme.textSecondary),
         ),
         actions: [
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: () => Navigator.pop(dialogCtx),
-              style: FilledButton.styleFrom(
-                backgroundColor: AppTheme.vibrantPrimary,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              ),
-              child: Text(s.excellent, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: Colors.white)),
-            ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Huỷ', style: GoogleFonts.plusJakartaSans(color: AppTheme.textSecondary)),
+          ),
+          FilledButton(
+            onPressed: () {
+              context.read<AppState>().toggleTemplate(task.id);
+              Navigator.pop(ctx);
+              Navigator.of(context).popUntil((route) => route.isFirst);
+            },
+            style: FilledButton.styleFrom(backgroundColor: AppTheme.outline),
+            child: Text('Tạm dừng', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDelete(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Xóa nhiệm vụ?',
+            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+        content: Text(
+          'Toàn bộ lịch sử hoàn thành sẽ bị xóa vĩnh viễn. Không thể khôi phục.',
+          style: GoogleFonts.plusJakartaSans(fontSize: 14, color: AppTheme.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Huỷ', style: GoogleFonts.plusJakartaSans(color: AppTheme.textSecondary)),
+          ),
+          FilledButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await context.read<AppState>().deleteTemplate(task.id);
+              if (context.mounted) {
+                Navigator.of(context).popUntil((route) => route.isFirst);
+              }
+            },
+            style: FilledButton.styleFrom(backgroundColor: const Color(0xFFEF4444)),
+            child: Text('Xóa hẳn', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
           ),
         ],
       ),

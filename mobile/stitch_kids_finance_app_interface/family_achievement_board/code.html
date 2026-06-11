@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PiggyBank Quest - Family Achievement Board</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary": "#904d00",
+                        "on-tertiary-fixed-variant": "#4f00d0",
+                        "on-surface-variant": "#564334",
+                        "on-secondary-fixed-variant": "#005313",
+                        "tertiary-container": "#b29bff",
+                        "secondary-fixed-dim": "#78dc77",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary-container": "#4600bb",
+                        "inverse-primary": "#ffb77d",
+                        "error": "#ba1a1a",
+                        "surface-variant": "#eee0cf",
+                        "surface-container": "#faecda",
+                        "on-surface": "#211b10",
+                        "on-secondary-fixed": "#002204",
+                        "surface-bright": "#fff8f3",
+                        "tertiary-fixed-dim": "#cdbdff",
+                        "surface-container-high": "#f4e6d5",
+                        "on-primary-fixed-variant": "#6e3900",
+                        "on-primary-container": "#623200",
+                        "on-background": "#211b10",
+                        "surface-container-highest": "#eee0cf",
+                        "outline-variant": "#ddc1ae",
+                        "on-error-container": "#93000a",
+                        "outline": "#897362",
+                        "surface-tint": "#904d00",
+                        "primary-fixed-dim": "#ffb77d",
+                        "inverse-on-surface": "#fdefdd",
+                        "surface-dim": "#e5d8c7",
+                        "surface": "#fff8f3",
+                        "on-primary": "#ffffff",
+                        "on-primary-fixed": "#2f1500",
+                        "secondary-fixed": "#94f990",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary": "#006e1c",
+                        "secondary-container": "#91f78e",
+                        "surface-container-low": "#fff2e1",
+                        "error-container": "#ffdad6",
+                        "background": "#fff8f3",
+                        "primary-fixed": "#ffdcc3",
+                        "on-secondary-container": "#00731e",
+                        "tertiary-fixed": "#e8deff",
+                        "on-tertiary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "tertiary": "#6833ea",
+                        "on-tertiary-fixed": "#20005f",
+                        "inverse-surface": "#372f24",
+                        "primary-container": "#ff8c00",
+                        "gold": "#FFD700",
+                        "silver": "#C0C0C0",
+                        "bronze": "#CD7F32"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px",
+                        "2xl": "1.5rem"
+                    },
+                    "spacing": {
+                        "stack-md": "16px",
+                        "stack-lg": "32px",
+                        "container-padding": "24px",
+                        "stack-sm": "8px",
+                        "unit": "4px",
+                        "gutter": "16px",
+                        "margin-mobile": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Nunito Sans"],
+                        "body-md": ["Nunito Sans"],
+                        "headline-lg-mobile": ["Nunito Sans"],
+                        "label-lg": ["Nunito Sans"],
+                        "headline-xl": ["Nunito Sans"],
+                        "body-lg": ["Nunito Sans"],
+                        "headline-lg": ["Nunito Sans"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "800" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-lg-mobile": ["28px", { "lineHeight": "36px", "fontWeight": "800" }],
+                        "label-lg": ["14px", { "lineHeight": "20px", "fontWeight": "700" }],
+                        "headline-xl": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "900" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "800" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #f00;
+            opacity: 0;
+        }
+        @keyframes fall {
+            0% { opacity: 1; top: -10px; transform: translateX(0) rotate(0deg); }
+            100% { opacity: 0; top: 100vh; transform: translateX(100px) rotate(360deg); }
+        }
+        .bg-confetti-pattern {
+            background-image: radial-gradient(circle at 50% 50%, rgba(255, 215, 0, 0.1) 0%, transparent 50%);
+            background-size: 100px 100px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-background min-h-screen font-body-md relative overflow-x-hidden pb-24 md:pb-0">
+<!-- TopAppBar -->
+<header class="w-full top-0 sticky bg-surface dark:bg-surface-container-low shadow-[0_4px_0_0_rgba(0,0,0,0.05)] z-40">
+<div class="flex items-center justify-between px-margin-mobile h-16 w-full max-w-[1200px] mx-auto">
+<div class="flex items-center gap-3">
+<img alt="Child avatar" class="w-10 h-10 rounded-full border-2 border-primary-container" data-alt="A close-up portrait of a happy, smiling child looking directly at the camera, serving as a profile avatar. The background is softly blurred to focus on the child's bright expression. The lighting is warm and natural, emphasizing a playful and friendly mood consistent with a gamified learning app aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5x04L-o9iccogj7RKwCN0wrTB4HgDH5dNPIDYEX4pLcMcML9p1_P6PGcqfP9LeS8iL6YIpE6lpjEPOLweqFpGl-h6Fx3uQHxYt8_tw8kfKq5IWkHhbqjseVm5TN2_komTJLRB7HKxu4quRXcrNk79_U69oLfUyUogorVXWhgjroXXway7BxiaB2iRzEyfkH_AYQ2Uel52Il3COerUTo-TJ5MJVJOf1hqRt2wik8jmAvJOshT5hm5WLu2qptC3FsCr36aXrlgs2EM"/>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-primary dark:text-primary-fixed tracking-tight">PiggyBank Quest</h1>
+</div>
+<button class="text-primary dark:text-primary-fixed hover:scale-105 transition-transform active:translate-y-0.5 active:shadow-none transition-all duration-150">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">stars</span>
+</button>
+</div>
+</header>
+<main class="w-full max-w-[1200px] mx-auto px-margin-mobile py-stack-lg relative z-10">
+<!-- Header & Toggle -->
+<div class="flex flex-col items-center mb-stack-lg">
+<h2 class="font-headline-xl text-headline-xl text-on-surface mb-stack-sm text-center">Bảng Vàng Gia Đình</h2>
+<button class="flex items-center gap-2 bg-surface-container-high rounded-full px-6 py-3 font-label-lg text-label-lg text-on-surface-variant shadow-[0_2px_0_0_rgba(0,0,0,0.05)] hover:bg-surface-dim transition-colors">
+                Tuần này
+                <span class="material-symbols-outlined">arrow_drop_down</span>
+</button>
+</div>
+<!-- Podium (Multiple Children Mode - Simulated active for demonstration) -->
+<div class="bg-surface-container-lowest rounded-2xl p-stack-lg shadow-[0_4px_15px_rgba(0,0,0,0.05)] mb-stack-lg relative overflow-hidden">
+<div class="absolute inset-0 bg-confetti-pattern opacity-50 pointer-events-none"></div>
+<div class="flex items-end justify-center gap-4 h-64 mt-8 relative z-10">
+<!-- 2nd Place -->
+<div class="flex flex-col items-center w-1/3 max-w-[120px]">
+<div class="relative mb-2">
+<img alt="Minh" class="w-16 h-16 rounded-full border-4 border-silver object-cover z-10 relative" data-alt="A portrait of a cheerful young boy with a gentle smile, serving as an avatar for a second-place ranking. The background is a soft, out-of-focus park scene with bright, sunny lighting. The image captures a sense of friendly competition and youthful joy, fitting the playful, gamified UI style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCwhjM5eKKJyWD87CRkQXXl4x1nYDgQcDzHfvb3LJdSgM9xqZslZ4RAnoDe0nIHwRmB--tudA_VW6-2ZaNODitCEO7WbZk8xJmM9dC1YyaNkMIqqvmA2g_8dEJkpcj8f0GyTdt9ei4jtldr5SqQ2vybYOe37lArhukcD6GjxlylzKkeo7vjx-VUQY_s2tlR6o-ikXdVki5C1wqMW4LAGmNZ-DZ5ArRq9DQKWGDjnIqJKZyZBF0L6KIAjvhJExvcnL3AJQcbVKnmx7A"/>
+<div class="absolute -bottom-2 -right-2 bg-surface rounded-full p-1 shadow-sm">
+<span class="material-symbols-outlined text-silver" style="font-variation-settings: 'FILL' 1;">military_tech</span>
+</div>
+</div>
+<span class="font-body-lg text-body-lg text-on-surface mb-1">Minh</span>
+<span class="font-label-lg text-label-lg text-primary">850 XP</span>
+<div class="w-full bg-gradient-to-t from-surface-container-high to-surface-variant rounded-t-lg mt-2 flex items-end justify-center h-24 border-t-2 border-silver">
+<span class="font-headline-md text-headline-md text-on-surface-variant opacity-50 mb-2">2</span>
+</div>
+</div>
+<!-- 1st Place -->
+<div class="flex flex-col items-center w-1/3 max-w-[140px] z-20">
+<div class="relative mb-2">
+<span class="material-symbols-outlined absolute -top-8 left-1/2 -translate-x-1/2 text-4xl text-gold" style="font-variation-settings: 'FILL' 1;">crown</span>
+<img alt="Lan" class="w-20 h-20 rounded-full border-4 border-gold object-cover shadow-lg relative z-10" data-alt="A bright, energetic portrait of a laughing young girl, used as a first-place avatar. She is lit by vibrant, warm sunlight against a soft, colorful background. The expression is triumphant and joyful, perfectly aligning with the playful, optimistic gamified theme of the application." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCbAT_GteWIXDLrtoBP4QB3ni42PEv1bkWydD_IgWOeQqB1-ksDsLs-_aUTX0kQwszMw1q_LYANDbUgv_q3EAAcrwCu-yVgV5iTEnm91FJCelPwdSSb0nB7kB7kmDWj8BFEkpO_h2JKAovPUumOSKvGCkDMTJXGKyf-0AlIsazSiBXXH26XYP-66sgcnUxdEV1O6tyoQ8OFHwDarEMsV9-V_7Sndcz7SocfTt0TBFhHoF_Nw7AK5LMRgfRXQNRPV87xYcia7Kq5arc"/>
+<div class="absolute -bottom-2 -right-2 bg-surface rounded-full p-1 shadow-sm">
+<span class="material-symbols-outlined text-gold" style="font-variation-settings: 'FILL' 1;">military_tech</span>
+</div>
+</div>
+<span class="font-headline-md text-headline-md text-primary-container mb-1 text-center">Lan</span>
+<span class="font-label-lg text-label-lg text-primary bg-primary-fixed px-3 py-1 rounded-full mb-2">1,200 XP</span>
+<div class="w-full bg-gradient-to-t from-primary-container to-inverse-primary rounded-t-lg flex items-end justify-center h-32 border-t-2 border-gold shadow-[0_-4px_10px_rgba(255,140,0,0.2)]">
+<span class="font-headline-lg text-headline-lg text-on-primary mb-4 drop-shadow-md">1</span>
+</div>
+</div>
+<!-- 3rd Place -->
+<div class="flex flex-col items-center w-1/3 max-w-[120px]">
+<div class="relative mb-2">
+<img alt="Nam" class="w-16 h-16 rounded-full border-4 border-bronze object-cover z-10 relative" data-alt="A portrait of a thoughtful but smiling child, acting as an avatar for third place. The lighting is soft and diffused, highlighting the child's face against a neutral, blurred background. The overall tone is encouraging and warm, maintaining the cohesive gamified design system style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBGfaksLPLRtS2L1xD0L40jcjqmUz249slvvNQpWU-nHvbODnyrfzQ_owtCQduLmiVKxV7TkzQp69huPk7CzlCFRQ-W18Rptry_an9Keb5_BOA_u3pDtDsy31sjeCIEYGX3P72BfQpWBYnq2MaLDX_SJwf9nHgD2qn7VXXEFSZ4GAxGRqkJW02mjBdLfnyGqniVHAuHtrDIO8ioLeBJGBQIYYxzA_WTY9gowcXnzU4oXOvnp4YQ5dTWTLRyMcW8BSh7cRvakvv5CFw"/>
+<div class="absolute -bottom-2 -right-2 bg-surface rounded-full p-1 shadow-sm">
+<span class="material-symbols-outlined text-bronze" style="font-variation-settings: 'FILL' 1;">military_tech</span>
+</div>
+</div>
+<span class="font-body-lg text-body-lg text-on-surface mb-1">Nam</span>
+<span class="font-label-lg text-label-lg text-primary">600 XP</span>
+<div class="w-full bg-gradient-to-t from-surface-container-high to-surface-variant rounded-t-lg mt-2 flex items-end justify-center h-16 border-t-2 border-bronze">
+<span class="font-headline-md text-headline-md text-on-surface-variant opacity-50 mb-1">3</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Recent Achievements (Bento Grid Style) -->
+<h3 class="font-headline-md text-headline-md text-on-surface mb-stack-md flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary">star</span>
+            Thành Tích Gần Đây
+        </h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter mb-stack-lg">
+<!-- Badge Card 1 -->
+<div class="bg-surface-container-lowest rounded-2xl p-stack-md flex items-center gap-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border-l-4 border-primary-container">
+<div class="w-16 h-16 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0 relative">
+<span class="material-symbols-outlined text-3xl text-on-primary-container" style="font-variation-settings: 'FILL' 1;">savings</span>
+<div class="absolute -bottom-1 -right-1 bg-surface rounded-full p-0.5">
+<img alt="Lan avatar small" class="w-6 h-6 rounded-full" data-alt="A tiny thumbnail crop of a young girl's laughing face, used as an overlay icon to indicate ownership of an achievement badge. The lighting is bright and cheerful, matching the primary avatar style and fitting the gamified UI." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDeRr0A1arVhd90LAUgMA2x_9kIwWNq5N26FY8MLsYuS3UHZOP5pD77ESLgRlqNRCfdxlLk2UK_FxssRbYAqc8cJJr9VffKRBoYPyDp5DtWe_QVLhNUbsFb-kb4X5c2CQzs3FmqylKMum_QwqLExywarLYmgmlrdWvU5e9fB7ocSVCoy85d0dasJ6Itmcq1jXiRE8DuEM73oU5lcWvlWr04UsbE-mLLZNzQTddGyIvOiahlfXvUOx_uIl56njSe9R1RoUHSgzvDWHE"/>
+</div>
+</div>
+<div>
+<h4 class="font-body-lg text-body-lg text-on-surface font-bold mb-1">Chuyên Gia Tiết Kiệm</h4>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm">Lan đã đạt mục tiêu heo đất tuần này!</p>
+<div class="mt-2 flex gap-2">
+<span class="bg-surface-container px-2 py-0.5 rounded-full font-label-lg text-label-lg text-primary-container text-xs">+150 XP</span>
+</div>
+</div>
+</div>
+<!-- Badge Card 2 -->
+<div class="bg-surface-container-lowest rounded-2xl p-stack-md flex items-center gap-4 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border-l-4 border-tertiary">
+<div class="w-16 h-16 rounded-full bg-tertiary-fixed flex items-center justify-center flex-shrink-0 relative">
+<span class="material-symbols-outlined text-3xl text-on-tertiary-fixed" style="font-variation-settings: 'FILL' 1;">auto_stories</span>
+<div class="absolute -bottom-1 -right-1 bg-surface rounded-full p-0.5">
+<img alt="Minh avatar small" class="w-6 h-6 rounded-full" data-alt="A tiny thumbnail crop of a young boy's smiling face, used to indicate who earned a specific reading achievement badge. Bright, cheerful lighting consistent with the rest of the application's visual tokens." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBNzBnPdUX3x9EOHlVDPmP_Fjssbp9vFdZZhO7vqrpOMu1VKdD_ymaXfkgESwHF3AZMtAEsGHufyTNAUW4rK7XDKpF4AVLiBR2TT7f3E3_nfS_r8J2iPsnqpOtHshcrpWxiPzDadUHUNRzEcrNb0PewKGej28gbJeXTs0KheWqoLnPq_HXgX9YpymtKXqRIoAE2F5NKLatfXZIP9PSIE8jVbbE7zlPqZH3NAX-ucF9uKHaleUXvazKqK56GWIWhJ-haeGzZlZTtGyQ"/>
+</div>
+</div>
+<div>
+<h4 class="font-body-lg text-body-lg text-on-surface font-bold mb-1">Mọt Sách Chăm Chỉ</h4>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm">Minh đã hoàn thành 3 bài học tài chính.</p>
+<div class="mt-2 flex gap-2">
+<span class="bg-surface-container px-2 py-0.5 rounded-full font-label-lg text-label-lg text-tertiary text-xs">+100 XP</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Privacy Note -->
+<div class="flex items-center justify-center gap-2 text-on-surface-variant opacity-70 mt-stack-lg pb-stack-lg">
+<span class="material-symbols-outlined text-sm">lock</span>
+<span class="font-body-md text-body-md text-sm">Chỉ gia đình mình thấy</span>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-4 pt-2 bg-surface-container-lowest dark:bg-surface-container-high border-t-4 border-surface-variant dark:border-outline-variant shadow-[0_-4px_12px_rgba(0,0,0,0.08)] rounded-t-lg md:hidden">
+<!-- Inactive: Learn -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline p-2 hover:bg-surface-container-high active:translate-y-0.5 active:shadow-none transition-all duration-200" href="#">
+<span class="material-symbols-outlined mb-1">auto_stories</span>
+<span class="font-label-sm text-[12px] font-bold">Learn</span>
+</a>
+<!-- Inactive: Play -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline p-2 hover:bg-surface-container-high active:translate-y-0.5 active:shadow-none transition-all duration-200" href="#">
+<span class="material-symbols-outlined mb-1">sports_esports</span>
+<span class="font-label-sm text-[12px] font-bold">Play</span>
+</a>
+<!-- Active: Goals (Assuming Leaderboard relates to Goals/Progress) -->
+<a class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary rounded-xl px-4 py-1 shadow-[0_2px_0_0_#684000] hover:bg-surface-container-high active:translate-y-0.5 active:shadow-none transition-all duration-200" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">savings</span>
+<span class="font-label-sm text-[12px] font-bold">Goals</span>
+</a>
+<!-- Inactive: Store -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline p-2 hover:bg-surface-container-high active:translate-y-0.5 active:shadow-none transition-all duration-200" href="#">
+<span class="material-symbols-outlined mb-1">shopping_basket</span>
+<span class="font-label-sm text-[12px] font-bold">Store</span>
+</a>
+</nav>
+<script>
+        // Simple confetti effect for demonstration
+        function createConfetti() {
+            const colors = ['#FFD700', '#ff8c00', '#94f990', '#b29bff'];
+            for (let i = 0; i < 50; i++) {
+                const conf = document.createElement('div');
+                conf.classList.add('confetti');
+                conf.style.left = Math.random() * 100 + 'vw';
+                conf.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                conf.style.animation = `fall ${Math.random() * 3 + 2}s linear infinite`;
+                conf.style.animationDelay = `${Math.random() * 2}s`;
+                document.body.appendChild(conf);
+                
+                // Cleanup
+                setTimeout(() => {
+                    conf.remove();
+                }, 5000);
+            }
+        }
+        
+        // Trigger on load for the "hint" effect requested
+        window.addEventListener('load', () => {
+            setTimeout(createConfetti, 500);
+        });
+    </script>
+</body></html>
