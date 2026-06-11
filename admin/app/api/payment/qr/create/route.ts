@@ -4,10 +4,9 @@ import { createClient } from '@supabase/supabase-js';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
 
-// PayOS reads PAYOS_CLIENT_ID, PAYOS_API_KEY, PAYOS_CHECKSUM_KEY from env automatically
-const payos = new PayOS();
-
 export async function POST(request: Request) {
+  // Instantiate inside handler so missing env vars don't fail at build time
+  const payos = new PayOS();
   try {
     const { userId, planName, billingInterval } = await request.json();
 
