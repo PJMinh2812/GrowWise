@@ -88,9 +88,9 @@ export default function LessonForm({ initial, lessonId }: Props) {
           <button
             type="button"
             onClick={() => router.push("/admin/lessons")}
-            className="p-2 hover:bg-surface-container-high rounded-full transition-colors"
+            className="p-2 hover:bg-surface-container-high rounded-full transition-colors text-on-surface text-lg leading-none"
           >
-            <span className="material-symbols-outlined text-on-surface">arrow_back</span>
+            ←
           </button>
           <div className="flex flex-col">
             <span className="text-xs text-on-surface-variant uppercase tracking-wider">Danh sách bài học</span>
@@ -128,7 +128,7 @@ export default function LessonForm({ initial, lessonId }: Props) {
           {/* Thông tin cơ bản */}
           <section className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6">
             <div className="flex items-center gap-2 mb-5">
-              <span className="material-symbols-outlined text-primary">info</span>
+              <span className="text-primary text-lg">ℹ️</span>
               <h3 className="text-lg font-semibold text-on-surface">Thông tin cơ bản</h3>
             </div>
             <div className="space-y-4">
@@ -214,21 +214,18 @@ export default function LessonForm({ initial, lessonId }: Props) {
           {/* Video */}
           <section className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6">
             <div className="flex items-center gap-2 mb-5">
-              <span className="material-symbols-outlined text-primary">play_circle</span>
+              <span className="text-lg">▶️</span>
               <h3 className="text-lg font-semibold text-on-surface">Video bài giảng</h3>
             </div>
             <div className="space-y-4">
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">YouTube Video ID *</label>
-                <div className="relative">
-                  <input
-                    value={form.youtube_id}
-                    onChange={e => set("youtube_id", e.target.value.trim())}
-                    placeholder="VD: WRcgRimBac8 (từ youtube.com/watch?v=...)"
-                    className="w-full bg-surface border border-outline-variant rounded-lg pl-4 pr-10 py-2.5 text-sm text-on-surface outline-none focus:border-primary"
-                  />
-                  <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">link</span>
-                </div>
+                <input
+                  value={form.youtube_id}
+                  onChange={e => set("youtube_id", e.target.value.trim())}
+                  placeholder="VD: WRcgRimBac8 (từ youtube.com/watch?v=...)"
+                  className="w-full bg-surface border border-outline-variant rounded-lg px-4 py-2.5 text-sm text-on-surface outline-none focus:border-primary"
+                />
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Thời lượng (giây) *</label>
@@ -250,7 +247,7 @@ export default function LessonForm({ initial, lessonId }: Props) {
                   <iframe src={youtubeEmbedUrl} className="w-full h-full" allowFullScreen title="YouTube preview" />
                 ) : (
                   <>
-                    <span className="material-symbols-outlined text-[48px] text-surface opacity-60">play_circle</span>
+                    <span className="text-[64px] opacity-40">▶️</span>
                     <span className="absolute bottom-4 text-sm text-surface/60">Nhập Video ID để xem trước</span>
                   </>
                 )}
@@ -262,7 +259,7 @@ export default function LessonForm({ initial, lessonId }: Props) {
           {isEdit && (
             <section className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6">
               <div className="flex items-center gap-2 mb-5">
-                <span className="material-symbols-outlined text-primary">quiz</span>
+                <span className="text-lg">📝</span>
                 <h3 className="text-lg font-semibold text-on-surface">Câu hỏi trắc nghiệm</h3>
               </div>
               <QuizEditor
@@ -282,7 +279,7 @@ export default function LessonForm({ initial, lessonId }: Props) {
           {/* Card preview */}
           <section className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6">
             <div className="flex items-center gap-2 mb-5">
-              <span className="material-symbols-outlined text-primary">visibility</span>
+              <span className="text-lg">👁️</span>
               <h3 className="text-lg font-semibold text-on-surface">Xem trước thẻ</h3>
             </div>
             <div className="max-w-[260px] mx-auto bg-surface rounded-xl shadow-lg border border-outline-variant overflow-hidden hover:scale-[1.02] transition-transform cursor-pointer">
@@ -303,10 +300,10 @@ export default function LessonForm({ initial, lessonId }: Props) {
                 )}
                 <div className="flex items-center justify-between pt-2 border-t border-outline-variant">
                   <div className="flex items-center gap-1 text-primary">
-                    <span className="material-symbols-outlined text-[14px]">schedule</span>
+                    <span className="text-xs">⏱</span>
                     <span className="text-xs">{form.duration_seconds > 0 ? Math.round(form.duration_seconds / 60) + ' phút' : '—'}</span>
                   </div>
-                  <span className="material-symbols-outlined text-primary text-[18px]">arrow_forward</span>
+                  <span className="text-primary text-sm">→</span>
                 </div>
               </div>
             </div>
@@ -352,8 +349,7 @@ export default function LessonForm({ initial, lessonId }: Props) {
           {isEdit && (
             <section className="bg-error-container/10 border border-error/20 rounded-xl p-6">
               <h3 className="text-sm font-medium text-error mb-2 flex items-center gap-2">
-                <span className="material-symbols-outlined text-[16px]">warning</span>
-                Vùng nguy hiểm
+                ⚠️ Vùng nguy hiểm
               </h3>
               <p className="text-xs text-on-surface-variant mb-4">
                 Xóa bài học sẽ không thể hoàn tác và ảnh hưởng đến tiến trình của học sinh.

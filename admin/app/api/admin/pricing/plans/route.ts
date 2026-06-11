@@ -43,14 +43,15 @@ export async function PATCH(request: NextRequest) {
   const ok = await verifyAdmin(request)
   if (!ok) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const { id, price_monthly, price_yearly, is_active } = await request.json()
+  const { id, price_monthly, price_yearly, is_active, display_name } = await request.json()
   if (!id) return NextResponse.json({ error: 'id bắt buộc' }, { status: 400 })
 
   const admin = createAdminClient()
   const update: Record<string, unknown> = {}
   if (price_monthly !== undefined) update.price_monthly = price_monthly
-  if (price_yearly !== undefined) update.price_yearly = price_yearly
-  if (is_active !== undefined) update.is_active = is_active
+  if (price_yearly  !== undefined) update.price_yearly  = price_yearly
+  if (is_active     !== undefined) update.is_active     = is_active
+  if (display_name  !== undefined && display_name.trim()) update.display_name = display_name.trim()
 
   const { data, error } = await admin.from('plans').update(update).eq('id', id).select().single()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

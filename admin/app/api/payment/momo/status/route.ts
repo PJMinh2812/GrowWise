@@ -16,12 +16,23 @@ export async function GET(request: Request) {
 
   const { data, error } = await supabase
     .from('payment_transactions')
-    .select('status')
+    .select('status, created_at')
     .eq('order_id', orderId)
     .single();
 
   if (error || !data) {
     return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+  }
+
+  if (data.status === 'pending') {
+    const ageMs = Date.now() - new Date(data.created_at).getTime()
+    if (ageMs > 15 * 60 * 1000) {
+      await supabase
+        .from('payment_transactions')
+        .update({ status: 'cancelled', updated_at: new Date().toISOString() })
+        .eq('order_id', orderId)
+      return NextResponse.json({ status: 'cancelled' })
+    }
   }
 
   return NextResponse.json({ status: data.status });

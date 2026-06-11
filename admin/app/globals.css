@@ -85,3 +85,12 @@ body {
   background-color: #F9FAFB;
   color: #1d1a24;
 }
+
+/* Landing page uses green as primary — override within this scope */
+.landing-theme {
+  --color-primary:           #006c49;
+  --color-on-primary:        #ffffff;
+  --color-primary-container: #6cf8bb;
+  --color-on-primary-container: #002113;
+  --color-inverse-primary:   #4edea3;
+}

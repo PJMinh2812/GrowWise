@@ -13,9 +13,9 @@ const PLANS = [
     yearlyMonthlyEquiv: 0,
     yearlySaving: 0,
     subtitle: "Miễn phí mãi mãi",
-    color: "border-border bg-background",
+    color: "border-gray-200 bg-white",
     buttonStyle:
-      "border border-muted-foreground/30 text-muted-foreground cursor-default",
+      "border border-gray-300 text-gray-400 cursor-default",
     buttonText: "Đang dùng miễn phí",
     buttonDisabled: true,
     badge: null,
@@ -64,8 +64,8 @@ const PLANS = [
     yearlyMonthlyEquiv: 118250,
     yearlySaving: 369000,
     subtitle: "Tối đa 3 hồ sơ trẻ",
-    color: "border-primary bg-primary/5",
-    buttonStyle: "bg-primary hover:bg-primary/90 text-white",
+    color: "border-secondary bg-secondary/5",
+    buttonStyle: "bg-secondary hover:bg-secondary/90 text-white",
     buttonText: "Chọn gói Gia Đình",
     buttonDisabled: false,
     badge: null,
@@ -107,26 +107,26 @@ export function Pricing() {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-10">
-          <span className="inline-block bg-primary/10 text-primary px-4 py-1.5 rounded-full text-sm font-medium mb-4">
+          <span className="inline-block bg-secondary/10 text-secondary px-4 py-1.5 rounded-full text-sm font-medium mb-4">
             Bảng giá
           </span>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground text-balance">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 text-balance">
             Chọn gói phù hợp 🌟
           </h2>
-          <p className="mt-3 text-lg text-muted-foreground">
+          <p className="mt-3 text-lg text-gray-500">
             Đầu tư nhỏ, tương lai lớn
           </p>
         </div>
 
         {/* Billing toggle */}
         <div className="flex justify-center mb-10">
-          <div className="inline-flex items-center bg-white border border-border rounded-full p-1 shadow-sm">
+          <div className="inline-flex items-center bg-white border border-gray-200 rounded-full p-1 shadow-sm">
             <button
               onClick={() => setIsYearly(false)}
               className={`px-5 py-2 rounded-full text-sm font-semibold transition-all ${
                 !isYearly
-                  ? "bg-primary text-white shadow"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-secondary text-white shadow"
+                  : "text-gray-500 hover:text-gray-900"
               }`}
             >
               Hàng tháng
@@ -135,8 +135,8 @@ export function Pricing() {
               onClick={() => setIsYearly(true)}
               className={`px-5 py-2 rounded-full text-sm font-semibold transition-all flex items-center gap-1.5 ${
                 isYearly
-                  ? "bg-primary text-white shadow"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "bg-secondary text-white shadow"
+                  : "text-gray-500 hover:text-gray-900"
               }`}
             >
               Hàng năm
@@ -179,20 +179,20 @@ export function Pricing() {
                 {/* Plan header */}
                 <div className="mb-5">
                   <div className="text-3xl mb-2">{plan.emoji}</div>
-                  <h3 className="text-xl font-bold text-foreground">
+                  <h3 className="text-xl font-bold text-gray-900">
                     {plan.name}
                   </h3>
 
                   <div className="mt-3">
                     {plan.monthlyPrice === 0 ? (
-                      <div className="text-3xl font-extrabold text-foreground">
+                      <div className="text-3xl font-extrabold text-gray-900">
                         Miễn phí
                       </div>
                     ) : (
                       <>
-                        <div className="text-3xl font-extrabold text-foreground">
+                        <div className="text-3xl font-extrabold text-gray-900">
                           {formatVND(displayPrice)}
-                          <span className="text-base font-normal text-muted-foreground">
+                          <span className="text-base font-normal text-gray-500">
                             {isYearly ? "/năm" : "/tháng"}
                           </span>
                         </div>
@@ -202,7 +202,7 @@ export function Pricing() {
                           </p>
                         )}
                         {!isYearly && (
-                          <p className="text-sm text-muted-foreground mt-0.5">
+                          <p className="text-sm text-gray-500 mt-0.5">
                             {plan.subtitle}
                           </p>
                         )}
@@ -216,7 +216,7 @@ export function Pricing() {
                   {plan.features.map((f, i) => (
                     <li
                       key={i}
-                      className="flex items-start gap-2 text-sm text-foreground"
+                      className="flex items-start gap-2 text-sm text-gray-900"
                     >
                       <Check className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
                       {f}
@@ -224,11 +224,11 @@ export function Pricing() {
                   ))}
                   {plan.id === "free" && (
                     <>
-                      <li className="flex items-start gap-2 text-sm text-muted-foreground/60">
+                      <li className="flex items-start gap-2 text-sm text-gray-500/60">
                         <Lock className="w-4 h-4 mt-0.5 shrink-0" />
                         Báo cáo AI
                       </li>
-                      <li className="flex items-start gap-2 text-sm text-muted-foreground/60">
+                      <li className="flex items-start gap-2 text-sm text-gray-500/60">
                         <Lock className="w-4 h-4 mt-0.5 shrink-0" />
                         Savings Analytics
                       </li>
@@ -253,7 +253,7 @@ export function Pricing() {
         </div>
 
         {/* Trust badges */}
-        <div className="flex flex-wrap justify-center gap-6 mb-12 text-sm text-muted-foreground">
+        <div className="flex flex-wrap justify-center gap-6 mb-12 text-sm text-gray-500">
           <span className="flex items-center gap-1.5">
             <span className="text-base">🔒</span> Thanh toán an toàn
           </span>
@@ -271,26 +271,26 @@ export function Pricing() {
 
         {/* FAQ */}
         <div className="max-w-2xl mx-auto">
-          <h3 className="text-xl font-bold text-foreground text-center mb-6">
+          <h3 className="text-xl font-bold text-gray-900 text-center mb-6">
             Câu hỏi thường gặp
           </h3>
           <div className="space-y-3">
             {FAQ.map((item, i) => (
               <div
                 key={i}
-                className="bg-white rounded-2xl border border-border overflow-hidden"
+                className="bg-white rounded-2xl border border-gray-200 overflow-hidden"
               >
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="w-full text-left px-5 py-4 font-semibold text-foreground flex justify-between items-center hover:bg-muted/30 transition-colors"
+                  className="w-full text-left px-5 py-4 font-semibold text-gray-900 flex justify-between items-center hover:bg-gray-100/30 transition-colors"
                 >
                   {item.q}
-                  <span className="text-muted-foreground text-lg leading-none">
+                  <span className="text-gray-500 text-lg leading-none">
                     {openFaq === i ? "−" : "+"}
                   </span>
                 </button>
                 {openFaq === i && (
-                  <div className="px-5 pb-4 text-sm text-muted-foreground">
+                  <div className="px-5 pb-4 text-sm text-gray-500">
                     {item.a}
                   </div>
                 )}
