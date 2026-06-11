@@ -3,9 +3,8 @@ import { PayOS } from '@payos/node';
 import type { Webhook } from '@payos/node/lib/resources/webhooks/webhook';
 import { createClient } from '@supabase/supabase-js';
 
-const payos = new PayOS();
-
 export async function POST(request: Request) {
+  const payos = new PayOS();
   try {
     const body = (await request.json()) as Webhook;
 
