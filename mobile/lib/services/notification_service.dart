@@ -109,5 +109,23 @@ class NotificationService {
     );
   }
 
+  /// Thông báo kết quả nhận diện cảm xúc ba/mẹ.
+  static Future<void> showEmotionResult({
+    required String emoji,
+    required String label,
+    required String advice,
+  }) async {
+    if (!_initialized) await initialize();
+    await _plugin.show(
+      3,
+      '$emoji Tâm trạng hôm nay: $label',
+      advice,
+      const NotificationDetails(
+        android: _channelReward,
+        iOS: DarwinNotificationDetails(),
+      ),
+    );
+  }
+
   static Future<void> cancelAll() => _plugin.cancelAll();
 }
