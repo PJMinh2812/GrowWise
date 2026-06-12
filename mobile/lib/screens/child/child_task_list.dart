@@ -40,8 +40,9 @@ class _ChildTaskListState extends State<ChildTaskList>
       builder: (context, app, child) {
         final pending = app.pendingTasks;
         final submitted = app.submittedTasks;
+        final rejected = app.rejectedTasks;
         final approved = app.approvedTasks;
-        final todo = [...pending, ...submitted];
+        final todo = [...rejected, ...pending, ...submitted];
 
         return Scaffold(
           backgroundColor: AppTheme.surfaceBright,
@@ -532,6 +533,62 @@ class _TaskCardItem extends StatelessWidget {
               ],
             ),
           ],
+          if (task.status == TaskStatus.rejected) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFEBEE),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.4)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.cancel_rounded, color: Color(0xFFEF4444), size: 16),
+                      const SizedBox(width: 6),
+                      Text('Ba/Mẹ chưa duyệt',
+                          style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFFEF4444))),
+                    ],
+                  ),
+                  if (task.parentNote != null && task.parentNote!.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text('Lý do: ${task.parentNote}',
+                        style: GoogleFonts.plusJakartaSans(fontSize: 12, color: const Color(0xFFB71C1C))),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: GestureDetector(
+                onTap: () => showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (_) => _SubmitProofSheet(task: task),
+                ),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEF4444),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.refresh_rounded, color: Colors.white, size: 18),
+                      const SizedBox(width: 8),
+                      Text('Nộp lại', style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -810,6 +867,31 @@ class _SubmitProofSheetState extends State<_SubmitProofSheet> {
             ),
             const SizedBox(height: 12),
 
+            // Auto-approve warning banner
+            if (widget.task.canAutoApprove) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF3CD),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFFFB300).withValues(alpha: 0.5)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline_rounded, size: 16, color: Color(0xFFE65100)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '⚡ Task tự duyệt — chỉ được chụp camera trực tiếp',
+                        style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w600, color: const Color(0xFFE65100)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
+
             // Camera / Gallery buttons
             Row(
               children: [
@@ -836,7 +918,8 @@ class _SubmitProofSheetState extends State<_SubmitProofSheet> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () => _pickImage(ImageSource.gallery),
+                    // Disabled when auto-approve: prevent pre-saved fake photos
+                    onPressed: widget.task.canAutoApprove ? null : () => _pickImage(ImageSource.gallery),
                     icon: const Icon(Icons.photo_library_outlined, size: 18),
                     label: Text(
                       s.gallery,
@@ -846,8 +929,14 @@ class _SubmitProofSheetState extends State<_SubmitProofSheet> {
                     ),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 12),
-                      side: const BorderSide(color: AppTheme.vibrantPrimary),
-                      foregroundColor: AppTheme.vibrantPrimary,
+                      side: BorderSide(
+                        color: widget.task.canAutoApprove
+                            ? AppTheme.border
+                            : AppTheme.vibrantPrimary,
+                      ),
+                      foregroundColor: widget.task.canAutoApprove
+                          ? AppTheme.textSecondary
+                          : AppTheme.vibrantPrimary,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),

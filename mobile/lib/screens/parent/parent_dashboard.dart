@@ -1,10 +1,15 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../providers/app_state.dart';
+import '../../services/emotion_service.dart';
 import '../../services/gemini_service.dart';
+import '../../services/notification_service.dart';
 import '../../theme/app_theme.dart';
 import '../../models/task_model.dart';
 import 'parent_task_detail.dart';
@@ -226,7 +231,11 @@ class _HomeTab extends StatelessWidget {
 
         // Bonding message bubble
         _WelcomeMessage(message: app.bondingMessage).animate().fadeIn().slideY(begin: 0.1),
-        const SizedBox(height: 24),
+        const SizedBox(height: 16),
+
+        // Emotion check-in
+        const _EmotionCheckInCard().animate(delay: 60.ms).fadeIn().slideY(begin: 0.1),
+        const SizedBox(height: 16),
 
         // Child profile card
         _ChildProfileCard(app: app).animate(delay: 80.ms).fadeIn().slideY(begin: 0.1),
@@ -272,6 +281,177 @@ class _HomeTab extends StatelessWidget {
 }
 
 // ── Widgets ───────────────────────────────────────────────────────────────────
+
+// ── Emotion Check-In Card ─────────────────────────────────────────────────────
+
+class _EmotionCheckInCard extends StatefulWidget {
+  const _EmotionCheckInCard();
+
+  @override
+  State<_EmotionCheckInCard> createState() => _EmotionCheckInCardState();
+}
+
+class _EmotionCheckInCardState extends State<_EmotionCheckInCard> {
+  static const _prefDate   = 'emotion_date';
+  static const _prefResult = 'emotion_result';
+
+  EmotionResult? _result;
+  bool _loading = false;
+  final _picker = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCached();
+  }
+
+  Future<void> _loadCached() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedDate = prefs.getString(_prefDate);
+    final today = DateTime.now().toIso8601String().substring(0, 10);
+    if (savedDate == today) {
+      final raw = prefs.getString(_prefResult);
+      if (raw != null) {
+        setState(() => _result = EmotionResult.fromJson(jsonDecode(raw)));
+      }
+    }
+  }
+
+  Future<void> _checkIn() async {
+    setState(() => _loading = true);
+    try {
+      final picked = await _picker.pickImage(
+        source: ImageSource.camera,
+        preferredCameraDevice: CameraDevice.front,
+        imageQuality: 80,
+        maxWidth: 640,
+      );
+      if (picked == null) { setState(() => _loading = false); return; }
+
+      final bytes = await picked.readAsBytes();
+      final result = await EmotionService.detectEmotion(bytes);
+
+      if (result == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Không nhận diện được khuôn mặt — thử lại với ánh sáng tốt hơn nhé 💡'),
+          ));
+        }
+        setState(() => _loading = false);
+        return;
+      }
+
+      // Save to prefs
+      final prefs = await SharedPreferences.getInstance();
+      final today = DateTime.now().toIso8601String().substring(0, 10);
+      await prefs.setString(_prefDate, today);
+      await prefs.setString(_prefResult, jsonEncode(result.toJson()));
+
+      // Fire notification
+      await NotificationService.showEmotionResult(
+        emoji: result.emoji,
+        label: result.label,
+        advice: result.advice,
+      );
+
+      if (mounted) setState(() => _result = result);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: AppTheme.cardShadow,
+        border: Border.all(color: AppTheme.border),
+      ),
+      child: _result != null ? _buildResult() : _buildCheckInButton(),
+    );
+  }
+
+  Widget _buildCheckInButton() {
+    return Column(
+      children: [
+        Row(
+          children: [
+            const Text('🎭', style: TextStyle(fontSize: 20)),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Tâm trạng hôm nay',
+                      style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
+                  Text('AI phân tích cảm xúc qua ảnh selfie',
+                      style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppTheme.textSecondary)),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: _loading ? null : _checkIn,
+            icon: _loading
+                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                : const Icon(Icons.camera_front_rounded, size: 18),
+            label: Text(
+              _loading ? 'AI đang phân tích...' : '📸 Kiểm tra tâm trạng',
+              style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
+            ),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppTheme.vibrantPrimary,
+              side: const BorderSide(color: AppTheme.vibrantPrimary, width: 1.5),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildResult() {
+    final r = _result!;
+    return Row(
+      children: [
+        Text(r.emoji, style: const TextStyle(fontSize: 36)),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text('Tâm trạng hôm nay: ',
+                      style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppTheme.textSecondary)),
+                  Text(r.label,
+                      style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(r.advice,
+                  style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppTheme.textSecondary, height: 1.4)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
 
 class _WelcomeMessage extends StatelessWidget {
   final String message;

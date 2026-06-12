@@ -313,7 +313,13 @@ class AppState extends ChangeNotifier {
     return _tasks.where((t) => t.isActive).expand((template) {
       final activeSub = _submissions
           .where((s) => s.taskId == template.id &&
-              (s.status == TaskStatus.pending || s.status == TaskStatus.submitted))
+              (s.status == TaskStatus.pending ||
+               s.status == TaskStatus.submitted ||
+               s.status == TaskStatus.rejected ||
+               // Auto-approved within 24h: parent can still retroactively reject
+               (s.status == TaskStatus.approved && s.autoApproved &&
+                s.reviewedAt != null &&
+                DateTime.now().difference(s.reviewedAt!).inHours < 24)))
           .fold<TaskSubmission?>(null, (latest, s) =>
               latest == null || s.createdAt.isAfter(latest.createdAt) ? s : latest);
 
@@ -380,6 +386,8 @@ class AppState extends ChangeNotifier {
       childViewTasks.where((t) => t.status == TaskStatus.pending).toList();
   List<TaskModel> get submittedTasks =>
       childViewTasks.where((t) => t.status == TaskStatus.submitted).toList();
+  List<TaskModel> get rejectedTasks =>
+      childViewTasks.where((t) => t.status == TaskStatus.rejected).toList();
   int get totalCoinsRewarded => _submissions
       .where((s) => s.status == TaskStatus.approved)
       .fold(0, (sum, s) => sum + (s.coinEarned ?? 0));
@@ -555,8 +563,10 @@ class AppState extends ChangeNotifier {
     if (templateIdx == -1) return;
     final template = _tasks[templateIdx];
 
+    // Accept pending OR rejected (child resubmitting after rejection)
     final subIdx = _submissions.indexWhere(
-      (s) => s.taskId == templateId && s.status == TaskStatus.pending,
+      (s) => s.taskId == templateId &&
+          (s.status == TaskStatus.pending || s.status == TaskStatus.rejected),
     );
     if (subIdx == -1) return;
     final sub = _submissions[subIdx];
@@ -757,8 +767,8 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Parent rejects a submission. Template stays active; child can try again.
-  Future<void> rejectTask(String templateId, {String? submissionId}) async {
+  /// Parent rejects a submission. Child sees the reason and can resubmit.
+  Future<void> rejectTask(String templateId, {String? submissionId, String? reason}) async {
     final subId = submissionId ??
         _submissions
             .where((s) => s.taskId == templateId && s.status == TaskStatus.submitted)
@@ -770,10 +780,59 @@ class AppState extends ChangeNotifier {
     final subIdx = _submissions.indexWhere((s) => s.id == subId);
     if (subIdx == -1) return;
 
-    _submissions[subIdx] = _submissions[subIdx].copyWith(status: TaskStatus.rejected);
+    _submissions[subIdx] = _submissions[subIdx].copyWith(
+      status: TaskStatus.rejected,
+      parentNote: reason?.isNotEmpty == true ? reason : null,
+    );
     notifyListeners();
     if (!isDemoMode) {
-      await SupabaseService.updateSubmissionStatus(subId, 'rejected');
+      await SupabaseService.updateSubmissionStatus(subId, 'rejected', parentNote: reason);
+    }
+  }
+
+  /// Parent retroactively rejects an auto-approved submission within 24h.
+  /// Deducts the coins given and decreases approvalCount so child must earn it back.
+  Future<void> retroactiveRejectTask(String templateId, {String? submissionId}) async {
+    final subId = submissionId ??
+        _submissions
+            .where((s) => s.taskId == templateId &&
+                s.status == TaskStatus.approved && s.autoApproved)
+            .fold<TaskSubmission?>(null, (latest, s) =>
+                latest == null || s.createdAt.isAfter(latest.createdAt) ? s : latest)
+            ?.id;
+    if (subId == null) return;
+
+    final subIdx = _submissions.indexWhere((s) => s.id == subId);
+    if (subIdx == -1) return;
+    final sub = _submissions[subIdx];
+
+    // Deduct coins that were auto-given
+    final coinsToDeduct = sub.coinEarned ?? 0;
+    if (coinsToDeduct > 0) _addCoins(-coinsToDeduct);
+
+    // Decrease approvalCount so child must re-earn auto-approve trust
+    final templateIdx = _tasks.indexWhere((t) => t.id == templateId);
+    if (templateIdx != -1) {
+      final t = _tasks[templateIdx];
+      _tasks[templateIdx] = t.copyWith(
+        approvalCount: (t.approvalCount - 1).clamp(0, 9999),
+      );
+    }
+
+    // Reset submission to pending so child can redo properly
+    _submissions[subIdx] = TaskSubmission(
+      id: sub.id,
+      taskId: sub.taskId,
+      childId: sub.childId,
+      status: TaskStatus.pending,
+      autoApproved: false,
+      createdAt: sub.createdAt,
+    );
+    notifyListeners();
+
+    if (!isDemoMode) {
+      await SupabaseService.updateSubmissionStatus(subId, 'pending');
+      await SupabaseService.decrementApprovalCount(templateId);
     }
   }
 

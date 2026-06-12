@@ -86,12 +86,21 @@ class ParentTaskDetail extends StatelessWidget {
 
               if (liveTask.status == TaskStatus.approved) ...[
                 _StatusBanner(
-                  emoji: '✅',
-                  title: s.approvedStatus,
-                  subtitle: s.coinsAdded,
-                  color: AppTheme.green,
-                  bgColor: AppTheme.greenLight,
+                  emoji: liveTask.autoApproved ? '⚡' : '✅',
+                  title: liveTask.autoApproved ? 'Đã tự duyệt' : s.approvedStatus,
+                  subtitle: liveTask.autoApproved ? 'Kiểm tra ảnh — có thể huỷ trong 24h' : s.coinsAdded,
+                  color: liveTask.autoApproved ? const Color(0xFFFF8F00) : AppTheme.green,
+                  bgColor: liveTask.autoApproved ? const Color(0xFFFFF8E1) : AppTheme.greenLight,
                 ),
+                if (liveTask.autoApproved && liveTask.proofImageUrl != null) ...[
+                  const SizedBox(height: 16),
+                  _ProofSection(taskId: liveTask.id, submittedAt: liveTask.submittedAt, proofImageUrl: liveTask.proofImageUrl),
+                ],
+                if (liveTask.autoApproved && liveTask.reviewedAt != null &&
+                    DateTime.now().difference(liveTask.reviewedAt!).inHours < 24) ...[
+                  const SizedBox(height: 16),
+                  _RetroactiveRejectButton(task: liveTask),
+                ],
                 const SizedBox(height: 12),
               ],
 
@@ -403,9 +412,9 @@ class _ActionButtons extends StatelessWidget {
           ),
           FilledButton(
             onPressed: () {
-              context.read<AppState>().rejectTask(task.id);
-              Navigator.pop(dialogCtx);
               final reason = ctrl.text.trim();
+              context.read<AppState>().rejectTask(task.id, reason: reason.isNotEmpty ? reason : null);
+              Navigator.pop(dialogCtx);
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                 content: Text(reason.isEmpty ? s.rejectedNoReason() : s.rejectedWithReason(reason)),
                 backgroundColor: const Color(0xFFEF4444),
@@ -599,6 +608,82 @@ Future<void> _showStreakDialog(BuildContext ctx, String badge, dynamic s) async 
       ],
     ),
   );
+}
+
+class _RetroactiveRejectButton extends StatefulWidget {
+  final TaskModel task;
+  const _RetroactiveRejectButton({required this.task});
+
+  @override
+  State<_RetroactiveRejectButton> createState() => _RetroactiveRejectButtonState();
+}
+
+class _RetroactiveRejectButtonState extends State<_RetroactiveRejectButton> {
+  bool _loading = false;
+
+  void _confirm(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Huỷ duyệt tự động?',
+            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+        content: Text(
+          'Xu đã trao sẽ bị thu hồi và con phải nộp lại bằng chứng đúng. Tiến độ auto-approve cũng giảm 1.',
+          style: GoogleFonts.plusJakartaSans(fontSize: 14, color: AppTheme.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Thôi', style: GoogleFonts.plusJakartaSans(color: AppTheme.textSecondary)),
+          ),
+          FilledButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              setState(() => _loading = true);
+              final appState = context.read<AppState>();
+              final nav = Navigator.of(context);
+              final messenger = ScaffoldMessenger.of(context);
+              await appState.retroactiveRejectTask(widget.task.id,
+                  submissionId: widget.task.submissionId);
+              if (!mounted) return;
+              setState(() => _loading = false);
+              nav.pop();
+              messenger.showSnackBar(const SnackBar(
+                content: Text('Đã huỷ duyệt — con cần nộp lại đúng cách'),
+                backgroundColor: Color(0xFFEF4444),
+              ));
+            },
+            style: FilledButton.styleFrom(backgroundColor: const Color(0xFFEF4444)),
+            child: Text('Huỷ duyệt', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: _loading ? null : () => _confirm(context),
+        icon: _loading
+            ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+            : const Icon(Icons.undo_rounded, size: 18),
+        label: Text(
+          _loading ? 'Đang xử lý...' : 'Huỷ duyệt tự động',
+          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
+        ),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: const Color(0xFFEF4444),
+          side: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
+          padding: const EdgeInsets.symmetric(vertical: 13),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        ),
+      ),
+    );
+  }
 }
 
 class _AutoApproveProgress extends StatelessWidget {

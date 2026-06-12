@@ -271,6 +271,11 @@ class SupabaseService {
     await client.rpc('increment_task_approval_count', params: {'p_task_id': taskId});
   }
 
+  /// Decrements the approval_count when parent retroactively rejects an auto-approved submission.
+  static Future<void> decrementApprovalCount(String taskId) async {
+    await client.rpc('decrement_task_approval_count', params: {'p_task_id': taskId});
+  }
+
   /// Deactivates a task template (soft delete).
   static Future<void> deactivateTask(String taskId) async {
     await client.from('tasks').update({'is_active': false}).eq('id', taskId);
