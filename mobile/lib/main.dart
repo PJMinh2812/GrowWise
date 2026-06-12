@@ -78,7 +78,11 @@ Future<void> _bootstrap() async {
     }
   }
 
-  await appState.initialize();
+  try {
+    await appState.initialize();
+  } catch (e) {
+    debugPrint('[AppState] init error (secure storage may be unavailable): $e');
+  }
 
   // Init local notifications + request permission
   await NotificationService.initialize();

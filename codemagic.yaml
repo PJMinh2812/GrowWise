@@ -14,15 +14,13 @@ workflows:
     scripts:
       - name: Create .env file
         script: |
-          cat > mobile/.env << EOF
-          SUPABASE_URL=$SUPABASE_URL
-          SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
-          GEMINI_API_KEY=$GEMINI_API_KEY
-          GROQ_API_KEY=$GROQ_API_KEY
-          API_BASE_URL=$API_BASE_URL
-          FACE_PLUS_PLUS_API_KEY=$FACE_PLUS_PLUS_API_KEY
-          FACE_PLUS_PLUS_API_SECRET=$FACE_PLUS_PLUS_API_SECRET
-          EOF
+          printf "SUPABASE_URL=%s\n" "$SUPABASE_URL" > mobile/.env
+          printf "SUPABASE_ANON_KEY=%s\n" "$SUPABASE_ANON_KEY" >> mobile/.env
+          printf "GEMINI_API_KEY=%s\n" "$GEMINI_API_KEY" >> mobile/.env
+          printf "GROQ_API_KEY=%s\n" "$GROQ_API_KEY" >> mobile/.env
+          printf "API_BASE_URL=%s\n" "$API_BASE_URL" >> mobile/.env
+          printf "FACE_PLUS_PLUS_API_KEY=%s\n" "$FACE_PLUS_PLUS_API_KEY" >> mobile/.env
+          printf "FACE_PLUS_PLUS_API_SECRET=%s\n" "$FACE_PLUS_PLUS_API_SECRET" >> mobile/.env
 
       - name: Restore firebase_options.dart
         script: |
