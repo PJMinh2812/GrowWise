@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Demo 1</string>
+	<string>GrowWise</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -47,6 +47,14 @@
 			</array>
 		</dict>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>GrowWise cần camera để chụp ảnh bằng chứng nhiệm vụ và nhận diện cảm xúc.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>GrowWise cần truy cập thư viện ảnh để chọn ảnh bằng chứng nhiệm vụ.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>GrowWise cần lưu ảnh vào thư viện của bạn.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>GrowWise dùng giọng đọc để hỗ trợ trẻ em học tài chính.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
