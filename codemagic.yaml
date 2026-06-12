@@ -24,6 +24,10 @@ workflows:
           FACE_PLUS_PLUS_API_SECRET=$FACE_PLUS_PLUS_API_SECRET
           EOF
 
+      - name: Restore firebase_options.dart
+        script: |
+          echo "$FIREBASE_OPTIONS" | base64 --decode > mobile/lib/firebase_options.dart
+
       - name: Flutter pub get
         script: flutter pub get
         working_directory: mobile
