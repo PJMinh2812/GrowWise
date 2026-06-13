@@ -7,6 +7,8 @@ type Dict = Record<string, { vi: string; en: string }>
 export const dict: Dict = {
   // common
   logout: { vi: 'Đăng xuất', en: 'Log out' },
+  switchRole: { vi: 'Đổi vai trò', en: 'Switch role' },
+  account: { vi: 'Tài khoản', en: 'Account' },
   cancel: { vi: 'Huỷ', en: 'Cancel' },
   save: { vi: 'Lưu', en: 'Save' },
   back: { vi: 'Quay lại', en: 'Back' },

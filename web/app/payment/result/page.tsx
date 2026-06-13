@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
+import { activateSubscriptionForOrder } from '@/lib/payment/momo-verify';
 
 export const metadata = {
   title: 'Kết quả thanh toán – GrowWise',
@@ -38,9 +39,14 @@ export default async function PaymentResultPage({ searchParams }: Props) {
 
   const success = resultCode === '0';
 
-  // Mark cancelled in DB when user arrives here with a failed/cancelled resultCode
-  if (!success && orderId) {
-    await cancelTransactionIfNeeded(orderId);
+  if (orderId) {
+    if (success) {
+      // Activate server-side (service role) — doesn't rely on the IPN or the
+      // user's session, so the plan is correct even if they re-login later.
+      await activateSubscriptionForOrder(orderId);
+    } else {
+      await cancelTransactionIfNeeded(orderId);
+    }
   }
 
   return (

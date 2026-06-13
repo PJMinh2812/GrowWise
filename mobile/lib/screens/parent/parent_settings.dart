@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_state.dart';
+import '../../services/supabase_service.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/validators.dart';
 import '../login_screen.dart';
@@ -54,11 +55,27 @@ class ParentSettings extends StatelessWidget {
                 ),
                 const SizedBox(height: 28),
 
-                _SectionLabel('👦 Child Profile'),
+                _SectionLabel('👦 Quản lý con'),
                 const SizedBox(height: 10),
+                ...appState.children.map((c) {
+                  final isActive = c['id'] == appState.childId;
+                  return _ChildTile(
+                    emoji: c['avatar_emoji'] as String? ?? '👦',
+                    name: (c['name'] as String?)?.isNotEmpty == true
+                        ? c['name'] as String
+                        : 'Con',
+                    level: c['level'] as int? ?? 1,
+                    isActive: isActive,
+                    hasPin: (c['child_pin_hash'] as String?) != null,
+                    onTap: () => appState.switchChild(c['id'] as String),
+                    onPinTap: () => _showChildPinMenu(context, c, appState),
+                  );
+                }),
+                _AddChildButton(onTap: () => _addChildDialog(context, appState)),
+                const SizedBox(height: 12),
                 _Tile(
                   icon: Icons.person_outline_rounded,
-                  title: 'Tên con',
+                  title: 'Tên con (đang chọn)',
                   subtitle: appState.childName.isEmpty
                       ? 'Chưa đặt tên'
                       : appState.childName,
@@ -80,10 +97,16 @@ class ParentSettings extends StatelessWidget {
                   subtitle: appState.isPremium
                       ? 'Premium đang hoạt động ✨'
                       : 'Nâng cấp để mở khóa tính năng nâng cao',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const PricingScreen()),
-                  ),
+                  onTap: () {
+                    if (appState.isPremium) {
+                      _showManagePlanDialog(context, appState);
+                    } else {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const PricingScreen()),
+                      );
+                    }
+                  },
                 ),
                 const SizedBox(height: 24),
 
@@ -125,6 +148,37 @@ class ParentSettings extends StatelessWidget {
                   onTap: () => _showAboutDialog(context),
                 ),
                 const SizedBox(height: 36),
+
+                // Switch role button → back to role selection
+                GestureDetector(
+                  onTap: () => Navigator.of(context).maybePop(),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    margin: const EdgeInsets.only(bottom: 14),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryFixed,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: AppTheme.primaryFixedDim, width: 2),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.swap_horiz_rounded,
+                            color: AppTheme.vibrantPrimary, size: 22),
+                        const SizedBox(width: 10),
+                        Text(
+                          'Đổi vai trò',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.vibrantPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
 
                 // Log Out button
                 GestureDetector(
@@ -238,6 +292,356 @@ class ParentSettings extends StatelessWidget {
         if (age != null && age > 0 && age < 18) appState.updateChildAge(age);
         return true;
       },
+    );
+  }
+
+  void _addChildDialog(BuildContext context, AppState appState) {
+    final nameCtrl = TextEditingController();
+    final ageCtrl = TextEditingController(text: '8');
+    const avatars = ['👦', '👧', '🧒', '👶', '🐱', '🐶', '🦊', '🐼'];
+    String emoji = avatars.first;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setLocal) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: Text(
+            '➕ Thêm con',
+            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 18),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: avatars.map((a) {
+                  final selected = a == emoji;
+                  return GestureDetector(
+                    onTap: () => setLocal(() => emoji = a),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: selected ? AppTheme.primaryFixed : AppTheme.surfaceBright,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: selected ? AppTheme.vibrantPrimary : AppTheme.surfaceContainerHigh,
+                          width: 2,
+                        ),
+                      ),
+                      child: Center(child: Text(a, style: const TextStyle(fontSize: 20))),
+                    ),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: nameCtrl,
+                decoration: const InputDecoration(hintText: 'Tên con'),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: ageCtrl,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(hintText: 'Tuổi', suffixText: 'tuổi'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('Hủy', style: GoogleFonts.plusJakartaSans(color: AppTheme.textSecondary)),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: AppTheme.vibrantPrimary),
+              onPressed: () async {
+                final name = nameCtrl.text.trim();
+                if (name.isEmpty) return;
+                final age = int.tryParse(ageCtrl.text.trim()) ?? 8;
+                final messenger = ScaffoldMessenger.of(context);
+                final navigator = Navigator.of(ctx);
+                final err = await appState.addChildWithLimit(
+                  name: name,
+                  age: age,
+                  avatarEmoji: emoji,
+                );
+                navigator.pop();
+                if (err != null) {
+                  messenger.showSnackBar(SnackBar(content: Text(err)));
+                }
+              },
+              child: Text('Thêm', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showChildPinMenu(
+    BuildContext context,
+    Map<String, dynamic> child,
+    AppState appState,
+  ) {
+    final childId = child['id'] as String;
+    final childName = (child['name'] as String?)?.isNotEmpty == true
+        ? child['name'] as String : 'Con';
+    final emoji = child['avatar_emoji'] as String? ?? '👦';
+    final hasPin = (child['child_pin_hash'] as String?) != null;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        padding: EdgeInsets.fromLTRB(
+          24, 16, 24,
+          MediaQuery.of(ctx).padding.bottom + 24,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Center(child: Container(width: 40, height: 4,
+              decoration: BoxDecoration(
+                color: AppTheme.outline.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2)))),
+            const SizedBox(height: 16),
+            Text('$emoji $childName',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 18, fontWeight: FontWeight.w800,
+                color: AppTheme.textPrimary)),
+            const SizedBox(height: 4),
+            Text(hasPin ? 'Đã đặt mã PIN 🔐' : 'Chưa có mã PIN',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 13, color: AppTheme.textHint)),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                icon: const Icon(Icons.lock_outline_rounded),
+                label: Text(hasPin ? 'Đổi mã PIN' : 'Đặt mã PIN',
+                  style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppTheme.vibrantPrimary,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18)),
+                ),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _showSetChildPinDialog(context, childId, childName, appState);
+                },
+              ),
+            ),
+            if (hasPin) ...[
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.lock_open_rounded, color: Colors.red),
+                  label: Text('Xóa mã PIN',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontWeight: FontWeight.w700, color: Colors.red)),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Colors.red),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18)),
+                  ),
+                  onPressed: () async {
+                    Navigator.pop(ctx);
+                    await SupabaseService.clearChildPin(childId);
+                    await appState.loadChildrenList();
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Đã xóa mã PIN ✓')));
+                    }
+                  },
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showSetChildPinDialog(
+    BuildContext context,
+    String childId,
+    String childName,
+    AppState appState,
+  ) {
+    final controllers = List.generate(4, (_) => TextEditingController());
+    final confirmCtrls = List.generate(4, (_) => TextEditingController());
+    final focusNodes = List.generate(4, (_) => FocusNode());
+    final confirmFocus = List.generate(4, (_) => FocusNode());
+    bool inConfirm = false;
+    String errorMsg = '';
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) {
+          void onComplete() async {
+            final pin = controllers.map((c) => c.text).join();
+            final conf = confirmCtrls.map((c) => c.text).join();
+            if (!inConfirm) {
+              if (pin.length != 4) return;
+              setState(() { inConfirm = true; errorMsg = ''; });
+              Future.delayed(const Duration(milliseconds: 50),
+                () => confirmFocus.first.requestFocus());
+              return;
+            }
+            if (conf.length != 4) return;
+            if (pin != conf) {
+              setState(() { errorMsg = 'Mã PIN không khớp. Thử lại.'; inConfirm = false; });
+              for (final c in controllers) { c.clear(); }
+              for (final c in confirmCtrls) { c.clear(); }
+              Future.delayed(const Duration(milliseconds: 50),
+                () => focusNodes.first.requestFocus());
+              return;
+            }
+            Navigator.pop(ctx);
+            await SupabaseService.setChildPin(childId, pin);
+            await appState.loadChildrenList();
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Đã đặt mã PIN cho $childName ✓')));
+            }
+          }
+
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('🔐', style: TextStyle(fontSize: 40)),
+                const SizedBox(height: 12),
+                Text(inConfirm ? 'Xác nhận mã PIN' : 'Đặt mã PIN cho $childName',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 16, fontWeight: FontWeight.w700,
+                    color: AppTheme.textPrimary)),
+                const SizedBox(height: 4),
+                Text(inConfirm ? 'Nhập lại mã PIN để xác nhận' : 'Nhập 4 chữ số',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13, color: AppTheme.textHint)),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(4, (i) {
+                    final ctrl = inConfirm ? confirmCtrls[i] : controllers[i];
+                    final focus = inConfirm ? confirmFocus[i] : focusNodes[i];
+                    final nextFocus = inConfirm
+                        ? (i < 3 ? confirmFocus[i + 1] : null)
+                        : (i < 3 ? focusNodes[i + 1] : null);
+                    return Container(
+                      width: 52, height: 60,
+                      margin: const EdgeInsets.symmetric(horizontal: 6),
+                      decoration: BoxDecoration(
+                        color: AppTheme.surfaceBright,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: AppTheme.surfaceContainerHigh, width: 2)),
+                      child: TextField(
+                        controller: ctrl,
+                        focusNode: focus,
+                        textAlign: TextAlign.center,
+                        keyboardType: TextInputType.number,
+                        maxLength: 1,
+                        obscureText: true,
+                        autofocus: i == 0,
+                        decoration: const InputDecoration(
+                          counterText: '', border: InputBorder.none),
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 22, fontWeight: FontWeight.w800),
+                        onChanged: (v) {
+                          if (v.isNotEmpty && nextFocus != null) {
+                            nextFocus.requestFocus();
+                          }
+                          if (i == 3 && v.isNotEmpty) onComplete();
+                        },
+                      ),
+                    );
+                  }),
+                ),
+                if (errorMsg.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Text(errorMsg, textAlign: TextAlign.center,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13, color: Colors.red)),
+                ],
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('Hủy',
+                  style: GoogleFonts.plusJakartaSans(color: AppTheme.textHint)),
+              ),
+              FilledButton(
+                onPressed: onComplete,
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppTheme.vibrantPrimary),
+                child: Text(inConfirm ? 'Lưu' : 'Tiếp',
+                  style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+              ),
+            ],
+          );
+        },
+      ),
+    ).whenComplete(() {
+      for (final c in controllers) { c.dispose(); }
+      for (final c in confirmCtrls) { c.dispose(); }
+      for (final f in focusNodes) { f.dispose(); }
+      for (final f in confirmFocus) { f.dispose(); }
+    });
+  }
+
+  void _showManagePlanDialog(BuildContext context, AppState appState) {
+    final planLabel = appState.planType == 'family' ? 'Gia Đình' : 'Nâng Cao';
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('✨', style: TextStyle(fontSize: 48)),
+            const SizedBox(height: 12),
+            Text(
+              'Gói đang hoạt động',
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Bạn đang dùng gói $planLabel. Cảm ơn đã đồng hành cùng GrowWise! 🌱',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.plusJakartaSans(fontSize: 14, color: AppTheme.textSecondary, height: 1.5),
+            ),
+          ],
+        ),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: () => Navigator.pop(ctx),
+              style: FilledButton.styleFrom(backgroundColor: AppTheme.vibrantPrimary),
+              child: Text('Đóng', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -707,6 +1111,118 @@ class _Tile extends StatelessWidget {
           color: AppTheme.textHint,
         ),
         onTap: onTap,
+      ),
+    );
+  }
+}
+
+class _ChildTile extends StatelessWidget {
+  final String emoji;
+  final String name;
+  final int level;
+  final bool isActive;
+  final bool hasPin;
+  final VoidCallback onTap;
+  final VoidCallback onPinTap;
+
+  const _ChildTile({
+    required this.emoji,
+    required this.name,
+    required this.level,
+    required this.isActive,
+    required this.hasPin,
+    required this.onTap,
+    required this.onPinTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: isActive ? AppTheme.primaryFixed : AppTheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isActive ? AppTheme.vibrantPrimary : Colors.transparent,
+          width: 2,
+        ),
+        boxShadow: AppTheme.cardShadow,
+      ),
+      child: ListTile(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        leading: CircleAvatar(
+          backgroundColor: AppTheme.indigoLight,
+          child: Text(emoji, style: const TextStyle(fontSize: 20)),
+        ),
+        title: Text(
+          name,
+          style: GoogleFonts.plusJakartaSans(
+            fontWeight: FontWeight.w700,
+            fontSize: 15,
+            color: AppTheme.textPrimary,
+          ),
+        ),
+        subtitle: Text(
+          'Cấp độ $level',
+          style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppTheme.textHint),
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            GestureDetector(
+              onTap: onPinTap,
+              child: Padding(
+                padding: const EdgeInsets.all(4),
+                child: Icon(
+                  hasPin ? Icons.lock_rounded : Icons.lock_open_rounded,
+                  color: hasPin ? AppTheme.vibrantPrimary : AppTheme.textHint,
+                  size: 20,
+                ),
+              ),
+            ),
+            const SizedBox(width: 4),
+            isActive
+                ? const Icon(Icons.check_circle_rounded, color: AppTheme.vibrantPrimary)
+                : const Icon(Icons.swap_horiz_rounded, color: AppTheme.textHint),
+          ],
+        ),
+        onTap: onTap,
+      ),
+    );
+  }
+}
+
+class _AddChildButton extends StatelessWidget {
+  final VoidCallback onTap;
+  const _AddChildButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: AppTheme.indigoLight,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppTheme.vibrantPrimary, width: 1.5),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.person_add_alt_1_rounded, color: AppTheme.vibrantPrimary, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              'Thêm con',
+              style: GoogleFonts.plusJakartaSans(
+                fontWeight: FontWeight.w700,
+                fontSize: 15,
+                color: AppTheme.vibrantPrimary,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import LanguageToggle from "./LanguageToggle";
 import LogoutButton from "./LogoutButton";
+import SwitchRoleButton from "./SwitchRoleButton";
 
 export type NavItem = { href: string; label: string; icon: string };
 
@@ -47,8 +48,9 @@ export default function AppShell({
             </Link>
           ))}
         </div>
-        {/* Logout pinned at the bottom of the sidebar */}
-        <div className="p-4 border-t border-outline-variant/30">
+        {/* Switch role + logout pinned at the bottom of the sidebar */}
+        <div className="p-4 border-t border-outline-variant/30 flex flex-col gap-3">
+          <SwitchRoleButton />
           <LogoutButton />
         </div>
       </nav>
@@ -57,6 +59,10 @@ export default function AppShell({
       <header className="fixed top-0 right-0 md:left-[260px] left-0 h-16 bg-surface/90 backdrop-blur border-b border-outline-variant/20 flex items-center justify-between px-4 md:px-8 z-30">
         <span className="md:hidden text-lg font-extrabold text-primary">{brand}</span>
         <div className="ml-auto flex items-center gap-3">
+          {/* Switch role — visible on mobile (no sidebar there) */}
+          <span className="md:hidden">
+            <SwitchRoleButton />
+          </span>
           <LanguageToggle />
           {topRight}
         </div>

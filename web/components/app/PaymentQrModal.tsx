@@ -115,12 +115,14 @@ export default function PaymentQrModal({
     }
   }, [countdown, status]);
 
-  const qrImg =
-    provider === "momo"
-      ? data?.qrCodeUrl ?? null
-      : data?.qrCode
-        ? `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(data.qrCode)}`
-        : null;
+  // MoMo returns `qrCodeUrl` as an EMV QR *string* (not an image URL); PayOS
+  // returns `qrCode` as an EMV string too. Render whichever we have as an image.
+  const qrPayload = provider === "momo" ? data?.qrCodeUrl : data?.qrCode;
+  const qrImg = qrPayload
+    ? /^https?:\/\//.test(qrPayload)
+      ? qrPayload
+      : `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(qrPayload)}`
+    : null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
