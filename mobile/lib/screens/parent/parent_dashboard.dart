@@ -222,6 +222,19 @@ class _HomeTab extends StatelessWidget {
                 ),
               ),
               GestureDetector(
+                onTap: () => Navigator.of(context).maybePop(),
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryFixed,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.swap_horiz_rounded,
+                      color: AppTheme.vibrantPrimary, size: 22),
+                ),
+              ),
+              const SizedBox(width: 12),
+              GestureDetector(
                 onTap: onGoToSettings,
                 child: const Icon(Icons.account_circle, color: AppTheme.vibrantPrimary, size: 30),
               ),

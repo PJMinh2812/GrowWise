@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
+import { activateSubscriptionForOrder } from '@/lib/payment/momo-verify';
 
 const ACCESS_KEY = process.env.MOMO_ACCESS_KEY ?? 'klm05TvNBzhg7h7j';
 const SECRET_KEY = process.env.MOMO_SECRET_KEY ?? 'at67qH6mk8w5Y1nAyMoYKMWACiEi2bsa';
@@ -65,36 +66,11 @@ export async function POST(request: Request) {
     }
 
     if (Number(resultCode) === 0) {
-      const extra = JSON.parse(Buffer.from(extraData, 'base64').toString('utf-8'));
-      const { userId, planId, billingInterval } = extra as {
-        userId: string;
-        planId: string;
-        planName: string;
-        billingInterval: string;
-      };
-
-      const now = new Date();
-      const days = billingInterval === 'yearly' ? 365 : 30;
-      const periodEnd = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
-
-      const { error: subErr } = await supabase.from('user_subscriptions').upsert(
-        {
-          user_id:              userId,
-          plan_id:              planId,
-          status:               'active',
-          billing_interval:     billingInterval,
-          trial_ends_at:        null,
-          current_period_start: now.toISOString(),
-          current_period_end:   periodEnd.toISOString(),
-          payment_method:       'momo',
-        },
-        { onConflict: 'user_id' }
-      );
-
-      if (subErr) {
-        console.error('[MoMo IPN] Failed to upsert user_subscriptions:', subErr);
+      const ok = await activateSubscriptionForOrder(orderId);
+      if (!ok) {
+        console.error('[MoMo IPN] Failed to activate subscription for order:', orderId);
       } else {
-        console.log('[MoMo IPN] Subscription activated for user:', userId, 'plan:', planId);
+        console.log('[MoMo IPN] Subscription activated for order:', orderId);
       }
     }
 

@@ -155,6 +155,37 @@ class _ChildDashboardState extends State<ChildDashboard> {
             ),
             const SizedBox(height: 32),
             GestureDetector(
+              onTap: () {
+                Navigator.pop(ctx);
+                Navigator.of(context).maybePop();
+              },
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryFixed,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppTheme.primaryFixedDim, width: 2),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.swap_horiz_rounded,
+                        color: AppTheme.vibrantPrimary, size: 22),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Đổi vai trò',
+                      style: GoogleFonts.plusJakartaSans(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.vibrantPrimary),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            GestureDetector(
               onTap: () async {
                 Navigator.pop(ctx);
                 await app.logout();

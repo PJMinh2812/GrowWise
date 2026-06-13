@@ -3,9 +3,44 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:share_plus/share_plus.dart';
 import '../../providers/app_state.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/memory_postcard.dart';
+import 'memory_postcard_preview.dart';
+
+/// Mở màn xem trước album (gộp nhiều kỷ niệm thành 1 ảnh) để chia sẻ.
+void _openAlbumPreview(BuildContext context, AppState appState) {
+  final memories = appState.memories;
+  if (memories.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Chưa có kỷ niệm nào để xuất.')),
+    );
+    return;
+  }
+  final childName = appState.childName;
+  final cards = memories.take(12).map((m) {
+    final taskId = m['taskId'] ?? '';
+    return MemoryPostcard(
+      emoji: m['emoji'] ?? '',
+      task: m['task'] ?? '',
+      note: m['note'] ?? '',
+      date: m['date'] ?? '',
+      childName: childName,
+      proofImageUrl: m['proofImageUrl'] ?? '',
+      proofBytes: taskId.isNotEmpty ? appState.getTaskProofBytes(taskId) : null,
+    );
+  }).toList();
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => MemoryPostcardPreview(
+        childName: childName,
+        pixelRatio: 2.0,
+        content: MemoryAlbum(postcards: cards),
+      ),
+    ),
+  );
+}
 
 class ParentMemoryLane extends StatelessWidget {
   const ParentMemoryLane({super.key});
@@ -18,7 +53,7 @@ class ParentMemoryLane extends StatelessWidget {
 
         return Scaffold(
           backgroundColor: AppTheme.surfaceBright,
-          appBar: _buildAppBar(() => _shareMemories(appState.childName, memories)),
+          appBar: _buildAppBar(() => _openAlbumPreview(context, appState)),
           body: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
             child: Column(
@@ -29,6 +64,7 @@ class ParentMemoryLane extends StatelessWidget {
                   childName: appState.childName,
                   totalCoins: appState.totalCoins,
                   approvedCount: appState.approvedTasks.length,
+                  onExport: () => _openAlbumPreview(context, appState),
                 ),
                 const SizedBox(height: 32),
 
@@ -85,19 +121,6 @@ class ParentMemoryLane extends StatelessWidget {
     );
   }
 
-  static void _shareMemories(String childName, List<Map<String, String>> memories) {
-    final String text;
-    if (memories.isEmpty) {
-      text = '$childName chưa có ký ức nào. Hãy giao việc để bắt đầu! 🌱';
-    } else {
-      final lines = memories.take(20)
-          .map((m) => '${m['emoji']} ${m['date']}: ${m['task']}')
-          .join('\n');
-      text = '🌱 Hành trình của $childName trên GrowWise\n\n$lines\n\n— Ứng dụng GrowWise';
-    }
-    Share.share(text);
-  }
-
   PreferredSizeWidget _buildAppBar(VoidCallback onShare) {
     return AppBar(
       backgroundColor: AppTheme.surface,
@@ -152,14 +175,17 @@ class _MemoryHero extends StatelessWidget {
   final String childName;
   final int totalCoins;
   final int approvedCount;
+  final VoidCallback onExport;
 
   const _MemoryHero({
     required this.memoriesCount,
     required this.childName,
     required this.totalCoins,
     required this.approvedCount,
+    required this.onExport,
   });
 
+  // ignore: unused_element
   void _showShareDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -268,7 +294,7 @@ class _MemoryHero extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           GestureDetector(
-            onTap: () => _showShareDialog(context),
+            onTap: onExport,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               decoration: BoxDecoration(
@@ -282,10 +308,10 @@ class _MemoryHero extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.movie, color: AppTheme.onSecondaryContainer),
+                  const Icon(Icons.ios_share, color: AppTheme.onSecondaryContainer),
                   const SizedBox(width: 8),
                   Text(
-                    'Xuất video kỷ niệm 2026',
+                    'Tải album kỷ niệm',
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
@@ -506,6 +532,44 @@ class _MemoryCard extends StatelessWidget {
                           ),
                         ),
                       ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Export this memory as a postcard image
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        final childName = context.read<AppState>().childName;
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => MemoryPostcardPreview(
+                              childName: childName,
+                              content: MemoryPostcard(
+                                emoji: emoji,
+                                task: task,
+                                note: note,
+                                date: date,
+                                childName: childName,
+                                proofImageUrl: proofImageUrl,
+                                proofBytes: proofBytes,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppTheme.vibrantPrimary,
+                        side: const BorderSide(color: AppTheme.vibrantPrimary),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                      icon: const Icon(Icons.ios_share, size: 18),
+                      label: Text(
+                        'Tải ảnh',
+                        style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
+                      ),
                     ),
                   ),
                 ],
