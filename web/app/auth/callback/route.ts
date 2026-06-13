@@ -4,9 +4,11 @@ import { NextResponse, type NextRequest } from 'next/server'
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
+  // Honor ?next= (app login → /role); default to admin dashboard for back-compat
+  const next = searchParams.get('next') ?? '/admin/dashboard'
 
   if (code) {
-    const response = NextResponse.redirect(`${origin}/admin/dashboard`)
+    const response = NextResponse.redirect(`${origin}${next}`)
 
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,

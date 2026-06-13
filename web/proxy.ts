@@ -80,16 +80,40 @@ export async function proxy(request: NextRequest) {
 
   const isLoginPage = pathname === '/admin/login'
   const isAdminRoute = pathname.startsWith('/admin')
+  // App người dùng (phụ huynh/con) — chỉ cần đăng nhập, KHÔNG cần quyền admin
+  const isAppRoute =
+    pathname.startsWith('/parent') ||
+    pathname.startsWith('/child') ||
+    pathname.startsWith('/role')
+  const isAppAuthPage = pathname === '/login' || pathname === '/register'
 
-  // Chưa đăng nhập → chỉ được vào trang admin/login
+  // Chưa đăng nhập
   if (!user) {
+    if (isAppRoute) {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
     if (isAdminRoute && !isLoginPage) {
       return NextResponse.redirect(new URL('/admin/login', request.url))
     }
     return response
   }
 
-  // Đã đăng nhập → kiểm tra quyền TRƯỚC KHI quyết định redirect
+  // Đã đăng nhập + đang ở trang login/register của app → đẩy vào chọn vai trò
+  if (isAppAuthPage) {
+    return NextResponse.redirect(new URL('/role', request.url))
+  }
+
+  // Đã đăng nhập + route app người dùng → cho vào (không cần quyền admin)
+  if (isAppRoute) {
+    return response
+  }
+
+  // Route không phải admin (landing, pricing, payment...) → cho qua
+  if (!isAdminRoute) {
+    return response
+  }
+
+  // ── Từ đây: route /admin/* — kiểm tra quyền admin ──
   const { role, isBanned } = await resolveRole(user.id, user.email ?? '')
 
   // Không có quyền hoặc bị ban → cho ở lại login (không redirect ra /admin/lessons)
