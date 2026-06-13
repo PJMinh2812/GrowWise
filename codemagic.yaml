@@ -8,8 +8,24 @@ workflows:
       flutter: stable
       xcode: latest
       cocoapods: default
+      groups:
+        - growwise_env
 
     scripts:
+      - name: Create .env file
+        script: |
+          printf "SUPABASE_URL=%s\n" "$SUPABASE_URL" > mobile/.env
+          printf "SUPABASE_ANON_KEY=%s\n" "$SUPABASE_ANON_KEY" >> mobile/.env
+          printf "GEMINI_API_KEY=%s\n" "$GEMINI_API_KEY" >> mobile/.env
+          printf "GROQ_API_KEY=%s\n" "$GROQ_API_KEY" >> mobile/.env
+          printf "API_BASE_URL=%s\n" "$API_BASE_URL" >> mobile/.env
+          printf "FACE_PLUS_PLUS_API_KEY=%s\n" "$FACE_PLUS_PLUS_API_KEY" >> mobile/.env
+          printf "FACE_PLUS_PLUS_API_SECRET=%s\n" "$FACE_PLUS_PLUS_API_SECRET" >> mobile/.env
+
+      - name: Restore firebase_options.dart
+        script: |
+          echo "$FIREBASE_OPTIONS" | base64 --decode > mobile/lib/firebase_options.dart
+
       - name: Flutter pub get
         script: flutter pub get
         working_directory: mobile

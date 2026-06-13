@@ -30,7 +30,11 @@ Future<void> _bootstrap() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await dotenv.load(fileName: '.env');
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  try {
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  } catch (e) {
+    debugPrint('[Firebase] init skipped: $e');
+  }
 
   try {
     await Supabase.initialize(
@@ -74,7 +78,11 @@ Future<void> _bootstrap() async {
     }
   }
 
-  await appState.initialize();
+  try {
+    await appState.initialize();
+  } catch (e) {
+    debugPrint('[AppState] init error (secure storage may be unavailable): $e');
+  }
 
   // Init local notifications + request permission
   await NotificationService.initialize();

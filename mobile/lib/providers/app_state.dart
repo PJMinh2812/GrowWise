@@ -55,7 +55,10 @@ class AppState extends ChangeNotifier {
   // Submissions (each time child starts/completes a task)
   List<TaskSubmission> _submissions = [];
 
-  // Child profile
+  // All children in the family (for multi-child management)
+  List<Map<String, dynamic>> _children = [];
+
+  // Child profile (the active child)
   String _childName = '';
   String _childAvatarEmoji = '👦';
   int _childAge = 8;
@@ -75,7 +78,7 @@ class AppState extends ChangeNotifier {
 
   static const _storage = FlutterSecureStorage();
   static const _completedLessonsKey = 'completed_lesson_ids';
-  Map<String, String> _customBadgeEmoji = {}; // achievementId → custom emoji
+  final Map<String, String> _customBadgeEmoji = {}; // achievementId → custom emoji
 
   // Dream items
   List<Map<String, dynamic>> _dreamItems = [];
@@ -171,51 +174,12 @@ class AppState extends ChangeNotifier {
     _familyId = await SupabaseService.getFamilyId();
     if (_familyId == null) return;
 
-    // Load first child
-    final children = await SupabaseService.getChildren(_familyId!);
-    if (children.isNotEmpty) {
-      final child = children.first;
-      _childId = child['id'] as String;
-      _childName = child['name'] as String? ?? '';
-      _childAvatarEmoji = child['avatar_emoji'] as String? ?? '👦';
-      _childAge = child['age'] as int? ?? 8;
-      _level = child['level'] as int? ?? 1;
-      _totalCoins = child['total_coins'] as int? ?? 0;
-      _spendJar = child['spend_jar'] as int? ?? 0;
-      _saveJar = child['save_jar'] as int? ?? 0;
-      _shareJar = child['share_jar'] as int? ?? 0;
-      _xp = child['xp'] as int? ?? 0;
-      _xpToNextLevel = child['xp_to_next_level'] as int? ?? 100;
-      _streakDays = child['streak_days'] as int? ?? 0;
-      final lastStreakStr = child['last_streak_date'] as String?;
-      _lastStreakDate = lastStreakStr != null ? DateTime.tryParse(lastStreakStr) : null;
-
-      // Load badges
-      final badgeRows = await SupabaseService.getBadges(_childId!);
-      _badges = badgeRows.map((b) => '${b['emoji']} ${b['title']}').toList();
-
-      // Load dream items
-      final dreams = await SupabaseService.getDreamItems(_childId!);
-      _dreamItems = dreams.map((item) {
-        final price = item['price'] as int;
-        final progress = price > 0 ? _totalCoins / price : 0.0;
-        return {...item, 'progress': progress > 1.0 ? 1.0 : progress};
-      }).toList();
+    // Load children list + active (first) child
+    _children = await SupabaseService.getChildren(_familyId!);
+    if (_children.isNotEmpty) {
+      await _applyChild(_children.first);
     }
-
-    // Load task templates
-    final templateRows = await SupabaseService.getTaskTemplates(
-      familyId: _familyId!,
-      childId: _childId,
-    );
-    _tasks = templateRows.map((row) => TaskModel.fromJson(row)).toList();
-
-    // Load submissions for this child
-    if (_childId != null) {
-      final subRows = await SupabaseService.getSubmissions(childId: _childId!);
-      _submissions = subRows.map((r) => TaskSubmission.fromJson(r)).toList();
-    }
-    _recomputeCategoryTaskCounts();
+    await _reloadChildScopedData();
 
     // Load memories
     final memoryRows = await SupabaseService.getMemories(familyId: _familyId!);
@@ -268,6 +232,7 @@ class AppState extends ChangeNotifier {
   String get parentEmail => _parentEmail;
   String? get familyId => _familyId;
   String? get childId => _childId;
+  List<Map<String, dynamic>> get children => List.unmodifiable(_children);
   List<TaskModel> get tasks => List.unmodifiable(_tasks);
   String get childName => _childName;
   String get childAvatarEmoji => _childAvatarEmoji;
@@ -477,6 +442,99 @@ class AppState extends ChangeNotifier {
     _childId = child['id'] as String;
     _childName = name;
     notifyListeners();
+  }
+
+  /// Applies a child row to the active-child state (fields + badges + dreams).
+  Future<void> _applyChild(Map<String, dynamic> child) async {
+    _childId = child['id'] as String;
+    _childName = child['name'] as String? ?? '';
+    _childAvatarEmoji = child['avatar_emoji'] as String? ?? '👦';
+    _childAge = child['age'] as int? ?? 8;
+    _level = child['level'] as int? ?? 1;
+    _totalCoins = child['total_coins'] as int? ?? 0;
+    _spendJar = child['spend_jar'] as int? ?? 0;
+    _saveJar = child['save_jar'] as int? ?? 0;
+    _shareJar = child['share_jar'] as int? ?? 0;
+    _xp = child['xp'] as int? ?? 0;
+    _xpToNextLevel = child['xp_to_next_level'] as int? ?? 100;
+    _streakDays = child['streak_days'] as int? ?? 0;
+    final lastStreakStr = child['last_streak_date'] as String?;
+    _lastStreakDate = lastStreakStr != null ? DateTime.tryParse(lastStreakStr) : null;
+
+    final badgeRows = await SupabaseService.getBadges(_childId!);
+    _badges = badgeRows.map((b) => '${b['emoji']} ${b['title']}').toList();
+
+    final dreams = await SupabaseService.getDreamItems(_childId!);
+    _dreamItems = dreams.map((item) {
+      final price = item['price'] as int;
+      final progress = price > 0 ? _totalCoins / price : 0.0;
+      return {...item, 'progress': progress > 1.0 ? 1.0 : progress};
+    }).toList();
+  }
+
+  /// Reloads task templates + submissions scoped to the active child.
+  Future<void> _reloadChildScopedData() async {
+    if (_familyId == null) return;
+    final templateRows = await SupabaseService.getTaskTemplates(
+      familyId: _familyId!,
+      childId: _childId,
+    );
+    _tasks = templateRows.map((row) => TaskModel.fromJson(row)).toList();
+    if (_childId != null) {
+      final subRows = await SupabaseService.getSubmissions(childId: _childId!);
+      _submissions = subRows.map((r) => TaskSubmission.fromJson(r)).toList();
+    } else {
+      _submissions = [];
+    }
+    _recomputeCategoryTaskCounts();
+  }
+
+  /// Refreshes the list of children in the family.
+  Future<void> loadChildrenList() async {
+    if (_familyId == null) return;
+    _children = await SupabaseService.getChildren(_familyId!);
+    notifyListeners();
+  }
+
+  /// Switches the active child and reloads all of its data.
+  Future<void> switchChild(String childId) async {
+    if (childId == _childId) return;
+    final child = _children.firstWhere(
+      (c) => c['id'] == childId,
+      orElse: () => <String, dynamic>{},
+    );
+    if (child.isEmpty) return;
+    await _applyChild(child);
+    await _reloadChildScopedData();
+    notifyListeners();
+  }
+
+  /// Adds a child, enforcing the plan's max_children limit.
+  /// Returns null on success, or an error message if blocked.
+  Future<String?> addChildWithLimit({
+    required String name,
+    required int age,
+    String avatarEmoji = '👦',
+  }) async {
+    if (_familyId == null) return 'Chưa có hồ sơ gia đình.';
+    if (isDemoMode) return 'Chế độ demo không thêm được con.';
+    final uid = SupabaseService.userId;
+    if (uid == null) return 'Phiên đăng nhập hết hạn.';
+
+    final maxChildren = await SupabaseService.getPlanMaxChildren(uid);
+    await loadChildrenList();
+    if (_children.length >= maxChildren) {
+      return 'Gói hiện tại chỉ cho phép $maxChildren hồ sơ con. Nâng cấp gói Gia Đình để thêm.';
+    }
+
+    await SupabaseService.createChild(
+      familyId: _familyId!,
+      name: name,
+      age: age,
+      avatarEmoji: avatarEmoji,
+    );
+    await loadChildrenList();
+    return null;
   }
 
   // ── Task actions ───────────────────────────────────────────────────────────
@@ -923,6 +981,30 @@ class AppState extends ChangeNotifier {
       final price = _dreamItems[i]['price'] as int;
       final progress = price > 0 ? _totalCoins / price : 0.0;
       _dreamItems[i]['progress'] = progress > 1.0 ? 1.0 : progress;
+    }
+  }
+
+  Future<void> editDream(int index, String name, int price, String icon) async {
+    if (index < 0 || index >= _dreamItems.length) return;
+    final dream = _dreamItems[index];
+    _dreamItems[index] = {...dream, 'name': name, 'price': price, 'icon': icon};
+    _updateDreamProgress();
+    notifyListeners();
+    if (!isDemoMode) {
+      await SupabaseService.editDreamItem(dream['id'] as String, name: name, price: price, icon: icon);
+    }
+  }
+
+  Future<void> deleteDream(int index) async {
+    if (index < 0 || index >= _dreamItems.length) return;
+    final dream = _dreamItems[index];
+    final dreamId = dream['id'] as String;
+    _dreamPurchaseRequests.removeWhere((r) => r['id'] == dreamId);
+    _approvedDreamIds.remove(dreamId);
+    _dreamItems.removeAt(index);
+    notifyListeners();
+    if (!isDemoMode) {
+      await SupabaseService.deleteDreamItem(dreamId);
     }
   }
 
