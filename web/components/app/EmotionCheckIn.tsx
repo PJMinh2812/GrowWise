@@ -95,6 +95,17 @@ export default function EmotionCheckIn() {
               </button>
             </div>
 
+            {(stage === "camera" || stage === "error") && (
+              <div className="mb-3 rounded-2xl bg-primary/5 p-3 text-left">
+                <p className="text-sm font-bold text-on-surface mb-1.5">Vì sao nên dùng? 💡</p>
+                <ul className="space-y-1 text-xs text-on-surface-variant">
+                  <li>🔍 Nhận biết sớm thay đổi cảm xúc mỗi ngày</li>
+                  <li>💬 Biết lúc nào nên dừng lại, lắng nghe và trò chuyện</li>
+                  <li>🌱 Hiểu cảm xúc để đồng hành cùng con nhẹ nhàng hơn</li>
+                </ul>
+              </div>
+            )}
+
             {stage === "camera" && (
               <>
                 <video
@@ -103,14 +114,6 @@ export default function EmotionCheckIn() {
                   muted
                   playsInline
                 />
-                <div className="mt-3 rounded-2xl bg-primary/5 p-3 text-left">
-                  <p className="text-sm font-bold text-on-surface mb-1.5">Vì sao nên dùng? 💡</p>
-                  <ul className="space-y-1 text-xs text-on-surface-variant">
-                    <li>🔍 Nhận biết sớm thay đổi cảm xúc mỗi ngày</li>
-                    <li>💬 Biết lúc nào nên dừng lại, lắng nghe và trò chuyện</li>
-                    <li>🌱 Hiểu cảm xúc để đồng hành cùng con nhẹ nhàng hơn</li>
-                  </ul>
-                </div>
                 <p className="text-xs text-on-surface-variant mt-2">
                   Ảnh không được lưu, chỉ dùng để phân tích cảm xúc.
                 </p>
