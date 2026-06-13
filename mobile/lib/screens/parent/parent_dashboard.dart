@@ -414,6 +414,34 @@ class _EmotionCheckInCardState extends State<_EmotionCheckInCard> {
           ],
         ),
         const SizedBox(height: 12),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppTheme.primaryFixed,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Vì sao nên dùng? 💡',
+                  style: GoogleFonts.plusJakartaSans(
+                      fontSize: 12.5, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
+              const SizedBox(height: 6),
+              ...const [
+                '🔍 Nhận biết sớm thay đổi cảm xúc mỗi ngày',
+                '💬 Biết lúc nào nên dừng lại, lắng nghe và trò chuyện',
+                '🌱 Hiểu cảm xúc để đồng hành cùng con nhẹ nhàng hơn',
+              ].map((line) => Padding(
+                    padding: const EdgeInsets.only(bottom: 3),
+                    child: Text(line,
+                        style: GoogleFonts.plusJakartaSans(
+                            fontSize: 11.5, color: AppTheme.textSecondary, height: 1.4)),
+                  )),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
         SizedBox(
           width: double.infinity,
           child: OutlinedButton.icon(
