@@ -4,8 +4,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  // Honor ?next= (app login → /role); default to admin dashboard for back-compat
-  const next = searchParams.get('next') ?? '/admin/dashboard'
+  const next = searchParams.get('next') ?? '/role'
 
   if (code) {
     const response = NextResponse.redirect(`${origin}${next}`)
@@ -29,6 +28,5 @@ export async function GET(request: NextRequest) {
     if (!error) return response
   }
 
-  // Nếu lỗi → về login
-  return NextResponse.redirect(`${origin}/admin/login?error=oauth`)
+  return NextResponse.redirect(`${origin}/login?error=oauth`)
 }
