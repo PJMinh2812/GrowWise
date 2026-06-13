@@ -45,8 +45,17 @@ async function resolveRole(
 }
 
 export async function proxy(request: NextRequest) {
-  const pathname = request.nextUrl.pathname
-  
+  const { pathname, searchParams, origin } = request.nextUrl
+
+  // Forward OAuth code to /auth/callback regardless of which page it lands on
+  const code = searchParams.get('code')
+  if (code && pathname !== '/auth/callback') {
+    const url = new URL('/auth/callback', origin)
+    url.searchParams.set('code', code)
+    url.searchParams.set('next', '/role')
+    return NextResponse.redirect(url)
+  }
+
   // Allow landing page to be accessed without authentication
   if (pathname === '/') {
     return NextResponse.next({ request })
