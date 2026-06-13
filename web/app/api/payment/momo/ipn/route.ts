@@ -40,14 +40,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'Invalid signature' }, { status: 400 });
     }
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!supabaseUrl || !serviceKey) {
+      console.error('[MoMo IPN] Missing Supabase env vars');
+      return NextResponse.json({ message: 'OK' }); // still 200 so MoMo won't retry
+    }
 
-    const status = resultCode === 0 ? 'completed' : 'failed';
+    const supabase = createClient(supabaseUrl, serviceKey);
 
-    await supabase
+    const status = Number(resultCode) === 0 ? 'completed' : 'failed';
+
+    const { error: txErr } = await supabase
       .from('payment_transactions')
       .update({
         status,
@@ -56,7 +60,11 @@ export async function POST(request: Request) {
       })
       .eq('order_id', orderId);
 
-    if (resultCode === 0) {
+    if (txErr) {
+      console.error('[MoMo IPN] Failed to update payment_transactions:', txErr);
+    }
+
+    if (Number(resultCode) === 0) {
       const extra = JSON.parse(Buffer.from(extraData, 'base64').toString('utf-8'));
       const { userId, planId, billingInterval } = extra as {
         userId: string;
@@ -69,7 +77,7 @@ export async function POST(request: Request) {
       const days = billingInterval === 'yearly' ? 365 : 30;
       const periodEnd = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
 
-      await supabase.from('user_subscriptions').upsert(
+      const { error: subErr } = await supabase.from('user_subscriptions').upsert(
         {
           user_id:              userId,
           plan_id:              planId,
@@ -82,6 +90,12 @@ export async function POST(request: Request) {
         },
         { onConflict: 'user_id' }
       );
+
+      if (subErr) {
+        console.error('[MoMo IPN] Failed to upsert user_subscriptions:', subErr);
+      } else {
+        console.log('[MoMo IPN] Subscription activated for user:', userId, 'plan:', planId);
+      }
     }
 
     return NextResponse.json({ message: 'OK' });
