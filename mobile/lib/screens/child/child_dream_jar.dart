@@ -333,6 +333,41 @@ class ChildDreamJar extends StatelessWidget {
                           ),
                         ),
                       ),
+                    const SizedBox(width: 4),
+                    PopupMenuButton<String>(
+                      icon: const Icon(Icons.more_vert, size: 18, color: _kOnSurfaceVariant),
+                      iconSize: 18,
+                      padding: EdgeInsets.zero,
+                      itemBuilder: (_) => [
+                        if (!isPurchased)
+                          PopupMenuItem(
+                            value: 'edit',
+                            child: Row(children: [
+                              const Icon(Icons.edit_outlined, size: 16, color: _kOnSurface),
+                              const SizedBox(width: 8),
+                              Text('Sửa', style: GoogleFonts.nunitoSans(fontSize: 14, color: _kOnSurface)),
+                            ]),
+                          ),
+                        PopupMenuItem(
+                          value: 'delete',
+                          child: Row(children: [
+                            const Icon(Icons.delete_outline, size: 16, color: Colors.red),
+                            const SizedBox(width: 8),
+                            Text('Xóa', style: GoogleFonts.nunitoSans(fontSize: 14, color: Colors.red)),
+                          ]),
+                        ),
+                      ],
+                      onSelected: (value) {
+                        if (value == 'edit') {
+                          _showEditDreamSheet(context, i, dream);
+                        } else if (value == 'delete') {
+                          context.read<AppState>().deleteDream(i);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Đã xóa ước mơ'), duration: Duration(seconds: 2)),
+                          );
+                        }
+                      },
+                    ),
                   ],
                 ),
                 const SizedBox(height: 14),
@@ -639,6 +674,125 @@ class ChildDreamJar extends StatelessWidget {
                       },
                       child: Text(
                         s.addDreamConfirm,
+                        style: GoogleFonts.nunitoSans(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showEditDreamSheet(BuildContext context, int index, Map<String, dynamic> dream) {
+    const icons = ['⭐', '🎮', '📚', '🚲', '🎨', '🧸', '🎯', '🏀', '🎵', '🧱', '✈️', '🏆', '🎪', '🎠', '🌈'];
+    final nameCtrl = TextEditingController(text: dream['name'] as String? ?? '');
+    final priceCtrl = TextEditingController(text: '${dream['price'] ?? 0}');
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: _kSurfaceContainerLowest,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (ctx) {
+        String selectedIcon = dream['icon'] as String? ?? '⭐';
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            final s = ctx.read<AppState>().strings;
+            return Padding(
+              padding: EdgeInsets.fromLTRB(24, 16, 24, MediaQuery.of(ctx).viewInsets.bottom + 32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 48, height: 5,
+                      decoration: BoxDecoration(color: _kSurfaceVariant, borderRadius: BorderRadius.circular(99)),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Sửa ước mơ',
+                    style: GoogleFonts.nunitoSans(fontSize: 20, fontWeight: FontWeight.w800, color: _kOnSurface),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(s.dreamNameLabel, style: GoogleFonts.nunitoSans(fontSize: 13, fontWeight: FontWeight.w700, color: _kOnSurfaceVariant)),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: nameCtrl,
+                    style: GoogleFonts.nunitoSans(fontSize: 15, color: _kOnSurface),
+                    decoration: InputDecoration(
+                      hintText: s.dreamNameHint,
+                      hintStyle: GoogleFonts.nunitoSans(color: _kOutline),
+                      filled: true, fillColor: _kSurface,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: _kSurfaceContainerHigh, width: 2)),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: _kSurfaceContainerHigh, width: 2)),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: _kPrimary, width: 2.5)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(s.dreamPriceLabel, style: GoogleFonts.nunitoSans(fontSize: 13, fontWeight: FontWeight.w700, color: _kOnSurfaceVariant)),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: priceCtrl,
+                    keyboardType: TextInputType.number,
+                    style: GoogleFonts.nunitoSans(fontSize: 15, color: _kOnSurface),
+                    decoration: InputDecoration(
+                      hintText: s.dreamPriceHint,
+                      hintStyle: GoogleFonts.nunitoSans(color: _kOutline),
+                      suffixText: s.coins,
+                      suffixStyle: GoogleFonts.nunitoSans(color: _kOnSurfaceVariant, fontWeight: FontWeight.w600),
+                      filled: true, fillColor: _kSurface,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: _kSurfaceContainerHigh, width: 2)),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: _kSurfaceContainerHigh, width: 2)),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: _kPrimary, width: 2.5)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(s.chooseIcon, style: GoogleFonts.nunitoSans(fontSize: 13, fontWeight: FontWeight.w700, color: _kOnSurfaceVariant)),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8, runSpacing: 8,
+                    children: icons.map((icon) {
+                      final isSelected = selectedIcon == icon;
+                      return GestureDetector(
+                        onTap: () => setSheetState(() => selectedIcon = icon),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 150),
+                          width: 48, height: 48,
+                          decoration: BoxDecoration(
+                            color: isSelected ? _kPrimaryFixed : _kSurface,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: isSelected ? _kPrimary : _kSurfaceContainerHigh, width: 2),
+                            boxShadow: isSelected ? [BoxShadow(color: _kPrimary.withValues(alpha: 0.2), blurRadius: 6)] : null,
+                          ),
+                          child: Center(child: Text(icon, style: const TextStyle(fontSize: 22))),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity, height: 54,
+                    child: FilledButton(
+                      style: FilledButton.styleFrom(backgroundColor: _kPrimary, shape: const StadiumBorder()),
+                      onPressed: () {
+                        final name = nameCtrl.text.trim();
+                        final price = int.tryParse(priceCtrl.text.trim()) ?? 0;
+                        if (name.isEmpty || price <= 0) return;
+                        context.read<AppState>().editDream(index, name, price, selectedIcon);
+                        Navigator.pop(ctx);
+                      },
+                      child: Text(
+                        'Lưu thay đổi',
                         style: GoogleFonts.nunitoSans(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white),
                       ),
                     ),

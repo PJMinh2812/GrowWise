@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -5,6 +7,69 @@ class SupabaseService {
   static SupabaseClient get client => Supabase.instance.client;
   static GoTrueClient get auth => client.auth;
   static String? get userId => auth.currentUser?.id;
+
+  // ── Parent PIN (bảo vệ chế độ Cha mẹ) ───────────────────────────────────────
+  // Hash khớp với web: sha256("<userId>:<pin>") dạng hex, lưu profiles.parent_pin_hash
+
+  static String _hashPin(String uid, String pin) =>
+      sha256.convert(utf8.encode('$uid:$pin')).toString();
+
+  /// Đã đặt PIN chưa?
+  static Future<bool> hasParentPin() async {
+    final uid = userId;
+    if (uid == null) return false;
+    final data = await client
+        .from('profiles')
+        .select('parent_pin_hash')
+        .eq('id', uid)
+        .maybeSingle();
+    final hash = data?['parent_pin_hash'] as String?;
+    return hash != null && hash.isNotEmpty;
+  }
+
+  /// Đặt / đổi PIN 4 số.
+  static Future<void> setParentPin(String pin) async {
+    final uid = userId;
+    if (uid == null) return;
+    await client
+        .from('profiles')
+        .update({'parent_pin_hash': _hashPin(uid, pin)})
+        .eq('id', uid);
+  }
+
+  /// Kiểm tra PIN đúng không.
+  static Future<bool> verifyParentPin(String pin) async {
+    final uid = userId;
+    if (uid == null) return false;
+    final data = await client
+        .from('profiles')
+        .select('parent_pin_hash')
+        .eq('id', uid)
+        .maybeSingle();
+    final hash = data?['parent_pin_hash'] as String?;
+    return hash != null && hash == _hashPin(uid, pin);
+  }
+
+  // ── Child PIN (bảo vệ từng hồ sơ con) ───────────────────────────────────────
+  // Hash: sha256("<childId>:<pin>"), lưu children.child_pin_hash
+
+  static Future<void> setChildPin(String childId, String pin) async {
+    await client
+        .from('children')
+        .update({'child_pin_hash': _hashPin(childId, pin)})
+        .eq('id', childId);
+  }
+
+  static Future<void> clearChildPin(String childId) async {
+    await client
+        .from('children')
+        .update({'child_pin_hash': null})
+        .eq('id', childId);
+  }
+
+  /// Verify locally — no DB call needed (hash đã load từ danh sách con).
+  static bool verifyChildPinLocal(String childId, String pin, String storedHash) =>
+      _hashPin(childId, pin) == storedHash;
 
   // ── Auth ──────────────────────────────────────────────────────────────────
 
@@ -186,7 +251,7 @@ class SupabaseService {
           if (dueDate != null) 'due_date': dueDate.toIso8601String(),
           'has_penalty': hasPenalty,
           'penalty_percent': penaltyPercent,
-          if (autoApproveAfter != null) 'auto_approve_after': autoApproveAfter,
+          'auto_approve_after': autoApproveAfter,
         })
         .select()
         .single();
@@ -406,6 +471,23 @@ class SupabaseService {
         .eq('id', dreamId);
   }
 
+  static Future<void> editDreamItem(
+    String dreamId, {
+    required String name,
+    required int price,
+    required String icon,
+  }) async {
+    await client
+        .from('dream_items')
+        .update({'name': name, 'price': price, 'icon': icon})
+        .eq('id', dreamId)
+        .eq('is_purchased', false);
+  }
+
+  static Future<void> deleteDreamItem(String dreamId) async {
+    await client.from('dream_items').delete().eq('id', dreamId);
+  }
+
   // ── Memories ──────────────────────────────────────────────────────────────
 
   static Future<List<Map<String, dynamic>>> getMemories({
@@ -492,6 +574,27 @@ class SupabaseService {
     } catch (e) {
       debugPrint('[SupabaseService] getUserPlan error: $e');
       return 'free';
+    }
+  }
+
+  /// Returns the plan's max_children limit for the user (free/none → 1).
+  static Future<int> getPlanMaxChildren(String userId) async {
+    try {
+      final data = await client
+          .from('user_subscriptions')
+          .select('status, plan:plans(name, max_children)')
+          .eq('user_id', userId)
+          .maybeSingle();
+      if (data == null) return 1;
+      final status = data['status'] as String?;
+      if (status == 'active' || status == 'trial') {
+        final plan = data['plan'] as Map<String, dynamic>?;
+        return (plan?['max_children'] as int?) ?? 1;
+      }
+      return 1;
+    } catch (e) {
+      debugPrint('[SupabaseService] getPlanMaxChildren error: $e');
+      return 1;
     }
   }
 
