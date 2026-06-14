@@ -77,13 +77,24 @@ export default function EmotionCheckIn() {
 
   return (
     <>
-      <button
-        onClick={start}
-        className="flex items-center gap-1 text-sm font-semibold text-primary"
-      >
-        <span className="material-symbols-outlined text-xl">photo_camera</span>
-        <span className="hidden sm:inline">{t("checkMood")}</span>
-      </button>
+      <div className="app-card p-4 flex items-center gap-4 justify-between">
+        <div className="text-left min-w-0">
+          <p className="font-bold text-on-surface mb-1">Tâm trạng hôm nay 🎭</p>
+          <p className="text-sm font-semibold text-on-surface mb-1">Vì sao nên dùng? 💡</p>
+          <ul className="space-y-0.5 text-xs text-on-surface-variant">
+            <li>🔍 Nhận biết sớm thay đổi cảm xúc mỗi ngày</li>
+            <li>💬 Biết lúc nào nên dừng lại, lắng nghe và trò chuyện</li>
+            <li>🌱 Hiểu cảm xúc để đồng hành cùng con nhẹ nhàng hơn</li>
+          </ul>
+        </div>
+        <button
+          onClick={start}
+          className="shrink-0 flex items-center gap-1.5 px-4 py-2.5 rounded-[14px] bg-primary text-on-primary font-bold text-sm"
+        >
+          <span className="material-symbols-outlined text-xl">photo_camera</span>
+          <span className="hidden sm:inline">{t("checkMood")}</span>
+        </button>
+      </div>
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
@@ -94,17 +105,6 @@ export default function EmotionCheckIn() {
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
-
-            {(stage === "camera" || stage === "error") && (
-              <div className="mb-3 rounded-2xl bg-primary/5 p-3 text-left">
-                <p className="text-sm font-bold text-on-surface mb-1.5">Vì sao nên dùng? 💡</p>
-                <ul className="space-y-1 text-xs text-on-surface-variant">
-                  <li>🔍 Nhận biết sớm thay đổi cảm xúc mỗi ngày</li>
-                  <li>💬 Biết lúc nào nên dừng lại, lắng nghe và trò chuyện</li>
-                  <li>🌱 Hiểu cảm xúc để đồng hành cùng con nhẹ nhàng hơn</li>
-                </ul>
-              </div>
-            )}
 
             {stage === "camera" && (
               <>

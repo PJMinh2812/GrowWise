@@ -415,50 +415,66 @@ class _EmotionCheckInCardState extends State<_EmotionCheckInCard> {
         ),
         const SizedBox(height: 12),
         Container(
-          width: double.infinity,
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: AppTheme.primaryFixed,
             borderRadius: BorderRadius.circular(14),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text('Vì sao nên dùng? 💡',
-                  style: GoogleFonts.plusJakartaSans(
-                      fontSize: 12.5, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
-              const SizedBox(height: 6),
-              ...const [
-                '🔍 Nhận biết sớm thay đổi cảm xúc mỗi ngày',
-                '💬 Biết lúc nào nên dừng lại, lắng nghe và trò chuyện',
-                '🌱 Hiểu cảm xúc để đồng hành cùng con nhẹ nhàng hơn',
-              ].map((line) => Padding(
-                    padding: const EdgeInsets.only(bottom: 3),
-                    child: Text(line,
+              // Lý do (trái)
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Vì sao nên dùng? 💡',
                         style: GoogleFonts.plusJakartaSans(
-                            fontSize: 11.5, color: AppTheme.textSecondary, height: 1.4)),
-                  )),
+                            fontSize: 12.5, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
+                    const SizedBox(height: 6),
+                    ...const [
+                      '🔍 Nhận biết sớm thay đổi cảm xúc mỗi ngày',
+                      '💬 Biết lúc nào nên dừng lại, lắng nghe và trò chuyện',
+                      '🌱 Hiểu cảm xúc để đồng hành cùng con nhẹ nhàng hơn',
+                    ].map((line) => Padding(
+                          padding: const EdgeInsets.only(bottom: 3),
+                          child: Text(line,
+                              style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 11.5, color: AppTheme.textSecondary, height: 1.4)),
+                        )),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Nút chụp (phải)
+              SizedBox(
+                width: 96,
+                child: OutlinedButton(
+                  onPressed: _loading ? null : _checkIn,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppTheme.vibrantPrimary,
+                    backgroundColor: Colors.white,
+                    side: const BorderSide(color: AppTheme.vibrantPrimary, width: 1.5),
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _loading
+                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Icon(Icons.camera_front_rounded, size: 22),
+                      const SizedBox(height: 6),
+                      Text(
+                        _loading ? 'Đang...' : 'Kiểm tra',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w700),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            onPressed: _loading ? null : _checkIn,
-            icon: _loading
-                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                : const Icon(Icons.camera_front_rounded, size: 18),
-            label: Text(
-              _loading ? 'AI đang phân tích...' : '📸 Kiểm tra tâm trạng',
-              style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
-            ),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppTheme.vibrantPrimary,
-              side: const BorderSide(color: AppTheme.vibrantPrimary, width: 1.5),
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            ),
           ),
         ),
       ],

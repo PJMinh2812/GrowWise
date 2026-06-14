@@ -26,16 +26,15 @@ export default async function ParentDashboard() {
 
   return (
     <div>
-      <div className="flex items-start justify-between gap-4 flex-wrap mb-6">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-extrabold text-on-surface mb-1">
-            {t(lang, "navDashboard")}
-          </h1>
-          <p className="text-on-surface-variant">{t(lang, "manageAndTrack")}</p>
-        </div>
-        <div className="app-card px-4 py-3">
-          <EmotionCheckIn />
-        </div>
+      <div className="mb-6">
+        <h1 className="text-2xl md:text-3xl font-extrabold text-on-surface mb-1">
+          {t(lang, "navDashboard")}
+        </h1>
+        <p className="text-on-surface-variant">{t(lang, "manageAndTrack")}</p>
+      </div>
+
+      <div className="mb-6">
+        <EmotionCheckIn />
       </div>
 
       {!family && (
