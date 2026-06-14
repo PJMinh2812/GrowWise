@@ -38,10 +38,10 @@ export async function GET(request: NextRequest) {
   const totalUsers = allUsers.length
   const newUsersThisMonth = allUsers.filter(u => u.created_at >= startOfMonth).length
 
-  // 2. Subscriptions
+  // 2. Subscriptions (NOTE: live user_subscriptions has no billing_interval column)
   const { data: subs } = await admin
     .from('user_subscriptions')
-    .select('status, billing_interval, plan:plans(name, display_name, price_monthly, price_yearly)')
+    .select('status, plan:plans(name, display_name)')
 
   const activeSubs   = subs?.filter(s => s.status === 'active') ?? []
   const trialSubs    = subs?.filter(s => s.status === 'trial') ?? []
@@ -57,6 +57,40 @@ export async function GET(request: NextRequest) {
 
   const monthlyRevenue = txns?.reduce((sum, t) => sum + (t.amount ?? 0), 0) ?? 0
 
+  // 3b. Completed transactions over the last 6 months → revenue chart + sales by plan
+  const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1).toISOString()
+  const { data: completedTxns } = await admin
+    .from('payment_transactions')
+    .select('amount, plan_name, created_at')
+    .eq('status', 'completed')
+    .gte('created_at', sixMonthsAgo)
+
+  // Revenue by month: build 6 buckets (oldest → newest), fill from completedTxns
+  const monthBuckets: { month: string; revenue: number; count: number }[] = []
+  const bucketIndex: Record<string, number> = {}
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    bucketIndex[key] = monthBuckets.length
+    monthBuckets.push({ month: key, revenue: 0, count: 0 })
+  }
+  const planAgg: Record<string, { plan: string; count: number; revenue: number }> = {}
+  completedTxns?.forEach(t => {
+    const d = new Date(t.created_at)
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    const idx = bucketIndex[key]
+    if (idx !== undefined) {
+      monthBuckets[idx].revenue += t.amount ?? 0
+      monthBuckets[idx].count += 1
+    }
+    const name = t.plan_name ?? 'unknown'
+    if (!planAgg[name]) planAgg[name] = { plan: name, count: 0, revenue: 0 }
+    planAgg[name].count += 1
+    planAgg[name].revenue += t.amount ?? 0
+  })
+  const revenueByMonth = monthBuckets
+  const salesByPlan = Object.values(planAgg).sort((a, b) => b.revenue - a.revenue)
+
   // 4. Recent 10 transactions (all time)
   const { data: recentTxns } = await admin
     .from('payment_transactions')
@@ -68,16 +102,13 @@ export async function GET(request: NextRequest) {
   const userEmailMap = Object.fromEntries(allUsers.map(u => [u.id, u.email ?? '']))
   const recentWithEmail = recentTxns?.map(t => ({ ...t, email: userEmailMap[t.user_id] ?? '' })) ?? []
 
-  // 5. Subscribers per plan
-  const planMap: Record<string, { display_name: string; monthly: number; yearly: number; free: number }> = {}
+  // 5. Subscribers per plan (active count; revenue comes from salesByPlan)
+  const planMap: Record<string, { name: string; display_name: string; subscribers: number; free: number }> = {}
   subs?.forEach(s => {
     const plan = (s.plan as unknown) as { name: string; display_name: string } | null
     if (!plan) return
-    if (!planMap[plan.name]) planMap[plan.name] = { display_name: plan.display_name, monthly: 0, yearly: 0, free: 0 }
-    if (s.status === 'active') {
-      if (s.billing_interval === 'yearly') planMap[plan.name].yearly++
-      else if (s.billing_interval === 'monthly') planMap[plan.name].monthly++
-    }
+    if (!planMap[plan.name]) planMap[plan.name] = { name: plan.name, display_name: plan.display_name, subscribers: 0, free: 0 }
+    if (s.status === 'active') planMap[plan.name].subscribers++
     if (plan.name === 'free') planMap[plan.name].free++
   })
 
@@ -89,6 +120,8 @@ export async function GET(request: NextRequest) {
     trialSubs:    trialSubs.length,
     canceledSubs: canceledSubs.length,
     planSummary:  Object.values(planMap),
+    salesByPlan,
+    revenueByMonth,
     recentTxns:   recentWithEmail,
   })
 }

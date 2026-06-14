@@ -10,7 +10,9 @@ interface Stats {
   activeSubs: number
   trialSubs: number
   canceledSubs: number
-  planSummary: { display_name: string; monthly: number; yearly: number; free: number }[]
+  planSummary: { name: string; display_name: string; subscribers: number; free: number }[]
+  salesByPlan: { plan: string; count: number; revenue: number }[]
+  revenueByMonth: { month: string; revenue: number; count: number }[]
   recentTxns: {
     order_id: string
     plan_name: string
@@ -64,6 +66,73 @@ function ProviderBadge({ provider }: { provider: string }) {
   )
 }
 
+function formatCompactVND(n: number) {
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1) + 'tr'
+  if (n >= 1_000) return Math.round(n / 1_000) + 'k'
+  return String(n)
+}
+
+const PLAN_LABELS: Record<string, string> = { free: 'Cơ Bản', premium: 'Nâng Cao', family: 'Gia Đình' }
+
+function RevenueChart({ data }: { data: Stats['revenueByMonth'] }) {
+  const max = Math.max(1, ...data.map(d => d.revenue))
+  const hasData = data.some(d => d.revenue > 0)
+  return (
+    <div>
+      <div className="flex items-end justify-between gap-3 h-48">
+        {data.map((d, i) => {
+          const pct = Math.round((d.revenue / max) * 100)
+          const [, mm] = d.month.split('-')
+          return (
+            <div key={i} className="flex-1 flex flex-col items-center justify-end h-full gap-2">
+              <span className="text-[11px] font-semibold text-on-surface-variant">
+                {d.revenue > 0 ? formatCompactVND(d.revenue) : ''}
+              </span>
+              <div
+                className="w-full max-w-[44px] rounded-t-md bg-secondary/80 hover:bg-secondary transition-all"
+                style={{ height: `${Math.max(pct, d.revenue > 0 ? 4 : 0)}%` }}
+                title={`Tháng ${mm}: ${formatVND(d.revenue)} · ${d.count} đơn`}
+              />
+              <span className="text-[11px] text-on-surface-variant">T{Number(mm)}</span>
+            </div>
+          )
+        })}
+      </div>
+      {!hasData && (
+        <p className="text-center text-sm text-on-surface-variant mt-4">Chưa có doanh thu trong 6 tháng gần đây</p>
+      )}
+    </div>
+  )
+}
+
+function PlanSalesChart({ data }: { data: Stats['salesByPlan'] }) {
+  if (!data.length) {
+    return <p className="text-center text-sm text-on-surface-variant py-8">Chưa có đơn mua nào</p>
+  }
+  const max = Math.max(1, ...data.map(d => d.count))
+  const colors = ['bg-primary', 'bg-secondary', 'bg-tertiary', 'bg-outline']
+  return (
+    <div className="space-y-4">
+      {data.map((d, i) => (
+        <div key={d.plan}>
+          <div className="flex justify-between items-baseline mb-1">
+            <span className="text-sm font-medium text-on-surface">{PLAN_LABELS[d.plan] ?? d.plan}</span>
+            <span className="text-xs text-on-surface-variant">
+              {d.count} đơn · <span className="font-semibold text-on-surface">{formatVND(d.revenue)}</span>
+            </span>
+          </div>
+          <div className="h-3 w-full rounded-full bg-surface-container overflow-hidden">
+            <div
+              className={`h-full rounded-full ${colors[i % colors.length]}`}
+              style={{ width: `${Math.max(Math.round((d.count / max) * 100), 6)}%` }}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function exportCSV(stats: Stats) {
   const todayStr = new Date().toLocaleDateString('vi-VN').replace(/\//g, '-')
 
@@ -77,8 +146,14 @@ function exportCSV(stats: Stats) {
     ['Đã hủy', stats.canceledSubs],
     ['Doanh thu tháng này (VNĐ)', stats.monthlyRevenue],
     [],
-    ['Gói', 'Hàng tháng', 'Hàng năm', 'Tổng'],
-    ...stats.planSummary.map(p => [p.display_name, p.monthly, p.yearly, p.monthly + p.yearly]),
+    ['Gói', 'Số người đăng ký', 'Số đơn đã mua', 'Doanh thu (VNĐ)'],
+    ...stats.planSummary.map(p => {
+      const sale = stats.salesByPlan.find(s => s.plan === p.name)
+      return [p.display_name, p.subscribers, sale?.count ?? 0, sale?.revenue ?? 0]
+    }),
+    [],
+    ['Doanh thu theo tháng', 'Số tiền (VNĐ)', 'Số đơn'],
+    ...stats.revenueByMonth.map(m => [m.month, m.revenue, m.count]),
     [],
     ['Mã đơn', 'Gói', 'Số tiền (VNĐ)', 'Phương thức', 'Chu kỳ', 'Trạng thái', 'Ngày tạo'],
     ...stats.recentTxns.map(t => [
@@ -218,6 +293,23 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* Charts row */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+        {/* Revenue by month */}
+        <section className="lg:col-span-7 bg-surface-container-lowest rounded-xl border border-outline-variant p-6">
+          <h4 className="text-base font-semibold text-on-surface mb-1">Doanh thu 6 tháng gần đây</h4>
+          <p className="text-xs text-on-surface-variant mb-5">Tổng từ các giao dịch thành công</p>
+          <RevenueChart data={stats.revenueByMonth} />
+        </section>
+
+        {/* Buyers by plan */}
+        <section className="lg:col-span-5 bg-surface-container-lowest rounded-xl border border-outline-variant p-6">
+          <h4 className="text-base font-semibold text-on-surface mb-1">Người mua theo gói</h4>
+          <p className="text-xs text-on-surface-variant mb-5">Số đơn thành công &amp; doanh thu mỗi gói</p>
+          <PlanSalesChart data={stats.salesByPlan} />
+        </section>
+      </div>
+
       {/* Tables row */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
         {/* Plan summary */}
@@ -237,8 +329,8 @@ export default function DashboardPage() {
               </thead>
               <tbody className="divide-y divide-outline-variant">
                 {stats.planSummary.map((plan, i) => {
-                  const total = plan.monthly + plan.yearly
                   const colors = ['bg-primary', 'bg-secondary', 'bg-outline']
+                  const sale = stats.salesByPlan.find(s => s.plan === plan.name)
                   return (
                     <tr key={i} className="hover:bg-surface-container-low transition-colors">
                       <td className="px-6 py-3">
@@ -247,9 +339,9 @@ export default function DashboardPage() {
                           <span className="text-sm text-on-surface">{plan.display_name}</span>
                         </div>
                       </td>
-                      <td className="px-6 py-3 text-sm text-on-surface font-medium">{total}</td>
+                      <td className="px-6 py-3 text-sm text-on-surface font-medium">{plan.subscribers}</td>
                       <td className="px-6 py-3 text-sm text-on-surface font-semibold text-right">
-                        {plan.free > 0 ? '0₫' : '—'}
+                        {sale && sale.revenue > 0 ? formatVND(sale.revenue) : '—'}
                       </td>
                     </tr>
                   )
