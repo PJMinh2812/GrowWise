@@ -20,6 +20,7 @@ export default function WisyChat({ childId, childName }: { childId: string; chil
   const [speakOn, setSpeakOn] = useState(true);
   const endRef = useRef<HTMLDivElement>(null);
   const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -40,32 +41,60 @@ export default function WisyChat({ childId, childName }: { childId: string; chil
     window.speechSynthesis.addEventListener?.("voiceschanged", loadVoices);
     return () => {
       window.speechSynthesis.removeEventListener?.("voiceschanged", loadVoices);
-      try {
-        window.speechSynthesis.cancel();
-      } catch {
-        /* noop */
-      }
+      stopSpeak();
     };
   }, []);
+
+  function stopSpeak() {
+    try {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = "";
+        audioRef.current = null;
+      }
+      window.speechSynthesis.cancel();
+    } catch {
+      /* noop */
+    }
+  }
 
   function toggleSpeak() {
     setSpeakOn((on) => {
       const next = !on;
       localStorage.setItem("wisy_tts", next ? "on" : "off");
-      if (!next) {
-        try {
-          window.speechSynthesis.cancel();
-        } catch {
-          /* noop */
-        }
-      }
+      if (!next) stopSpeak();
       return next;
     });
   }
 
-  function speak(text: string) {
+  // Read a reply aloud: prefer server-side Vietnamese TTS (real vi voice),
+  // fall back to the browser's Web Speech API if the route isn't configured.
+  async function speak(text: string) {
+    const clean = text.replace(/[^\p{L}\p{N}\s.,!?]/gu, "");
+    if (!clean) return;
     try {
-      const clean = text.replace(/[^\p{L}\p{N}\s.,!?]/gu, "");
+      const res = await fetch("/api/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: clean }),
+      });
+      if (res.ok && res.headers.get("content-type")?.includes("audio")) {
+        const url = URL.createObjectURL(await res.blob());
+        stopSpeak();
+        const audio = new Audio(url);
+        audioRef.current = audio;
+        audio.onended = () => URL.revokeObjectURL(url);
+        await audio.play();
+        return;
+      }
+    } catch {
+      /* fall through to browser speech */
+    }
+    speakBrowser(clean);
+  }
+
+  function speakBrowser(clean: string) {
+    try {
       // Detect language: Vietnamese diacritics → vi, else fall back to en.
       const hasVietnamese =
         /[ăâđêôơưàáạảãằắặẳẵầấậẩẫèéẹẻẽềếệểễìíịỉĩòóọỏõồốộổỗờớợởỡùúụủũừứựửữỳýỵỷỹ]/i.test(clean);
@@ -76,12 +105,7 @@ export default function WisyChat({ childId, childName }: { childId: string; chil
       const voices = voicesRef.current.length
         ? voicesRef.current
         : window.speechSynthesis.getVoices();
-      // Prefer a voice matching the detected language (vi voices first).
-      const match =
-        voices.find((v) => v.lang?.toLowerCase().startsWith(langPrefix)) ??
-        (hasVietnamese
-          ? voices.find((v) => v.lang?.toLowerCase().startsWith("vi"))
-          : undefined);
+      const match = voices.find((v) => v.lang?.toLowerCase().startsWith(langPrefix));
       if (match) u.voice = match;
 
       window.speechSynthesis.cancel();
