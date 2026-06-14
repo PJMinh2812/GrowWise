@@ -219,6 +219,7 @@ function ChildPinMenu({
   );
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPin, setShowPin] = useState(false);
 
   function onPinInput(i: number, value: string, isConfirm = false) {
     if (!/^\d?$/.test(value)) return;
@@ -322,12 +323,13 @@ function ChildPinMenu({
             <p className="text-sm text-on-surface-variant text-center mb-4">Nhập mã PIN 4 chữ số</p>
             <div className="flex gap-3 justify-center mb-4">
               {([ref0, ref1, ref2, ref3] as const).map((ref, i) => (
-                <input key={i} ref={ref} type="password" inputMode="numeric" maxLength={1}
+                <input key={i} ref={ref} type={showPin ? "text" : "password"} inputMode="numeric" maxLength={1}
                   value={pin[i]} onChange={(e) => onPinInput(i, e.target.value)}
                   onKeyDown={(e) => onKeyDown(i, e)} autoFocus={i === 0} disabled={loading}
                   className={pinBoxCls} />
               ))}
             </div>
+            <PinReveal show={showPin} onToggle={() => setShowPin((s) => !s)} />
           </>
         )}
 
@@ -336,12 +338,13 @@ function ChildPinMenu({
             <p className="text-sm text-on-surface-variant text-center mb-4">Nhập lại để xác nhận</p>
             <div className="flex gap-3 justify-center mb-4">
               {([ref0c, ref1c, ref2c, ref3c] as const).map((ref, i) => (
-                <input key={i} ref={ref} type="password" inputMode="numeric" maxLength={1}
+                <input key={i} ref={ref} type={showPin ? "text" : "password"} inputMode="numeric" maxLength={1}
                   value={confirm[i]} onChange={(e) => onPinInput(i, e.target.value, true)}
                   onKeyDown={(e) => onKeyDown(i, e, true)} autoFocus={i === 0} disabled={loading}
                   className={pinBoxCls} />
               ))}
             </div>
+            <PinReveal show={showPin} onToggle={() => setShowPin((s) => !s)} />
           </>
         )}
 
@@ -373,5 +376,20 @@ function ChildPinMenu({
         )}
       </div>
     </div>
+  );
+}
+
+function PinReveal({ show, onToggle }: { show: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className="mx-auto -mt-2 mb-2 flex items-center gap-1 text-xs font-semibold text-on-surface-variant hover:text-on-surface"
+    >
+      <span className="material-symbols-outlined text-base">
+        {show ? "visibility_off" : "visibility"}
+      </span>
+      {show ? "Ẩn mã PIN" : "Hiện mã PIN"}
+    </button>
   );
 }

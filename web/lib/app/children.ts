@@ -1,6 +1,7 @@
 import { cache } from 'react'
 import { cookies } from 'next/headers'
 import { createServerSupabase } from '@/lib/supabase-server'
+import { getCurrentUser } from '@/lib/app/auth'
 import type { Child, Family } from '@/lib/types'
 
 /**
@@ -9,12 +10,10 @@ import type { Child, Family } from '@/lib/types'
  * page, getSelectedChild → getMyChildren) only trigger one DB round-trip.
  */
 export const getFamilyForUser = cache(async (): Promise<Family | null> => {
-  const supabase = await createServerSupabase()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) return null
 
+  const supabase = await createServerSupabase()
   const { data } = await supabase
     .from('families')
     .select('*')

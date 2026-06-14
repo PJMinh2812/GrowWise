@@ -19,15 +19,27 @@ export default function WisyChat({ childId, childName }: { childId: string; chil
   const [limited, setLimited] = useState(false);
   const [speakOn, setSpeakOn] = useState(true);
   const endRef = useRef<HTMLDivElement>(null);
+  const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
-  // Load saved TTS preference (default on); stop any speech on unmount
+  // Load saved TTS preference (default on); cache available voices; cleanup
   useEffect(() => {
     if (localStorage.getItem("wisy_tts") === "off") setSpeakOn(false);
+    const loadVoices = () => {
+      try {
+        voicesRef.current = window.speechSynthesis.getVoices();
+      } catch {
+        /* noop */
+      }
+    };
+    loadVoices();
+    // Voices load asynchronously in most browsers
+    window.speechSynthesis.addEventListener?.("voiceschanged", loadVoices);
     return () => {
+      window.speechSynthesis.removeEventListener?.("voiceschanged", loadVoices);
       try {
         window.speechSynthesis.cancel();
       } catch {
@@ -53,8 +65,25 @@ export default function WisyChat({ childId, childName }: { childId: string; chil
 
   function speak(text: string) {
     try {
-      const u = new SpeechSynthesisUtterance(text.replace(/[^\p{L}\p{N}\s.,!?]/gu, ""));
-      u.lang = "vi-VN";
+      const clean = text.replace(/[^\p{L}\p{N}\s.,!?]/gu, "");
+      // Detect language: Vietnamese diacritics → vi, else fall back to en.
+      const hasVietnamese =
+        /[ăâđêôơưàáạảãằắặẳẵầấậẩẫèéẹẻẽềếệểễìíịỉĩòóọỏõồốộổỗờớợởỡùúụủũừứựửữỳýỵỷỹ]/i.test(clean);
+      const langPrefix = hasVietnamese ? "vi" : "en";
+      const u = new SpeechSynthesisUtterance(clean);
+      u.lang = hasVietnamese ? "vi-VN" : "en-US";
+
+      const voices = voicesRef.current.length
+        ? voicesRef.current
+        : window.speechSynthesis.getVoices();
+      // Prefer a voice matching the detected language (vi voices first).
+      const match =
+        voices.find((v) => v.lang?.toLowerCase().startsWith(langPrefix)) ??
+        (hasVietnamese
+          ? voices.find((v) => v.lang?.toLowerCase().startsWith("vi"))
+          : undefined);
+      if (match) u.voice = match;
+
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(u);
     } catch {

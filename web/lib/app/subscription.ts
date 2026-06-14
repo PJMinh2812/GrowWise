@@ -1,14 +1,13 @@
 import { createServerSupabase } from '@/lib/supabase-server'
+import { getCurrentUser } from '@/lib/app/auth'
 
 export type PlanName = 'free' | 'premium' | 'family'
 
 /** Active plan name for the logged-in user ('free' if none/expired). */
 export async function getUserPlan(): Promise<PlanName> {
-  const supabase = await createServerSupabase()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) return 'free'
+  const supabase = await createServerSupabase()
   const { data } = await supabase
     .from('user_subscriptions')
     .select('status, plan:plans(name)')
@@ -77,13 +76,11 @@ async function applyDueScheduledChange(userId: string): Promise<void> {
 
 /** Active plan name + its max_children limit (free → 1). */
 export async function getActivePlan(): Promise<ActivePlan> {
-  const supabase = await createServerSupabase()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) return { name: 'free', maxChildren: 1 }
 
   await applyDueScheduledChange(user.id)
+  const supabase = await createServerSupabase()
 
   const { data } = await supabase
     .from('user_subscriptions')
@@ -114,12 +111,10 @@ export interface SubscriptionDetails extends ActivePlan {
 /** Active plan plus period end + any scheduled (downgrade) plan change. */
 export async function getSubscriptionDetails(): Promise<SubscriptionDetails> {
   const active = await getActivePlan() // applies any due scheduled change
-  const supabase = await createServerSupabase()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) return { ...active, periodEnd: null, scheduledPlan: null }
 
+  const supabase = await createServerSupabase()
   const { data, error } = await supabase
     .from('user_subscriptions')
     .select('current_period_end, scheduled_plan_name')

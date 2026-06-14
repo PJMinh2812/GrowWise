@@ -18,6 +18,7 @@ function LoginForm() {
   });
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [showPw, setShowPw] = useState(false);
 
   // Khi có ?error= → sign out client-side để xóa session cookie, tránh redirect loop
   useEffect(() => {
@@ -118,14 +119,26 @@ function LoginForm() {
           <label className="block text-sm font-medium text-black mb-1">
             Mật khẩu
           </label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 text-black"
-            placeholder="••••••••"
-          />
+          <div className="relative">
+            <input
+              type={showPw ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 text-black"
+              placeholder="••••••••"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPw((s) => !s)}
+              aria-label={showPw ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              <span className="material-symbols-outlined text-xl">
+                {showPw ? "visibility_off" : "visibility"}
+              </span>
+            </button>
+          </div>
         </div>
 
         {error && <p className="text-sm text-red-600">{error}</p>}

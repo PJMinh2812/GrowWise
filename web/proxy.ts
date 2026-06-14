@@ -155,5 +155,8 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|auth/callback).*)'],
+  // Only run auth middleware where it matters. Public pages (landing, pricing,
+  // payment), API routes (which do their own auth), and static assets skip the
+  // proxy entirely — avoids an extra getUser() round-trip per request.
+  matcher: ['/admin/:path*', '/parent/:path*', '/child/:path*', '/role/:path*', '/login', '/register'],
 }
