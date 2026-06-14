@@ -128,17 +128,36 @@ function Field({
   type?: string;
   placeholder?: string;
 }) {
+  const [showPw, setShowPw] = useState(false);
+  const isPassword = type === "password";
+  const inputType = isPassword && showPw ? "text" : type;
   return (
     <div>
       <label className="block text-sm font-semibold text-[#1A1A2E] mb-1">{label}</label>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        required
-        placeholder={placeholder}
-        className="w-full border border-gray-300 rounded-[14px] px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#3DBE6E] text-black"
-      />
+      <div className="relative">
+        <input
+          type={inputType}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          required
+          placeholder={placeholder}
+          className={`w-full border border-gray-300 rounded-[14px] px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#3DBE6E] text-black ${
+            isPassword ? "pr-11" : ""
+          }`}
+        />
+        {isPassword && (
+          <button
+            type="button"
+            onClick={() => setShowPw((s) => !s)}
+            aria-label={showPw ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+          >
+            <span className="material-symbols-outlined text-xl">
+              {showPw ? "visibility_off" : "visibility"}
+            </span>
+          </button>
+        )}
+      </div>
     </div>
   );
 }

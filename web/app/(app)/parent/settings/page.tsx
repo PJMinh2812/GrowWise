@@ -1,5 +1,5 @@
 import { getFamilyForUser, getChildren } from "@/lib/app/children";
-import { getActivePlan } from "@/lib/app/subscription";
+import { getSubscriptionDetails } from "@/lib/app/subscription";
 import SettingsView from "@/components/app/SettingsView";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
@@ -17,7 +17,7 @@ export default async function SettingsPage() {
   const family = await getFamilyForUser();
   const [children, plan] = await Promise.all([
     family ? getChildren(family.id) : Promise.resolve([]),
-    getActivePlan(),
+    getSubscriptionDetails(),
   ]);
 
   return (
@@ -27,6 +27,8 @@ export default async function SettingsPage() {
         planLabel={PLAN_LABEL[plan.name] ?? plan.name}
         planName={plan.name}
         maxChildren={plan.maxChildren}
+        periodEnd={plan.periodEnd}
+        scheduledPlanLabel={plan.scheduledPlan ? (PLAN_LABEL[plan.scheduledPlan] ?? plan.scheduledPlan) : null}
         children={children.map((c) => ({
           id: c.id,
           name: c.name,

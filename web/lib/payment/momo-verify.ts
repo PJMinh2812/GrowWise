@@ -92,6 +92,13 @@ export async function activateSubscriptionForOrder(orderId: string): Promise<boo
     return false;
   }
 
+  // A paid upgrade cancels any pending scheduled downgrade (best-effort; the
+  // column may not exist yet on older DBs, so ignore any error).
+  await supabase
+    .from('user_subscriptions')
+    .update({ scheduled_plan_name: null })
+    .eq('user_id', tx.user_id);
+
   await supabase
     .from('payment_transactions')
     .update({ status: 'completed', updated_at: new Date().toISOString() })

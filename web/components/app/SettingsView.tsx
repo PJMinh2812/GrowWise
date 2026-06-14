@@ -1,10 +1,12 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import ParentPinDialog from "./ParentPinDialog";
 import AddChildDialog from "./AddChildDialog";
 import { useLang } from "./LangProvider";
+import { cancelScheduledChange } from "@/lib/app/subscription-actions";
 
 interface ChildInfo {
   id: string;
@@ -18,14 +20,20 @@ export default function SettingsView({
   planLabel,
   planName,
   maxChildren,
+  periodEnd,
+  scheduledPlanLabel,
   children,
 }: {
   planLabel: string;
   planName: string;
   maxChildren: number;
+  periodEnd?: string | null;
+  scheduledPlanLabel?: string | null;
   children: ChildInfo[];
 }) {
   const { t } = useLang();
+  const router = useRouter();
+  const [cancelPending, startCancel] = useTransition();
   const [pinOpen, setPinOpen] = useState(false);
   const [pinDone, setPinDone] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
@@ -114,15 +122,37 @@ export default function SettingsView({
           {t("currentPlan")}: <b>{planLabel}</b>
           {!isFree && <span className="text-green-600 font-semibold"> · ✨</span>}
         </p>
-        {isFree && (
-          <Link
-            href="/parent/pricing"
-            className="inline-flex items-center gap-2 mt-4 px-5 py-2.5 rounded-[14px] bg-primary text-on-primary font-bold"
-          >
-            <span className="material-symbols-outlined text-lg">workspace_premium</span>
-            {t("viewPlans")}
-          </Link>
+        {!isFree && periodEnd && (
+          <p className="text-sm text-on-surface-variant mt-1">
+            Hết kỳ hiện tại: {new Date(periodEnd).toLocaleDateString("vi-VN")}
+          </p>
         )}
+
+        {scheduledPlanLabel && (
+          <div className="mt-3 p-3 rounded-[14px] bg-amber-50 border border-amber-200 text-sm text-amber-800 flex items-center justify-between gap-2">
+            <span>Sẽ chuyển sang <b>{scheduledPlanLabel}</b> khi hết kỳ.</span>
+            <button
+              onClick={() =>
+                startCancel(async () => {
+                  await cancelScheduledChange();
+                  router.refresh();
+                })
+              }
+              disabled={cancelPending}
+              className="px-3 py-1.5 rounded-full bg-white text-amber-800 font-semibold whitespace-nowrap border border-amber-300 disabled:opacity-50"
+            >
+              {cancelPending ? "…" : "Hủy lịch đổi"}
+            </button>
+          </div>
+        )}
+
+        <Link
+          href="/parent/pricing"
+          className="inline-flex items-center gap-2 mt-4 px-5 py-2.5 rounded-[14px] bg-primary text-on-primary font-bold"
+        >
+          <span className="material-symbols-outlined text-lg">workspace_premium</span>
+          {isFree ? t("viewPlans") : "Đổi gói"}
+        </Link>
       </section>
 
       {/* Account */}
@@ -189,6 +219,7 @@ function ChildPinMenu({
   );
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPin, setShowPin] = useState(false);
 
   function onPinInput(i: number, value: string, isConfirm = false) {
     if (!/^\d?$/.test(value)) return;
@@ -292,12 +323,13 @@ function ChildPinMenu({
             <p className="text-sm text-on-surface-variant text-center mb-4">Nhập mã PIN 4 chữ số</p>
             <div className="flex gap-3 justify-center mb-4">
               {([ref0, ref1, ref2, ref3] as const).map((ref, i) => (
-                <input key={i} ref={ref} type="password" inputMode="numeric" maxLength={1}
+                <input key={i} ref={ref} type={showPin ? "text" : "password"} inputMode="numeric" maxLength={1}
                   value={pin[i]} onChange={(e) => onPinInput(i, e.target.value)}
                   onKeyDown={(e) => onKeyDown(i, e)} autoFocus={i === 0} disabled={loading}
                   className={pinBoxCls} />
               ))}
             </div>
+            <PinReveal show={showPin} onToggle={() => setShowPin((s) => !s)} />
           </>
         )}
 
@@ -306,12 +338,13 @@ function ChildPinMenu({
             <p className="text-sm text-on-surface-variant text-center mb-4">Nhập lại để xác nhận</p>
             <div className="flex gap-3 justify-center mb-4">
               {([ref0c, ref1c, ref2c, ref3c] as const).map((ref, i) => (
-                <input key={i} ref={ref} type="password" inputMode="numeric" maxLength={1}
+                <input key={i} ref={ref} type={showPin ? "text" : "password"} inputMode="numeric" maxLength={1}
                   value={confirm[i]} onChange={(e) => onPinInput(i, e.target.value, true)}
                   onKeyDown={(e) => onKeyDown(i, e, true)} autoFocus={i === 0} disabled={loading}
                   className={pinBoxCls} />
               ))}
             </div>
+            <PinReveal show={showPin} onToggle={() => setShowPin((s) => !s)} />
           </>
         )}
 
@@ -343,5 +376,20 @@ function ChildPinMenu({
         )}
       </div>
     </div>
+  );
+}
+
+function PinReveal({ show, onToggle }: { show: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className="mx-auto -mt-2 mb-2 flex items-center gap-1 text-xs font-semibold text-on-surface-variant hover:text-on-surface"
+    >
+      <span className="material-symbols-outlined text-base">
+        {show ? "visibility_off" : "visibility"}
+      </span>
+      {show ? "Ẩn mã PIN" : "Hiện mã PIN"}
+    </button>
   );
 }

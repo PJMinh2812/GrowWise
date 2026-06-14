@@ -1,10 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import PaymentQrModal from "./PaymentQrModal";
+import { scheduleDowngrade } from "@/lib/app/subscription-actions";
+
+type PlanKey = "free" | "premium" | "family";
+
+const RANK: Record<PlanKey, number> = { free: 0, premium: 1, family: 2 };
 
 interface Plan {
-  key: "free" | "premium" | "family";
+  key: PlanKey;
   name: string;
   price: string;
   sub: string;
@@ -49,65 +55,106 @@ const PLANS: Plan[] = [
   },
 ];
 
-export default function PricingPlans() {
+export default function PricingPlans({
+  currentPlan = "free",
+  scheduledPlan = null,
+}: {
+  currentPlan?: PlanKey;
+  scheduledPlan?: PlanKey | null;
+}) {
+  const router = useRouter();
   const [pay, setPay] = useState<null | "premium" | "family">(null);
+  const [pending, startTransition] = useTransition();
+  const [note, setNote] = useState("");
+
+  function downgrade(target: PlanKey) {
+    setNote("");
+    startTransition(async () => {
+      const res = await scheduleDowngrade(target);
+      if (res.ok) {
+        setNote("Đã đặt lịch chuyển gói khi hết kỳ hiện tại.");
+        router.refresh();
+      } else {
+        setNote(res.error ?? "Không đặt được lịch đổi gói.");
+      }
+    });
+  }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-      {PLANS.map((p) => (
-        <div
-          key={p.key}
-          className={`app-card p-6 flex flex-col ${
-            p.highlight ? "ring-2 ring-primary relative" : ""
-          }`}
-        >
-          {p.highlight && (
-            <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-on-primary text-xs font-bold px-3 py-1 rounded-full">
-              PHỔ BIẾN NHẤT
-            </span>
-          )}
-          <h3 className="text-xl font-extrabold text-on-surface">{p.name}</h3>
-          <div className="mt-2">
-            <span className="text-2xl font-extrabold text-primary">{p.price}</span>
-            <span className="text-sm text-on-surface-variant"> {p.sub}</span>
-          </div>
-          <ul className="mt-4 space-y-2 flex-1">
-            {p.features.map((f) => (
-              <li key={f} className="flex items-start gap-2 text-sm text-on-surface">
-                <span className="text-green-600">✓</span>
-                {f}
-              </li>
-            ))}
-          </ul>
-          {p.key === "free" ? (
-            <button
-              disabled
-              className="mt-5 py-2.5 rounded-[14px] bg-surface-container text-on-surface-variant font-bold"
-            >
-              Đang dùng
-            </button>
-          ) : (
-            <button
-              onClick={() => setPay(p.key as "premium" | "family")}
-              className={`mt-5 py-2.5 rounded-[14px] font-bold ${
-                p.highlight
-                  ? "bg-primary text-on-primary"
-                  : "bg-tertiary text-on-tertiary"
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        {PLANS.map((p) => {
+          const isCurrent = p.key === currentPlan;
+          const isUpgrade = RANK[p.key] > RANK[currentPlan];
+          const isScheduled = scheduledPlan === p.key;
+          return (
+            <div
+              key={p.key}
+              className={`app-card p-6 flex flex-col ${
+                p.highlight ? "ring-2 ring-primary relative" : ""
               }`}
             >
-              Nâng cấp →
-            </button>
-          )}
-        </div>
-      ))}
+              {p.highlight && (
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-on-primary text-xs font-bold px-3 py-1 rounded-full">
+                  PHỔ BIẾN NHẤT
+                </span>
+              )}
+              <h3 className="text-xl font-extrabold text-on-surface">{p.name}</h3>
+              <div className="mt-2">
+                <span className="text-2xl font-extrabold text-primary">{p.price}</span>
+                <span className="text-sm text-on-surface-variant"> {p.sub}</span>
+              </div>
+              <ul className="mt-4 space-y-2 flex-1">
+                {p.features.map((f) => (
+                  <li key={f} className="flex items-start gap-2 text-sm text-on-surface">
+                    <span className="text-green-600">✓</span>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+
+              {isCurrent ? (
+                <button
+                  disabled
+                  className="mt-5 py-2.5 rounded-[14px] bg-surface-container text-on-surface-variant font-bold"
+                >
+                  Đang dùng
+                </button>
+              ) : isUpgrade ? (
+                <button
+                  onClick={() => setPay(p.key as "premium" | "family")}
+                  className={`mt-5 py-2.5 rounded-[14px] font-bold ${
+                    p.highlight ? "bg-primary text-on-primary" : "bg-tertiary text-on-tertiary"
+                  }`}
+                >
+                  Nâng cấp →
+                </button>
+              ) : isScheduled ? (
+                <button
+                  disabled
+                  className="mt-5 py-2.5 rounded-[14px] bg-surface-container text-on-surface-variant font-bold"
+                >
+                  Đã đặt lịch ✓
+                </button>
+              ) : (
+                <button
+                  onClick={() => downgrade(p.key)}
+                  disabled={pending}
+                  className="mt-5 py-2.5 rounded-[14px] border border-outline-variant text-on-surface font-bold disabled:opacity-50"
+                >
+                  Chuyển khi hết kỳ
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {note && <p className="mt-4 text-center text-sm text-on-surface-variant">{note}</p>}
 
       {pay && (
-        <PaymentQrModal
-          planName={pay}
-          billingInterval="monthly"
-          onClose={() => setPay(null)}
-        />
+        <PaymentQrModal planName={pay} billingInterval="monthly" onClose={() => setPay(null)} />
       )}
-    </div>
+    </>
   );
 }

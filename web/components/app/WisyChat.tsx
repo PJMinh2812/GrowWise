@@ -17,16 +17,97 @@ export default function WisyChat({ childId, childName }: { childId: string; chil
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [limited, setLimited] = useState(false);
+  const [speakOn, setSpeakOn] = useState(true);
   const endRef = useRef<HTMLDivElement>(null);
+  const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
-  function speak(text: string) {
+  // Load saved TTS preference (default on); cache available voices; cleanup
+  useEffect(() => {
+    if (localStorage.getItem("wisy_tts") === "off") setSpeakOn(false);
+    const loadVoices = () => {
+      try {
+        voicesRef.current = window.speechSynthesis.getVoices();
+      } catch {
+        /* noop */
+      }
+    };
+    loadVoices();
+    // Voices load asynchronously in most browsers
+    window.speechSynthesis.addEventListener?.("voiceschanged", loadVoices);
+    return () => {
+      window.speechSynthesis.removeEventListener?.("voiceschanged", loadVoices);
+      stopSpeak();
+    };
+  }, []);
+
+  function stopSpeak() {
     try {
-      const u = new SpeechSynthesisUtterance(text.replace(/[^\p{L}\p{N}\s.,!?]/gu, ""));
-      u.lang = "vi-VN";
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = "";
+        audioRef.current = null;
+      }
+      window.speechSynthesis.cancel();
+    } catch {
+      /* noop */
+    }
+  }
+
+  function toggleSpeak() {
+    setSpeakOn((on) => {
+      const next = !on;
+      localStorage.setItem("wisy_tts", next ? "on" : "off");
+      if (!next) stopSpeak();
+      return next;
+    });
+  }
+
+  // Read a reply aloud: prefer server-side Vietnamese TTS (real vi voice),
+  // fall back to the browser's Web Speech API if the route isn't configured.
+  async function speak(text: string) {
+    const clean = text.replace(/[^\p{L}\p{N}\s.,!?]/gu, "");
+    if (!clean) return;
+    try {
+      const res = await fetch("/api/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: clean }),
+      });
+      if (res.ok && res.headers.get("content-type")?.includes("audio")) {
+        const url = URL.createObjectURL(await res.blob());
+        stopSpeak();
+        const audio = new Audio(url);
+        audioRef.current = audio;
+        audio.onended = () => URL.revokeObjectURL(url);
+        await audio.play();
+        return;
+      }
+    } catch {
+      /* fall through to browser speech */
+    }
+    speakBrowser(clean);
+  }
+
+  function speakBrowser(clean: string) {
+    try {
+      // Detect language: Vietnamese diacritics → vi, else fall back to en.
+      const hasVietnamese =
+        /[ăâđêôơưàáạảãằắặẳẵầấậẩẫèéẹẻẽềếệểễìíịỉĩòóọỏõồốộổỗờớợởỡùúụủũừứựửữỳýỵỷỹ]/i.test(clean);
+      const langPrefix = hasVietnamese ? "vi" : "en";
+      const u = new SpeechSynthesisUtterance(clean);
+      u.lang = hasVietnamese ? "vi-VN" : "en-US";
+
+      const voices = voicesRef.current.length
+        ? voicesRef.current
+        : window.speechSynthesis.getVoices();
+      const match = voices.find((v) => v.lang?.toLowerCase().startsWith(langPrefix));
+      if (match) u.voice = match;
+
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(u);
     } catch {
@@ -58,7 +139,7 @@ export default function WisyChat({ childId, childName }: { childId: string; chil
       }
       const reply = data.reply ?? data.error ?? "Wisy đang bận chút xíu 😅";
       setMessages((m) => [...m, { role: "assistant", content: reply }]);
-      speak(reply);
+      if (speakOn) speak(reply);
     } catch {
       setMessages((m) => [...m, { role: "assistant", content: "Lỗi kết nối, thử lại nhé 😅" }]);
     } finally {
@@ -70,10 +151,20 @@ export default function WisyChat({ childId, childName }: { childId: string; chil
     <div className="flex flex-col h-[calc(100vh-10rem)] max-w-2xl mx-auto">
       <div className="flex items-center gap-2 mb-3">
         <span className="text-3xl">🦉</span>
-        <div>
+        <div className="flex-1">
           <p className="font-extrabold text-on-surface">Wisy</p>
           <p className="text-xs text-on-surface-variant">Trợ lý tài chính của bạn</p>
         </div>
+        <button
+          onClick={toggleSpeak}
+          aria-label={speakOn ? "Tắt giọng nói" : "Bật giọng nói"}
+          title={speakOn ? "Tắt giọng nói" : "Bật giọng nói"}
+          className={`w-10 h-10 rounded-full flex items-center justify-center transition ${
+            speakOn ? "bg-primary/10 text-primary" : "bg-surface-container text-on-surface-variant"
+          }`}
+        >
+          <span className="material-symbols-outlined">{speakOn ? "volume_up" : "volume_off"}</span>
+        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto space-y-3 pr-1">

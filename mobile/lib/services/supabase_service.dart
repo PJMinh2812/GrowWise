@@ -653,4 +653,35 @@ class SupabaseService {
       debugPrint('[SupabaseService] incrementAiUsage error: $e');
     }
   }
+
+  /// Returns today's emotion check-in count for the user, or 0 if no record.
+  static Future<int> getDailyEmotionUsage(String userId) async {
+    try {
+      final today = DateTime.now().toIso8601String().substring(0, 10);
+      final data = await client
+          .from('daily_emotion_usage')
+          .select('count')
+          .eq('user_id', userId)
+          .eq('date', today)
+          .maybeSingle();
+      return (data?['count'] as int?) ?? 0;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  /// Increments today's emotion check-in count for the user (upsert).
+  static Future<void> incrementEmotionUsage(String userId) async {
+    try {
+      final today = DateTime.now().toIso8601String().substring(0, 10);
+      final current = await getDailyEmotionUsage(userId);
+      await client.from('daily_emotion_usage').upsert({
+        'user_id': userId,
+        'date': today,
+        'count': current + 1,
+      }, onConflict: 'user_id,date');
+    } catch (e) {
+      debugPrint('[SupabaseService] incrementEmotionUsage error: $e');
+    }
+  }
 }

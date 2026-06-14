@@ -1,22 +1,26 @@
+import { cache } from 'react'
 import { cookies } from 'next/headers'
 import { createServerSupabase } from '@/lib/supabase-server'
+import { getCurrentUser } from '@/lib/app/auth'
 import type { Child, Family } from '@/lib/types'
 
-/** Family owned by the currently logged-in parent (families.parent_id == uid). */
-export async function getFamilyForUser(): Promise<Family | null> {
-  const supabase = await createServerSupabase()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+/**
+ * Family owned by the currently logged-in parent (families.parent_id == uid).
+ * Wrapped in React `cache()` so multiple callers in the same request (layout,
+ * page, getSelectedChild → getMyChildren) only trigger one DB round-trip.
+ */
+export const getFamilyForUser = cache(async (): Promise<Family | null> => {
+  const user = await getCurrentUser()
   if (!user) return null
 
+  const supabase = await createServerSupabase()
   const { data } = await supabase
     .from('families')
     .select('*')
     .eq('parent_id', user.id)
     .maybeSingle()
   return (data as Family) ?? null
-}
+})
 
 /** All children in a family, ordered by creation. */
 export async function getChildren(familyId: string): Promise<Child[]> {

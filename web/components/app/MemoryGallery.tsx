@@ -81,7 +81,13 @@ export default function MemoryGallery({
               <p className="text-sm text-on-surface-variant mt-1">{m.note}</p>
               <p className="text-xs text-on-surface-variant mt-2">
                 {childMap[m.child_id] ? childMap[m.child_id].name + " · " : ""}
-                {new Date(m.created_at).toLocaleDateString("vi-VN")}
+                {new Date(m.created_at).toLocaleString("vi-VN", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
               </p>
               <button
                 onClick={() => exportOne(m)}

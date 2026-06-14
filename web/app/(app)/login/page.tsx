@@ -45,9 +45,12 @@ function LoginForm() {
     setGoogleLoading(true);
     setError("");
     const supabase = createClient();
+    // Prefer a configured public site URL so the OAuth redirect is stable and
+    // doesn't depend on which (possibly protected) deployment URL is open.
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback?next=/role` },
+      options: { redirectTo: `${siteUrl}/auth/callback?next=/role` },
     });
     if (error) {
       setError("Không thể kết nối Google. Thử lại.");
