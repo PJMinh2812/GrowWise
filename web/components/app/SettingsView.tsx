@@ -1,10 +1,12 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import ParentPinDialog from "./ParentPinDialog";
 import AddChildDialog from "./AddChildDialog";
 import { useLang } from "./LangProvider";
+import { cancelScheduledChange } from "@/lib/app/subscription-actions";
 
 interface ChildInfo {
   id: string;
@@ -18,14 +20,20 @@ export default function SettingsView({
   planLabel,
   planName,
   maxChildren,
+  periodEnd,
+  scheduledPlanLabel,
   children,
 }: {
   planLabel: string;
   planName: string;
   maxChildren: number;
+  periodEnd?: string | null;
+  scheduledPlanLabel?: string | null;
   children: ChildInfo[];
 }) {
   const { t } = useLang();
+  const router = useRouter();
+  const [cancelPending, startCancel] = useTransition();
   const [pinOpen, setPinOpen] = useState(false);
   const [pinDone, setPinDone] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
@@ -114,15 +122,37 @@ export default function SettingsView({
           {t("currentPlan")}: <b>{planLabel}</b>
           {!isFree && <span className="text-green-600 font-semibold"> · ✨</span>}
         </p>
-        {isFree && (
-          <Link
-            href="/parent/pricing"
-            className="inline-flex items-center gap-2 mt-4 px-5 py-2.5 rounded-[14px] bg-primary text-on-primary font-bold"
-          >
-            <span className="material-symbols-outlined text-lg">workspace_premium</span>
-            {t("viewPlans")}
-          </Link>
+        {!isFree && periodEnd && (
+          <p className="text-sm text-on-surface-variant mt-1">
+            Hết kỳ hiện tại: {new Date(periodEnd).toLocaleDateString("vi-VN")}
+          </p>
         )}
+
+        {scheduledPlanLabel && (
+          <div className="mt-3 p-3 rounded-[14px] bg-amber-50 border border-amber-200 text-sm text-amber-800 flex items-center justify-between gap-2">
+            <span>Sẽ chuyển sang <b>{scheduledPlanLabel}</b> khi hết kỳ.</span>
+            <button
+              onClick={() =>
+                startCancel(async () => {
+                  await cancelScheduledChange();
+                  router.refresh();
+                })
+              }
+              disabled={cancelPending}
+              className="px-3 py-1.5 rounded-full bg-white text-amber-800 font-semibold whitespace-nowrap border border-amber-300 disabled:opacity-50"
+            >
+              {cancelPending ? "…" : "Hủy lịch đổi"}
+            </button>
+          </div>
+        )}
+
+        <Link
+          href="/parent/pricing"
+          className="inline-flex items-center gap-2 mt-4 px-5 py-2.5 rounded-[14px] bg-primary text-on-primary font-bold"
+        >
+          <span className="material-symbols-outlined text-lg">workspace_premium</span>
+          {isFree ? t("viewPlans") : "Đổi gói"}
+        </Link>
       </section>
 
       {/* Account */}

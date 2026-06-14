@@ -1,4 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createServerSupabase } from '@/lib/supabase-server'
+import {
+  getUserPlan,
+  getDailyEmotionUsage,
+  incrementEmotionUsage,
+  EMOTION_LIMITS,
+} from '@/lib/app/subscription'
 
 export const runtime = 'nodejs'
 
@@ -18,6 +25,30 @@ export async function POST(req: NextRequest) {
   const apiSecret = process.env.FACE_PLUS_PLUS_API_SECRET
   if (!apiKey || !apiSecret) {
     return NextResponse.json({ error: 'Face++ chưa được cấu hình' }, { status: 500 })
+  }
+
+  // Auth + daily quota by plan (free 1 / premium 3 / family unlimited)
+  const supabase = await createServerSupabase()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+
+  const plan = await getUserPlan()
+  const limit = EMOTION_LIMITS[plan]
+  const used = await getDailyEmotionUsage(user.id)
+  if (used >= limit) {
+    return NextResponse.json(
+      {
+        error: 'limit',
+        message:
+          plan === 'free'
+            ? 'Hết lượt kiểm tra tâm trạng hôm nay (1 lần/ngày). Nâng cấp để dùng nhiều hơn!'
+            : 'Hết lượt kiểm tra tâm trạng hôm nay. Nâng cấp gói Gia Đình để không giới hạn!',
+        remaining: 0,
+      },
+      { status: 429 },
+    )
   }
 
   const { imageBase64 } = (await req.json()) as { imageBase64: string }
@@ -47,6 +78,7 @@ export async function POST(req: NextRequest) {
     }
     const dominant = Object.entries(mapped).reduce((a, b) => (b[1] >= a[1] ? b : a))[0]
     const info = EMOTION_MAP[dominant] ?? EMOTION_MAP.neutral
+    if (Number.isFinite(limit)) await incrementEmotionUsage(user.id)
     return NextResponse.json({ emotion: dominant, ...info })
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 })

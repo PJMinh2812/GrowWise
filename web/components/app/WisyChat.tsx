@@ -17,11 +17,39 @@ export default function WisyChat({ childId, childName }: { childId: string; chil
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [limited, setLimited] = useState(false);
+  const [speakOn, setSpeakOn] = useState(true);
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
+
+  // Load saved TTS preference (default on); stop any speech on unmount
+  useEffect(() => {
+    if (localStorage.getItem("wisy_tts") === "off") setSpeakOn(false);
+    return () => {
+      try {
+        window.speechSynthesis.cancel();
+      } catch {
+        /* noop */
+      }
+    };
+  }, []);
+
+  function toggleSpeak() {
+    setSpeakOn((on) => {
+      const next = !on;
+      localStorage.setItem("wisy_tts", next ? "on" : "off");
+      if (!next) {
+        try {
+          window.speechSynthesis.cancel();
+        } catch {
+          /* noop */
+        }
+      }
+      return next;
+    });
+  }
 
   function speak(text: string) {
     try {
@@ -58,7 +86,7 @@ export default function WisyChat({ childId, childName }: { childId: string; chil
       }
       const reply = data.reply ?? data.error ?? "Wisy đang bận chút xíu 😅";
       setMessages((m) => [...m, { role: "assistant", content: reply }]);
-      speak(reply);
+      if (speakOn) speak(reply);
     } catch {
       setMessages((m) => [...m, { role: "assistant", content: "Lỗi kết nối, thử lại nhé 😅" }]);
     } finally {
@@ -70,10 +98,20 @@ export default function WisyChat({ childId, childName }: { childId: string; chil
     <div className="flex flex-col h-[calc(100vh-10rem)] max-w-2xl mx-auto">
       <div className="flex items-center gap-2 mb-3">
         <span className="text-3xl">🦉</span>
-        <div>
+        <div className="flex-1">
           <p className="font-extrabold text-on-surface">Wisy</p>
           <p className="text-xs text-on-surface-variant">Trợ lý tài chính của bạn</p>
         </div>
+        <button
+          onClick={toggleSpeak}
+          aria-label={speakOn ? "Tắt giọng nói" : "Bật giọng nói"}
+          title={speakOn ? "Tắt giọng nói" : "Bật giọng nói"}
+          className={`w-10 h-10 rounded-full flex items-center justify-center transition ${
+            speakOn ? "bg-primary/10 text-primary" : "bg-surface-container text-on-surface-variant"
+          }`}
+        >
+          <span className="material-symbols-outlined">{speakOn ? "volume_up" : "volume_off"}</span>
+        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto space-y-3 pr-1">

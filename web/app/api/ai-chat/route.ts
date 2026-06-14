@@ -30,9 +30,12 @@ function buildSystemPrompt(ctx: {
   xpNext: number
   dreams: string[]
   badges: string[]
+  now: string
 }): string {
   return `Bạn là Wisy 🌱, trợ lý AI thân thiện của GrowWise — ứng dụng giáo dục tài chính cho trẻ em.
 Bạn đang trò chuyện với ${ctx.name}, ${ctx.age} tuổi.
+
+Thời gian hiện tại (giờ Việt Nam): ${ctx.now}
 
 Thông tin của ${ctx.name}:
 • Xu: ${ctx.total} xu (Chi tiêu: ${ctx.spend} | Tiết kiệm: ${ctx.save} | Chia sẻ: ${ctx.share})
@@ -45,6 +48,7 @@ Quy tắc:
 - Dùng 1–2 emoji mỗi câu trả lời.
 - Ngôn ngữ đơn giản phù hợp ${ctx.age} tuổi.
 - Dùng đúng dữ liệu của ${ctx.name} khi liên quan, không bịa số.
+- Nếu được hỏi hôm nay là ngày/thứ/giờ mấy, trả lời theo "Thời gian hiện tại" ở trên.
 - Luôn khuyến khích và tích cực.`
 }
 
@@ -101,6 +105,11 @@ export async function POST(req: NextRequest) {
     xpNext: child.xp_to_next_level,
     dreams: (dreams ?? []).map((d: { name: string }) => d.name),
     badges: (badges ?? []).map((b: { title: string }) => b.title),
+    now: new Date().toLocaleString('vi-VN', {
+      timeZone: 'Asia/Ho_Chi_Minh',
+      dateStyle: 'full',
+      timeStyle: 'short',
+    }),
   })
 
   try {

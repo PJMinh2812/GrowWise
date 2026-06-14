@@ -63,6 +63,8 @@ CREATE TABLE IF NOT EXISTS user_subscriptions (
   current_period_start  TIMESTAMPTZ NOT NULL DEFAULT now(),
   current_period_end    TIMESTAMPTZ,
   payment_method        TEXT CHECK (payment_method IN ('momo', 'vnpay', 'zalopay', 'card', 'payos')),
+  -- Scheduled (downgrade) plan applied at the end of the current period.
+  scheduled_plan_name   TEXT CHECK (scheduled_plan_name IN ('free', 'premium', 'family')),
   created_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE(user_id)
 );
@@ -75,10 +77,20 @@ CREATE TABLE IF NOT EXISTS daily_ai_usage (
   UNIQUE(user_id, date)
 );
 
+-- Daily emotion check-in usage (free 1 / premium 3 / family unlimited).
+CREATE TABLE IF NOT EXISTS daily_emotion_usage (
+  id      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  date    DATE NOT NULL DEFAULT CURRENT_DATE,
+  count   INTEGER NOT NULL DEFAULT 0,
+  UNIQUE(user_id, date)
+);
+
 -- RLS: users only access their own subscription/usage; admin via service role
 ALTER TABLE plans ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE daily_ai_usage ENABLE ROW LEVEL SECURITY;
+ALTER TABLE daily_emotion_usage ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Public read plans" ON plans FOR SELECT USING (true);
 CREATE POLICY "Service role full access plans" ON plans USING (true) WITH CHECK (true);
@@ -92,6 +104,29 @@ CREATE POLICY "Users manage own ai usage" ON daily_ai_usage
   USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Service role full access ai usage" ON daily_ai_usage
   USING (true) WITH CHECK (true);
+
+CREATE POLICY "Users manage own emotion usage" ON daily_emotion_usage
+  USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Service role full access emotion usage" ON daily_emotion_usage
+  USING (true) WITH CHECK (true);
+
+-- ── Migration for existing databases (run once on the live DB) ────────────────
+-- ALTER TABLE user_subscriptions
+--   ADD COLUMN IF NOT EXISTS scheduled_plan_name TEXT
+--   CHECK (scheduled_plan_name IN ('free', 'premium', 'family'));
+--
+-- CREATE TABLE IF NOT EXISTS daily_emotion_usage (
+--   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+--   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+--   date DATE NOT NULL DEFAULT CURRENT_DATE,
+--   count INTEGER NOT NULL DEFAULT 0,
+--   UNIQUE(user_id, date)
+-- );
+-- ALTER TABLE daily_emotion_usage ENABLE ROW LEVEL SECURITY;
+-- CREATE POLICY "Users manage own emotion usage" ON daily_emotion_usage
+--   USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+-- CREATE POLICY "Service role full access emotion usage" ON daily_emotion_usage
+--   USING (true) WITH CHECK (true);
 
 -- ── RPC function: upsert + increment daily AI usage ──────────────────────────
 -- Cần chạy sau khi tạo bảng daily_ai_usage

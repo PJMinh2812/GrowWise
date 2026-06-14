@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Link from "next/link";
 import { useLang } from "./LangProvider";
 
 interface Result {
@@ -15,6 +16,7 @@ export default function EmotionCheckIn() {
   const [stage, setStage] = useState<"camera" | "loading" | "result" | "error">("camera");
   const [result, setResult] = useState<Result | null>(null);
   const [errMsg, setErrMsg] = useState("");
+  const [limitReached, setLimitReached] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
@@ -22,6 +24,7 @@ export default function EmotionCheckIn() {
     setOpen(true);
     setStage("camera");
     setResult(null);
+    setLimitReached(false);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
       streamRef.current = stream;
@@ -62,6 +65,12 @@ export default function EmotionCheckIn() {
         body: JSON.stringify({ imageBase64: base64 }),
       });
       const data = await res.json();
+      if (res.status === 429) {
+        setLimitReached(true);
+        setErrMsg(data.message ?? "Hết lượt kiểm tra tâm trạng hôm nay.");
+        setStage("error");
+        return;
+      }
       if (!res.ok) {
         setErrMsg(data.error ?? "Phân tích thất bại");
         setStage("error");
@@ -151,13 +160,24 @@ export default function EmotionCheckIn() {
 
             {stage === "error" && (
               <div className="py-6">
-                <p className="text-error">{errMsg}</p>
-                <button
-                  onClick={start}
-                  className="mt-4 px-5 py-2.5 rounded-[14px] bg-primary text-on-primary font-bold"
-                >
-                  Thử lại
-                </button>
+                <p className={limitReached ? "text-on-surface" : "text-error"}>{errMsg}</p>
+                {limitReached ? (
+                  <Link
+                    href="/parent/pricing"
+                    onClick={close}
+                    className="inline-flex items-center gap-1.5 mt-4 px-5 py-2.5 rounded-[14px] bg-primary text-on-primary font-bold"
+                  >
+                    <span className="material-symbols-outlined text-lg">workspace_premium</span>
+                    Nâng cấp
+                  </Link>
+                ) : (
+                  <button
+                    onClick={start}
+                    className="mt-4 px-5 py-2.5 rounded-[14px] bg-primary text-on-primary font-bold"
+                  >
+                    Thử lại
+                  </button>
+                )}
               </div>
             )}
           </div>

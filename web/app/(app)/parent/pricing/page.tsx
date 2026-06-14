@@ -1,5 +1,4 @@
-import { redirect } from "next/navigation";
-import { getActivePlan } from "@/lib/app/subscription";
+import { getSubscriptionDetails } from "@/lib/app/subscription";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 import PricingPlans from "@/components/app/PricingPlans";
@@ -7,10 +6,7 @@ import PricingPlans from "@/components/app/PricingPlans";
 export const dynamic = "force-dynamic";
 
 export default async function ParentPricingPage() {
-  const plan = await getActivePlan();
-  // Already subscribed → hide the pricing page
-  if (plan.name !== "free") redirect("/parent/settings");
-
+  const { name, scheduledPlan } = await getSubscriptionDetails();
   const lang = await getLang();
   return (
     <div className="max-w-4xl mx-auto">
@@ -20,7 +16,7 @@ export default async function ParentPricingPage() {
       <p className="text-on-surface-variant mb-8 text-center">
         Đầu tư nhỏ, tương lai lớn
       </p>
-      <PricingPlans />
+      <PricingPlans currentPlan={name} scheduledPlan={scheduledPlan} />
     </div>
   );
 }

@@ -78,7 +78,16 @@ function PendingCard({ sub }: { sub: SubmissionWithRelations }) {
           <img
             src={sub.proof_image_url}
             alt="Ảnh bằng chứng"
-            className="rounded-2xl object-cover w-full sm:w-28 h-40 sm:h-28"
+            className="rounded-2xl object-cover w-full sm:w-28 h-40 sm:h-28 bg-surface-container"
+            onError={(e) => {
+              const el = e.currentTarget;
+              el.onerror = null;
+              el.src =
+                "data:image/svg+xml;utf8," +
+                encodeURIComponent(
+                  '<svg xmlns="http://www.w3.org/2000/svg" width="112" height="112"><rect width="100%" height="100%" fill="#eee"/><text x="50%" y="50%" font-size="11" text-anchor="middle" dominant-baseline="middle" fill="#999">Không tải được ảnh</text></svg>',
+                );
+            }}
           />
         )}
         <div className="flex-1">

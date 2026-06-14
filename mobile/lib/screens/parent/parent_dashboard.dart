@@ -10,6 +10,7 @@ import '../../providers/app_state.dart';
 import '../../services/emotion_service.dart';
 import '../../services/gemini_service.dart';
 import '../../services/notification_service.dart';
+import '../../services/supabase_service.dart';
 import '../../theme/app_theme.dart';
 import '../../models/task_model.dart';
 import 'parent_task_detail.dart';
@@ -331,6 +332,31 @@ class _EmotionCheckInCardState extends State<_EmotionCheckInCard> {
   }
 
   Future<void> _checkIn() async {
+    // Daily quota by plan: free 1, premium 3, family unlimited.
+    final app = context.read<AppState>();
+    final plan = app.planType;
+    final int? limit = plan == 'family' ? null : (plan == 'premium' ? 3 : 1);
+    final uid = SupabaseService.userId;
+    if (!app.isDemoMode && limit != null && uid != null && uid.isNotEmpty) {
+      final used = await SupabaseService.getDailyEmotionUsage(uid);
+      if (used >= limit) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(plan == 'free'
+                ? 'Hết lượt kiểm tra tâm trạng hôm nay (1 lần/ngày). Nâng cấp để dùng nhiều hơn!'
+                : 'Hết lượt hôm nay. Nâng cấp gói Gia Đình để không giới hạn!'),
+            action: SnackBarAction(
+              label: 'Nâng cấp',
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const PricingScreen()),
+              ),
+            ),
+          ));
+        }
+        return;
+      }
+    }
+
     setState(() => _loading = true);
     try {
       final picked = await _picker.pickImage(
@@ -352,6 +378,11 @@ class _EmotionCheckInCardState extends State<_EmotionCheckInCard> {
         }
         setState(() => _loading = false);
         return;
+      }
+
+      // Count this successful check-in against the daily quota
+      if (!app.isDemoMode && limit != null && uid != null && uid.isNotEmpty) {
+        await SupabaseService.incrementEmotionUsage(uid);
       }
 
       // Save to prefs
