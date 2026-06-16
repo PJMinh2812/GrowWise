@@ -5,7 +5,7 @@ import AdminSidebar from './AdminSidebar'
 
 interface Props {
   children: React.ReactNode
-  role: 'admin' | 'staff' | null
+  role: 'admin' | 'manager' | 'staff' | null
   email: string
 }
 

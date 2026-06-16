@@ -3,6 +3,8 @@ import { getSelectedChild, getFamilyForUser } from "@/lib/app/children";
 import { getTaskTemplates } from "@/lib/app/tasks";
 import { getChildSubmissions } from "@/lib/app/submissions";
 import ChildTaskList, { type ChildTaskItem } from "@/components/app/ChildTaskList";
+import SurveyBanner from "@/components/app/SurveyBanner";
+import { getActiveSurveyFor } from "@/lib/app/surveys";
 import type { TaskStatus } from "@/lib/types";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
@@ -40,9 +42,11 @@ export default async function ChildHome() {
   });
 
   const xpPct = Math.min(100, Math.round((child.xp / Math.max(1, child.xp_to_next_level)) * 100));
+  const survey = await getActiveSurveyFor("child", child.id);
 
   return (
     <div>
+      {survey && <SurveyBanner survey={survey} childId={child.id} />}
       <div className="mb-6">
         <div className="flex items-center gap-3">
           <span className="text-4xl">{child.avatar_emoji}</span>

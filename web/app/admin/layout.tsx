@@ -4,7 +4,7 @@ import { createAdminClient } from '@/lib/supabase-admin'
 import AdminShell from '@/components/AdminShell'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  let role: 'admin' | 'staff' | null = null
+  let role: 'admin' | 'manager' | 'staff' | null = null
   let email = ''
 
   try {
@@ -34,6 +34,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       const adminEmails = (process.env.ADMIN_EMAILS ?? '').split(',').map(e => e.trim())
       if (profile?.role === 'admin' || adminEmails.includes(email)) {
         role = 'admin'
+      } else if (profile?.role === 'manager') {
+        role = 'manager'
       } else if (profile?.role === 'staff') {
         role = 'staff'
       }

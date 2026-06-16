@@ -7,6 +7,8 @@ import {
 } from "@/lib/app/submissions";
 import ApprovalQueue from "@/components/app/ApprovalQueue";
 import EmotionCheckIn from "@/components/app/EmotionCheckIn";
+import SurveyBanner from "@/components/app/SurveyBanner";
+import { getActiveSurveyFor } from "@/lib/app/surveys";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 
@@ -23,9 +25,11 @@ export default async function ParentDashboard() {
         getWeeklyCoins(family.id),
       ])
     : [[], [], [], 0];
+  const survey = await getActiveSurveyFor("parent");
 
   return (
     <div>
+      {survey && <SurveyBanner survey={survey} />}
       <div className="mb-6">
         <h1 className="text-2xl md:text-3xl font-extrabold text-on-surface mb-1">
           {t(lang, "navDashboard")}

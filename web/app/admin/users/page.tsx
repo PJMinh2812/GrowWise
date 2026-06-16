@@ -10,7 +10,7 @@ interface UserRow {
   created_at: string;
   last_sign_in_at: string | null;
   profile: {
-    role: "admin" | "staff";
+    role: "admin" | "manager" | "staff";
     is_banned: boolean;
     access_granted: boolean;
   } | null;
@@ -44,7 +44,7 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState<"staff" | "admin">("staff");
+  const [inviteRole, setInviteRole] = useState<"staff" | "manager" | "admin">("staff");
   const [inviting, setInviting] = useState(false);
   const [inviteError, setInviteError] = useState("");
   const [inviteSuccess, setInviteSuccess] = useState("");
@@ -161,10 +161,11 @@ export default function AdminUsersPage() {
             <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1">Vai trò</label>
             <select
               value={inviteRole}
-              onChange={e => setInviteRole(e.target.value as "staff" | "admin")}
+              onChange={e => setInviteRole(e.target.value as "staff" | "manager" | "admin")}
               className="w-full border border-outline-variant rounded-lg px-4 py-2.5 text-sm text-on-surface bg-surface-container-lowest outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
             >
               <option value="staff">Staff</option>
+              <option value="manager">Quản lý (duyệt)</option>
               <option value="admin">Admin</option>
             </select>
           </div>
@@ -315,10 +316,13 @@ export default function AdminUsersPage() {
                         className={`text-xs px-2 py-1 rounded-full border font-semibold outline-none cursor-pointer disabled:opacity-50 ${
                           u.profile.role === "admin"
                             ? "bg-primary/10 text-primary border-primary/20"
-                            : "bg-surface-variant text-on-surface-variant border-outline-variant"
+                            : u.profile.role === "manager"
+                              ? "bg-secondary/10 text-secondary border-secondary/20"
+                              : "bg-surface-variant text-on-surface-variant border-outline-variant"
                         }`}
                       >
                         <option value="admin">Admin</option>
+                        <option value="manager">Quản lý</option>
                         <option value="staff">Staff</option>
                       </select>
                     ) : (
