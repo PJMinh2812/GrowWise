@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import type { ActiveSurvey } from "@/lib/app/surveys";
 import { dismissSurvey } from "@/lib/app/survey-actions";
 
@@ -11,23 +12,30 @@ export default function SurveyBanner({
   survey: ActiveSurvey;
   childId?: string | null;
 }) {
+  const router = useRouter();
   const [hidden, setHidden] = useState(false);
+  const [opened, setOpened] = useState(false);
   const [, start] = useTransition();
   const laterKey = `survey_later_${survey.id}`;
 
-  // "Để sau" only hides for this browser until a refresh in a new session.
+  // "Để sau" only hides for this browser session.
   useEffect(() => {
     if (sessionStorage.getItem(laterKey)) setHidden(true);
   }, [laterKey]);
 
   if (hidden) return null;
 
-  function doSurvey() {
+  function openForm() {
     window.open(survey.url, "_blank", "noopener,noreferrer");
-    setHidden(true);
-    start(async () => {
-      await dismissSurvey(survey.id, childId);
-    });
+    if (survey.verified) {
+      // Don't hide — banner disappears only after a real submit (webhook records it).
+      setOpened(true);
+    } else {
+      setHidden(true);
+      start(async () => {
+        await dismissSurvey(survey.id, childId);
+      });
+    }
   }
 
   function later() {
@@ -43,12 +51,20 @@ export default function SurveyBanner({
         {survey.description && (
           <p className="text-sm text-on-surface-variant mt-0.5">{survey.description}</p>
         )}
+        {survey.verified && opened && (
+          <p className="text-xs text-on-surface-variant mt-2">
+            Banner sẽ tự ẩn sau khi bạn nộp khảo sát. Đã nộp xong?{" "}
+            <button onClick={() => router.refresh()} className="text-primary font-semibold underline">
+              Tải lại
+            </button>
+          </p>
+        )}
         <div className="flex flex-wrap gap-2 mt-3">
           <button
-            onClick={doSurvey}
+            onClick={openForm}
             className="px-4 py-2 rounded-[14px] bg-primary text-on-primary font-bold text-sm"
           >
-            Làm khảo sát
+            {opened ? "Mở lại khảo sát" : "Làm khảo sát"}
           </button>
           <button
             onClick={later}

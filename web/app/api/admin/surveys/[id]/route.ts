@@ -16,6 +16,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     description?: string
     url?: string
     audience?: 'parent' | 'child' | 'all'
+    min_age?: number | null
+    max_age?: number | null
   }
 
   if (typeof body.is_published === 'boolean' && auth.role !== 'admin' && auth.role !== 'manager') {
@@ -31,6 +33,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if (body.description !== undefined) patch.description = body.description
   if (body.url !== undefined) patch.url = body.url
   if (body.audience !== undefined) patch.audience = body.audience
+  if (body.min_age !== undefined) patch.min_age = body.min_age
+  if (body.max_age !== undefined) patch.max_age = body.max_age
   if (Object.keys(patch).length === 0) {
     return NextResponse.json({ error: 'Không có thay đổi' }, { status: 400 })
   }

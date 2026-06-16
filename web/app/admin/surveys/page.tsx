@@ -9,6 +9,8 @@ interface Survey {
   description: string | null;
   url: string;
   audience: "parent" | "child" | "all";
+  min_age: number | null;
+  max_age: number | null;
   is_published: boolean;
   created_at: string;
   published_at: string | null;
@@ -28,14 +30,38 @@ export default function AdminSurveysPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState("");
 
-  // create form
+  // create / edit form
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [url, setUrl] = useState("");
   const [audience, setAudience] = useState<"parent" | "child" | "all">("all");
+  const [minAge, setMinAge] = useState("");
+  const [maxAge, setMaxAge] = useState("");
   const [creating, setCreating] = useState(false);
 
   const canPublish = role === "admin" || role === "manager";
+
+  function resetForm() {
+    setEditingId(null);
+    setTitle("");
+    setDescription("");
+    setUrl("");
+    setAudience("all");
+    setMinAge("");
+    setMaxAge("");
+  }
+
+  function startEdit(s: Survey) {
+    setEditingId(s.id);
+    setTitle(s.title);
+    setDescription(s.description ?? "");
+    setUrl(s.url);
+    setAudience(s.audience);
+    setMinAge(s.min_age != null ? String(s.min_age) : "");
+    setMaxAge(s.max_age != null ? String(s.max_age) : "");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 
   useEffect(() => {
     load();
@@ -54,23 +80,31 @@ export default function AdminSurveysPage() {
     setLoading(false);
   }
 
-  async function handleCreate(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setCreating(true);
     setError("");
-    const res = await fetch("/api/admin/surveys", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, description, url, audience }),
-    });
+    const payload = {
+      title,
+      description,
+      url,
+      audience,
+      min_age: audience !== "parent" && minAge !== "" ? Number(minAge) : null,
+      max_age: audience !== "parent" && maxAge !== "" ? Number(maxAge) : null,
+    };
+    const res = await fetch(
+      editingId ? `/api/admin/surveys/${editingId}` : "/api/admin/surveys",
+      {
+        method: editingId ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      },
+    );
     const json = await res.json();
     if (!res.ok) {
-      setError(json.error ?? "Không tạo được khảo sát");
+      setError(json.error ?? "Không lưu được khảo sát");
     } else {
-      setTitle("");
-      setDescription("");
-      setUrl("");
-      setAudience("all");
+      resetForm();
       await load();
     }
     setCreating(false);
@@ -108,9 +142,11 @@ export default function AdminSurveysPage() {
         </p>
       </div>
 
-      {/* Create form */}
-      <form onSubmit={handleCreate} className="bg-surface-container-lowest rounded-xl border border-outline-variant p-6 space-y-4">
-        <h3 className="text-lg font-semibold text-on-surface">Tạo khảo sát mới</h3>
+      {/* Create / edit form */}
+      <form onSubmit={handleSubmit} className="bg-surface-container-lowest rounded-xl border border-outline-variant p-6 space-y-4">
+        <h3 className="text-lg font-semibold text-on-surface">
+          {editingId ? "Sửa khảo sát" : "Tạo khảo sát mới"}
+        </h3>
         <div className="grid md:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1">Tiêu đề</label>
@@ -137,11 +173,41 @@ export default function AdminSurveysPage() {
           <textarea value={description} onChange={e => setDescription(e.target.value)} rows={2} placeholder="Giúp chúng tôi cải thiện ứng dụng…"
             className="w-full border border-outline-variant rounded-lg px-4 py-2.5 text-sm text-on-surface bg-surface-container-lowest outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
         </div>
+
+        {audience !== "parent" && (
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1">Tuổi tối thiểu của trẻ (tuỳ chọn)</label>
+              <input type="number" min={0} max={18} value={minAge} onChange={e => setMinAge(e.target.value)} placeholder="vd: 9"
+                className="w-full border border-outline-variant rounded-lg px-4 py-2.5 text-sm text-on-surface bg-surface-container-lowest outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1">Tuổi tối đa của trẻ (tuỳ chọn)</label>
+              <input type="number" min={0} max={18} value={maxAge} onChange={e => setMaxAge(e.target.value)} placeholder="vd: 15"
+                className="w-full border border-outline-variant rounded-lg px-4 py-2.5 text-sm text-on-surface bg-surface-container-lowest outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
+            </div>
+          </div>
+        )}
+
+        <p className="text-xs text-on-surface-variant">
+          💡 Để xác minh người dùng đã nộp form: trong link, đặt câu &quot;Mã xác nhận&quot; với giá trị
+          <code className="mx-1 px-1 rounded bg-surface-container">__TOKEN__</code>
+          (xem hướng dẫn Apps Script). Không có thì banner ẩn ngay khi bấm.
+        </p>
+
         {error && <p className="text-xs text-error">{error}</p>}
-        <button type="submit" disabled={creating}
-          className="px-6 py-2.5 bg-primary text-on-primary text-sm font-semibold rounded-lg hover:opacity-90 active:scale-95 transition-all disabled:opacity-50">
-          {creating ? "Đang tạo…" : "Tạo bản nháp"}
-        </button>
+        <div className="flex gap-2">
+          <button type="submit" disabled={creating}
+            className="px-6 py-2.5 bg-primary text-on-primary text-sm font-semibold rounded-lg hover:opacity-90 active:scale-95 transition-all disabled:opacity-50">
+            {creating ? "Đang lưu…" : editingId ? "Lưu thay đổi" : "Tạo bản nháp"}
+          </button>
+          {editingId && (
+            <button type="button" onClick={resetForm}
+              className="px-6 py-2.5 border border-outline-variant text-on-surface-variant text-sm font-semibold rounded-lg hover:bg-surface-container">
+              Huỷ sửa
+            </button>
+          )}
+        </div>
       </form>
 
       {/* List */}
@@ -166,7 +232,13 @@ export default function AdminSurveysPage() {
                   </span>
                   <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
                     {AUDIENCE_LABEL[s.audience]}
+                    {s.audience !== "parent" && (s.min_age != null || s.max_age != null)
+                      ? ` · ${s.min_age ?? 0}–${s.max_age ?? "∞"} tuổi`
+                      : ""}
                   </span>
+                  {s.url.includes("__TOKEN__") && (
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-secondary/10 text-secondary font-medium">Có xác minh</span>
+                  )}
                 </div>
                 <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline break-all">
                   {s.url}
@@ -176,6 +248,12 @@ export default function AdminSurveysPage() {
                 </p>
               </div>
               <div className="flex items-center gap-2">
+                <button
+                  onClick={() => startEdit(s)}
+                  className="text-xs px-3 py-1.5 rounded-lg font-semibold border border-outline-variant text-on-surface-variant hover:bg-surface-container"
+                >
+                  Sửa
+                </button>
                 {canPublish ? (
                   <button
                     onClick={() => patchSurvey(s.id, { is_published: !s.is_published })}
