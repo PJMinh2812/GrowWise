@@ -42,7 +42,7 @@ export default async function ChildHome() {
   });
 
   const xpPct = Math.min(100, Math.round((child.xp / Math.max(1, child.xp_to_next_level)) * 100));
-  const survey = await getActiveSurveyFor("child", child.id);
+  const survey = await getActiveSurveyFor("child", { id: child.id, age: child.age });
 
   return (
     <div>

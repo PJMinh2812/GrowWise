@@ -24,11 +24,13 @@ export async function POST(request: NextRequest) {
   const auth = await getAdminRole(request)
   if (!auth) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  const { title, description, url, audience } = (await request.json()) as {
+  const { title, description, url, audience, min_age, max_age } = (await request.json()) as {
     title?: string
     description?: string
     url?: string
     audience?: 'parent' | 'child' | 'all'
+    min_age?: number | null
+    max_age?: number | null
   }
   if (!title?.trim() || !url?.trim()) {
     return NextResponse.json({ error: 'Thiếu tiêu đề hoặc link' }, { status: 400 })
@@ -40,6 +42,8 @@ export async function POST(request: NextRequest) {
     description: description?.trim() || null,
     url: url.trim(),
     audience: audience ?? 'all',
+    min_age: min_age ?? null,
+    max_age: max_age ?? null,
     is_published: false,
     created_by: auth.userId,
   })

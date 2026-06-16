@@ -177,6 +177,8 @@ CREATE TABLE IF NOT EXISTS surveys (
   description   TEXT,
   url           TEXT NOT NULL,
   audience      TEXT NOT NULL DEFAULT 'all' CHECK (audience IN ('parent', 'child', 'all')),
+  min_age       INT,   -- chỉ áp dụng cho người xem là trẻ em (NULL = không giới hạn)
+  max_age       INT,
   is_published  BOOLEAN NOT NULL DEFAULT false,
   created_by    UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -215,3 +217,6 @@ CREATE POLICY "Service role full access dismissals" ON survey_dismissals
 --   ALTER TABLE admin_profiles ADD CONSTRAINT admin_profiles_role_check
 --     CHECK (role IN ('admin','manager','staff'));
 -- 2) Tạo 2 bảng surveys + survey_dismissals + index + RLS như khối ở trên.
+-- 3) Nếu bảng surveys đã tạo trước đó, thêm cột giới hạn tuổi:
+--   ALTER TABLE surveys ADD COLUMN IF NOT EXISTS min_age INT;
+--   ALTER TABLE surveys ADD COLUMN IF NOT EXISTS max_age INT;
