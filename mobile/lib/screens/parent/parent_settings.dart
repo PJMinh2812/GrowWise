@@ -87,6 +87,12 @@ class ParentSettings extends StatelessWidget {
                   subtitle: '${appState.childAge} tuổi',
                   onTap: () => _editAgeDialog(context, appState),
                 ),
+                _Tile(
+                  icon: Icons.face_retouching_natural_rounded,
+                  title: 'Avatar',
+                  subtitle: appState.childAvatarEmoji,
+                  onTap: () => _editAvatarDialog(context, appState),
+                ),
                 const SizedBox(height: 24),
 
                 _SectionLabel('💎 Gói đăng ký'),
@@ -292,6 +298,50 @@ class ParentSettings extends StatelessWidget {
         if (age != null && age > 0 && age < 18) appState.updateChildAge(age);
         return true;
       },
+    );
+  }
+
+  void _editAvatarDialog(BuildContext context, AppState appState) {
+    const avatars = ['👦', '👧', '🧒', '👶', '🐱', '🐶', '🦊', '🐼', '🦄', '🐯'];
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text('😀 Đổi avatar',
+            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 18)),
+        content: Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: avatars.map((a) {
+            final selected = a == appState.childAvatarEmoji;
+            return GestureDetector(
+              onTap: () {
+                appState.updateChildEmoji(a);
+                Navigator.pop(ctx);
+              },
+              child: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: selected ? AppTheme.primaryFixed : AppTheme.surfaceBright,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: selected ? AppTheme.vibrantPrimary : AppTheme.surfaceContainerHigh,
+                    width: 2,
+                  ),
+                ),
+                child: Center(child: Text(a, style: const TextStyle(fontSize: 22))),
+              ),
+            );
+          }).toList(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Đóng', style: GoogleFonts.plusJakartaSans(color: AppTheme.textSecondary)),
+          ),
+        ],
+      ),
     );
   }
 
