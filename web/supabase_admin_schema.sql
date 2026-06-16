@@ -6,7 +6,7 @@
 CREATE TABLE IF NOT EXISTS admin_profiles (
   id            UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email         TEXT NOT NULL,
-  role          TEXT NOT NULL DEFAULT 'staff' CHECK (role IN ('admin', 'staff')),
+  role          TEXT NOT NULL DEFAULT 'staff' CHECK (role IN ('admin', 'manager', 'staff')),
   is_banned     BOOLEAN NOT NULL DEFAULT false,
   access_granted BOOLEAN NOT NULL DEFAULT false,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -166,3 +166,52 @@ CREATE POLICY "Users read own payments" ON payment_transactions
   FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Service role full access payments" ON payment_transactions
   USING (true) WITH CHECK (true);
+
+-- ============================================================================
+-- Surveys (banner khảo sát; link tới Google Form)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS surveys (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title         TEXT NOT NULL,
+  description   TEXT,
+  url           TEXT NOT NULL,
+  audience      TEXT NOT NULL DEFAULT 'all' CHECK (audience IN ('parent', 'child', 'all')),
+  is_published  BOOLEAN NOT NULL DEFAULT false,
+  created_by    UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  published_at  TIMESTAMPTZ
+);
+
+-- Mỗi (user, [con]) chỉ "đánh dấu xong" 1 lần / survey → banner không hiện lại
+CREATE TABLE IF NOT EXISTS survey_dismissals (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  survey_id   UUID NOT NULL REFERENCES surveys(id) ON DELETE CASCADE,
+  user_id     UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  child_id    UUID,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+-- Unique kể cả khi child_id NULL (parent): coalesce về 1 UUID cố định
+CREATE UNIQUE INDEX IF NOT EXISTS survey_dismissals_uniq
+  ON survey_dismissals (survey_id, user_id, COALESCE(child_id, '00000000-0000-0000-0000-000000000000'::uuid));
+
+ALTER TABLE surveys ENABLE ROW LEVEL SECURITY;
+ALTER TABLE survey_dismissals ENABLE ROW LEVEL SECURITY;
+
+-- Ai đăng nhập cũng đọc được survey đã publish (để hiện banner)
+CREATE POLICY "Read published surveys" ON surveys
+  FOR SELECT USING (is_published = true);
+CREATE POLICY "Service role full access surveys" ON surveys
+  USING (true) WITH CHECK (true);
+
+CREATE POLICY "Users manage own dismissals" ON survey_dismissals
+  USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Service role full access dismissals" ON survey_dismissals
+  USING (true) WITH CHECK (true);
+
+-- ── Migration cho DB cũ (chạy 1 lần trên Supabase live) ──────────────────────
+-- 1) Cho phép role 'manager':
+--   ALTER TABLE admin_profiles DROP CONSTRAINT IF EXISTS admin_profiles_role_check;
+--   ALTER TABLE admin_profiles ADD CONSTRAINT admin_profiles_role_check
+--     CHECK (role IN ('admin','manager','staff'));
+-- 2) Tạo 2 bảng surveys + survey_dismissals + index + RLS như khối ở trên.

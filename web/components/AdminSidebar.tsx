@@ -5,13 +5,14 @@ import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 
 interface Props {
-  role: "admin" | "staff" | null;
+  role: "admin" | "manager" | "staff" | null;
 }
 
 const NAV = [
   { href: "/admin/dashboard", label: "Thống kê",    adminOnly: false },
   { href: "/admin/lessons",   label: "Bài học",     adminOnly: false },
   { href: "/admin/pricing",   label: "Định giá",    adminOnly: false },
+  { href: "/admin/surveys",   label: "Khảo sát",    adminOnly: false },
   { href: "/admin/users",     label: "Người dùng",  adminOnly: true },
 ];
 

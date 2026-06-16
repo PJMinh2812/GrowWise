@@ -91,6 +91,67 @@ export async function GET(request: NextRequest) {
   const revenueByMonth = monthBuckets
   const salesByPlan = Object.values(planAgg).sort((a, b) => b.revenue - a.revenue)
 
+  // 3c. New users per month (last 6 months) — same buckets as revenue
+  const newUsersByMonth = monthBuckets.map(b => ({ month: b.month, count: 0 }))
+  allUsers.forEach(u => {
+    const d = new Date(u.created_at)
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    const idx = bucketIndex[key]
+    if (idx !== undefined) newUsersByMonth[idx].count++
+  })
+
+  // 3c-2. Weekly buckets for the CURRENT month (Tuần 1..n, by day-of-month)
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+  const weekCount = Math.ceil(daysInMonth / 7)
+  const curMonthNum = now.getMonth() + 1
+  const weekRange = (i: number) => `${i * 7 + 1}–${Math.min((i + 1) * 7, daysInMonth)}/${curMonthNum}`
+  const revenueByWeek = Array.from({ length: weekCount }, (_, i) => ({ label: `Tuần ${i + 1}`, range: weekRange(i), revenue: 0, count: 0 }))
+  const newUsersByWeek = Array.from({ length: weekCount }, (_, i) => ({ label: `Tuần ${i + 1}`, range: weekRange(i), count: 0 }))
+  txns?.forEach(t => {
+    const d = new Date(t.created_at)
+    const w = Math.floor((d.getDate() - 1) / 7)
+    if (revenueByWeek[w]) { revenueByWeek[w].revenue += t.amount ?? 0; revenueByWeek[w].count += 1 }
+  })
+  allUsers.forEach(u => {
+    if (u.created_at < startOfMonth) return
+    const w = Math.floor((new Date(u.created_at).getDate() - 1) / 7)
+    if (newUsersByWeek[w]) newUsersByWeek[w].count += 1
+  })
+
+  // 3c-3. Status breakdown per month (last 6 months) — for the pie chart selector
+  const statusByMonth = monthBuckets.map(b => ({ month: b.month, completed: 0, failed: 0, cancelled: 0 }))
+  const { data: statusTxns } = await admin
+    .from('payment_transactions')
+    .select('status, created_at')
+    .gte('created_at', sixMonthsAgo)
+  statusTxns?.forEach(t => {
+    const d = new Date(t.created_at)
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    const idx = bucketIndex[key]
+    if (idx === undefined) return
+    if (t.status === 'completed') statusByMonth[idx].completed++
+    else if (t.status === 'failed') statusByMonth[idx].failed++
+    else if (t.status === 'cancelled') statusByMonth[idx].cancelled++
+  })
+
+  // 3d. All-time revenue (completed)
+  const { data: allCompleted } = await admin
+    .from('payment_transactions')
+    .select('amount')
+    .eq('status', 'completed')
+  const totalRevenue = allCompleted?.reduce((sum, t) => sum + (t.amount ?? 0), 0) ?? 0
+
+  // 3e. Transaction status breakdown (cheap count queries)
+  const statusKeys = ['completed', 'pending', 'failed', 'cancelled'] as const
+  const statusCounts = await Promise.all(
+    statusKeys.map(s =>
+      admin.from('payment_transactions').select('*', { count: 'exact', head: true }).eq('status', s),
+    ),
+  )
+  const txnStatusBreakdown = Object.fromEntries(
+    statusKeys.map((s, i) => [s, statusCounts[i].count ?? 0]),
+  ) as Record<(typeof statusKeys)[number], number>
+
   // 4. Recent 10 transactions (all time)
   const { data: recentTxns } = await admin
     .from('payment_transactions')
@@ -122,6 +183,12 @@ export async function GET(request: NextRequest) {
     planSummary:  Object.values(planMap),
     salesByPlan,
     revenueByMonth,
+    newUsersByMonth,
+    revenueByWeek,
+    newUsersByWeek,
+    statusByMonth,
+    totalRevenue,
+    txnStatusBreakdown,
     recentTxns:   recentWithEmail,
   })
 }

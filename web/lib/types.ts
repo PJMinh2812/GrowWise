@@ -22,7 +22,7 @@ export interface LessonQuiz {
 export interface Profile {
   id: string
   email: string
-  role: 'admin' | 'staff'
+  role: 'admin' | 'manager' | 'staff'
   is_banned: boolean
   access_granted: boolean
   created_at: string

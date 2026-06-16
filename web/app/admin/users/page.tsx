@@ -10,7 +10,7 @@ interface UserRow {
   created_at: string;
   last_sign_in_at: string | null;
   profile: {
-    role: "admin" | "staff";
+    role: "admin" | "manager" | "staff";
     is_banned: boolean;
     access_granted: boolean;
   } | null;
@@ -44,12 +44,13 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState<"staff" | "admin">("staff");
+  const [inviteRole, setInviteRole] = useState<"staff" | "manager" | "admin">("staff");
   const [inviting, setInviting] = useState(false);
   const [inviteError, setInviteError] = useState("");
   const [inviteSuccess, setInviteSuccess] = useState("");
   const [filterRole, setFilterRole] = useState<"all" | "admin" | "staff" | "none">("all");
   const [filterStatus, setFilterStatus] = useState<"all" | "active" | "banned">("all");
+  const [filterCreated, setFilterCreated] = useState<"all" | "today" | "7d" | "30d">("all");
   const [showFilter, setShowFilter] = useState(false);
 
   useEffect(() => { fetchUsers(); }, []);
@@ -107,16 +108,26 @@ export default function AdminUsersPage() {
   const activeCount  = users.filter(u => u.profile?.access_granted && !u.profile?.is_banned).length;
   const bannedCount  = users.filter(u => u.profile?.is_banned).length;
 
+  function matchesCreated(iso: string) {
+    if (filterCreated === "all") return true;
+    const created = new Date(iso);
+    const now = new Date();
+    if (filterCreated === "today") return created.toDateString() === now.toDateString();
+    const days = filterCreated === "7d" ? 7 : 30;
+    return created.getTime() >= now.getTime() - days * 86400000;
+  }
+
   const filteredUsers = users.filter(u => {
     if (filterRole === "admin"  && u.profile?.role !== "admin")  return false;
     if (filterRole === "staff"  && u.profile?.role !== "staff")  return false;
     if (filterRole === "none"   && u.profile?.access_granted)    return false;
     if (filterStatus === "active" && u.profile?.is_banned)       return false;
     if (filterStatus === "banned" && !u.profile?.is_banned)      return false;
+    if (!matchesCreated(u.created_at))                           return false;
     return true;
   });
 
-  const isFiltered = filterRole !== "all" || filterStatus !== "all";
+  const isFiltered = filterRole !== "all" || filterStatus !== "all" || filterCreated !== "all";
 
   return (
     <div className="p-6 max-w-[1440px] mx-auto space-y-6">
@@ -150,10 +161,11 @@ export default function AdminUsersPage() {
             <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1">Vai trò</label>
             <select
               value={inviteRole}
-              onChange={e => setInviteRole(e.target.value as "staff" | "admin")}
+              onChange={e => setInviteRole(e.target.value as "staff" | "manager" | "admin")}
               className="w-full border border-outline-variant rounded-lg px-4 py-2.5 text-sm text-on-surface bg-surface-container-lowest outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
             >
               <option value="staff">Staff</option>
+              <option value="manager">Quản lý (duyệt)</option>
               <option value="admin">Admin</option>
             </select>
           </div>
@@ -227,8 +239,25 @@ export default function AdminUsersPage() {
                     ))}
                   </div>
                 </div>
+                <div>
+                  <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-2">Ngày tạo tài khoản</p>
+                  <div className="flex flex-col gap-1">
+                    {(["all", "today", "7d", "30d"] as const).map(v => (
+                      <label key={v} className="flex items-center gap-2 cursor-pointer text-sm text-on-surface hover:text-primary">
+                        <input
+                          type="radio"
+                          name="filterCreated"
+                          checked={filterCreated === v}
+                          onChange={() => setFilterCreated(v)}
+                          className="accent-primary"
+                        />
+                        {{ all: "Tất cả", today: "Hôm nay", "7d": "7 ngày qua", "30d": "30 ngày qua" }[v]}
+                      </label>
+                    ))}
+                  </div>
+                </div>
                 <button
-                  onClick={() => { setFilterRole("all"); setFilterStatus("all"); setShowFilter(false); }}
+                  onClick={() => { setFilterRole("all"); setFilterStatus("all"); setFilterCreated("all"); setShowFilter(false); }}
                   className="w-full text-xs text-on-surface-variant hover:text-error text-center pt-1 border-t border-outline-variant"
                 >
                   Xóa bộ lọc
@@ -270,6 +299,9 @@ export default function AdminUsersPage() {
                       <div>
                         <p className="font-medium text-on-surface">{u.email.split("@")[0]}</p>
                         <p className="text-xs text-on-surface-variant">{u.email}</p>
+                        <p className="text-[11px] text-on-surface-variant mt-0.5">
+                          Tạo: {new Date(u.created_at).toLocaleDateString("vi-VN")}
+                        </p>
                       </div>
                     </div>
                   </td>
@@ -284,10 +316,13 @@ export default function AdminUsersPage() {
                         className={`text-xs px-2 py-1 rounded-full border font-semibold outline-none cursor-pointer disabled:opacity-50 ${
                           u.profile.role === "admin"
                             ? "bg-primary/10 text-primary border-primary/20"
-                            : "bg-surface-variant text-on-surface-variant border-outline-variant"
+                            : u.profile.role === "manager"
+                              ? "bg-secondary/10 text-secondary border-secondary/20"
+                              : "bg-surface-variant text-on-surface-variant border-outline-variant"
                         }`}
                       >
                         <option value="admin">Admin</option>
+                        <option value="manager">Quản lý</option>
                         <option value="staff">Staff</option>
                       </select>
                     ) : (
