@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ParentPinDialog from "./ParentPinDialog";
 import AddChildDialog from "./AddChildDialog";
+import EditChildDialog from "./EditChildDialog";
 import { useLang } from "./LangProvider";
 import { cancelScheduledChange } from "@/lib/app/subscription-actions";
 
@@ -12,6 +13,7 @@ interface ChildInfo {
   id: string;
   name: string;
   emoji: string;
+  age: number;
   level: number;
   hasPin: boolean;
 }
@@ -37,6 +39,7 @@ export default function SettingsView({
   const [pinOpen, setPinOpen] = useState(false);
   const [pinDone, setPinDone] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+  const [editChild, setEditChild] = useState<ChildInfo | null>(null);
   const [pinMenuChild, setPinMenuChild] = useState<ChildInfo | null>(null);
   // "set" | "change" | "delete"
   const [pinMenuMode, setPinMenuMode] = useState<"set" | "change" | "delete">("set");
@@ -66,8 +69,17 @@ export default function SettingsView({
             {children.map((c) => (
               <li key={c.id} className="flex items-center gap-3">
                 <span className="text-2xl">{c.emoji}</span>
-                <span className="flex-1 font-semibold text-on-surface">{c.name}</span>
+                <span className="flex-1 font-semibold text-on-surface">
+                  {c.name} <span className="text-sm font-normal text-on-surface-variant">· {c.age} tuổi</span>
+                </span>
                 <span className="text-sm text-on-surface-variant">Lv.{c.level}</span>
+                <button
+                  onClick={() => setEditChild(c)}
+                  className="p-1.5 rounded-full hover:bg-surface-container transition-colors"
+                  title="Sửa thông tin con"
+                >
+                  <span className="material-symbols-outlined text-lg text-on-surface-variant">edit</span>
+                </button>
                 <button
                   onClick={() => openPinMenu(c)}
                   className="p-1.5 rounded-full hover:bg-surface-container transition-colors"
@@ -179,6 +191,13 @@ export default function SettingsView({
       )}
 
       {addOpen && <AddChildDialog onClose={() => setAddOpen(false)} />}
+
+      {editChild && (
+        <EditChildDialog
+          child={{ id: editChild.id, name: editChild.name, age: editChild.age, emoji: editChild.emoji }}
+          onClose={() => setEditChild(null)}
+        />
+      )}
 
       {pinMenuChild && (
         <ChildPinMenu

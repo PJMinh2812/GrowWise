@@ -70,6 +70,52 @@ export async function addChildAction(input: {
   return { ok: true }
 }
 
+/** Edit a child's name / age / avatar (only within the parent's own family). */
+export async function updateChildAction(input: {
+  childId: string
+  name: string
+  age: number
+  avatarEmoji: string
+}) {
+  const supabase = await createServerSupabase()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: 'unauthorized' }
+  if (!input.name.trim()) return { ok: false, error: 'Vui lòng nhập tên con' }
+
+  const { data: family } = await supabase
+    .from('families')
+    .select('id')
+    .eq('parent_id', user.id)
+    .maybeSingle()
+  if (!family) return { ok: false, error: 'Chưa có hồ sơ gia đình' }
+
+  // Ensure the child belongs to this parent's family
+  const { data: child } = await supabase
+    .from('children')
+    .select('id')
+    .eq('id', input.childId)
+    .eq('family_id', family.id)
+    .maybeSingle()
+  if (!child) return { ok: false, error: 'unauthorized' }
+
+  const { error } = await supabase
+    .from('children')
+    .update({
+      name: input.name.trim(),
+      age: input.age,
+      avatar_emoji: input.avatarEmoji,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', input.childId)
+  if (error) return { ok: false, error: error.message }
+
+  revalidatePath('/parent/settings')
+  revalidatePath('/role')
+  return { ok: true }
+}
+
 function qualityMultiplier(rating: number): number {
   if (rating === 1) return 0.8
   if (rating === 3) return 1.2

@@ -33,6 +33,7 @@ export default async function SettingsPage() {
           id: c.id,
           name: c.name,
           emoji: c.avatar_emoji,
+          age: c.age,
           level: c.level,
           hasPin: Boolean(c.child_pin_hash),
         }))}
