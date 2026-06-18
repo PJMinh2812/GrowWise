@@ -22,8 +22,13 @@ export default async function ParentLessonsPage() {
               href={`/parent/lessons/${l.id}`}
               className="app-card overflow-hidden hover:-translate-y-0.5 transition-transform"
             >
-              <div className="h-24 bg-primary-container/30 flex items-center justify-center text-5xl">
-                {l.thumbnail_emoji}
+              <div className="h-24 bg-primary-container/30 flex items-center justify-center text-5xl overflow-hidden relative">
+                {l.thumbnail_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={l.thumbnail_url} alt={l.title} className="absolute inset-0 w-full h-full object-cover" />
+                ) : (
+                  l.thumbnail_emoji
+                )}
               </div>
               <div className="p-4">
                 <p className="font-bold text-on-surface">{l.title}</p>
