@@ -134,7 +134,12 @@ export default function LessonsPage() {
             >
               {/* Banner */}
               <div className="h-40 bg-surface-container flex items-center justify-center relative overflow-hidden">
-                <span className="text-6xl z-10">{lesson.thumbnail_emoji || '📚'}</span>
+                {lesson.thumbnail_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={lesson.thumbnail_url} alt={lesson.title} className="absolute inset-0 w-full h-full object-cover" />
+                ) : (
+                  <span className="text-6xl z-10">{lesson.thumbnail_emoji || '📚'}</span>
+                )}
                 {lesson.category && (
                   <div className="absolute top-2 right-2">
                     <span className="px-2 py-1 bg-surface-container-highest text-on-surface-variant rounded-full text-xs font-semibold">
@@ -150,7 +155,11 @@ export default function LessonsPage() {
 
                 {/* Meta */}
                 <div className="flex items-center gap-4 mb-4 text-xs text-outline">
-                  <span>⏱ {Math.round(lesson.duration_seconds / 60)} phút</span>
+                  <span>
+                    {lesson.lesson_type === 'story'
+                      ? `📖 ${lesson.story_pages?.length ?? 0} trang`
+                      : `⏱ ${Math.round(lesson.duration_seconds / 60)} phút`}
+                  </span>
                   <span>{AUDIENCE_LABEL[lesson.audience] ?? lesson.audience}</span>
                 </div>
 

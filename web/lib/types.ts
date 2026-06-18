@@ -57,14 +57,26 @@ export interface UserSubscription {
   plan?: Plan
 }
 
+/** Một trang của bài học dạng truyện tranh: 1 ảnh + lời kể. */
+export interface StoryPage {
+  image_url: string
+  caption: string
+}
+
 export interface Lesson {
   id?: string
   title: string
   description: string
   youtube_id: string
+  /** 'video' = bài giảng YouTube; 'story' = truyện tranh (story_pages). */
+  lesson_type?: 'video' | 'story'
+  /** Các trang truyện (chỉ dùng khi lesson_type === 'story'). */
+  story_pages?: StoryPage[]
   audience: 'child' | 'parent'
   category: string
   thumbnail_emoji: string
+  /** Ảnh thumbnail tùy chọn; nếu rỗng thì hiển thị thumbnail_emoji. */
+  thumbnail_url?: string
   duration_seconds: number
   order_index: number
   is_published: boolean

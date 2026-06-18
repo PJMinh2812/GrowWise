@@ -21,8 +21,13 @@ export default async function ChildLearnPage() {
             const locked = !premium && i >= FREE_LIMITS.lessons;
             const card = (
               <div className="app-card overflow-hidden h-full">
-                <div className="h-24 bg-primary-container/30 flex items-center justify-center text-5xl relative">
-                  {l.thumbnail_emoji}
+                <div className="h-24 bg-primary-container/30 flex items-center justify-center text-5xl relative overflow-hidden">
+                  {l.thumbnail_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={l.thumbnail_url} alt={l.title} className="absolute inset-0 w-full h-full object-cover" />
+                  ) : (
+                    l.thumbnail_emoji
+                  )}
                   {locked && (
                     <span className="absolute inset-0 bg-black/40 flex items-center justify-center text-white">
                       <span className="material-symbols-outlined text-3xl">lock</span>
@@ -35,7 +40,11 @@ export default async function ChildLearnPage() {
                     {l.description}
                   </p>
                   <p className="text-xs text-on-surface-variant mt-2">
-                    {locked ? "🔒 Premium" : `⏱ ${Math.round(l.duration_seconds / 60)} phút`}
+                    {locked
+                      ? "🔒 Premium"
+                      : l.lesson_type === "story"
+                        ? `📖 Truyện · ${l.story_pages?.length ?? 0} trang`
+                        : `⏱ ${Math.round(l.duration_seconds / 60)} phút`}
                   </p>
                 </div>
               </div>
