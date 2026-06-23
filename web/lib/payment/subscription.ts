@@ -67,12 +67,14 @@ export async function activateSubscriptionForOrder(
   }
   const periodEnd = new Date(base.getTime() + days * 24 * 60 * 60 * 1000);
 
+  // NB: do not write `billing_interval` here — some live DBs don't have that
+  // column on user_subscriptions. The interval is already reflected in
+  // current_period_end (30 vs 365 days).
   const { error: subErr } = await supabase.from('user_subscriptions').upsert(
     {
       user_id: tx.user_id,
       plan_id: plan.id,
       status: 'active',
-      billing_interval: tx.billing_interval,
       trial_ends_at: null,
       current_period_start: now.toISOString(),
       current_period_end: periodEnd.toISOString(),
