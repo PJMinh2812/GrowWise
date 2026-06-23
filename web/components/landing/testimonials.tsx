@@ -1,43 +1,30 @@
-import { Star, Quote } from "lucide-react";
+"use client";
 
-const testimonials = [
-  {
-    name: "Chị Lan Anh",
-    role: "Mẹ của bé Minh (8 tuổi)",
-    avatar: "👩",
-    rating: 5,
-    content: "Con trai tôi giờ đã biết tiết kiệm tiền để mua món đồ chơi yêu thích. GrowWise thực sự thay đổi cách con nhìn nhận về tiền bạc!",
-  },
-  {
-    name: "Anh Hoàng",
-    role: "Bố của bé Linh (10 tuổi)",
-    avatar: "👨",
-    rating: 5,
-    content: "Việc giao nhiệm vụ cho con qua app rất tiện lợi. Con gái tôi rất hào hứng hoàn thành nhiệm vụ để nhận xu thưởng mỗi ngày.",
-  },
-  {
-    name: "Chị Thảo",
-    role: "Mẹ của bé An (6 tuổi)",
-    avatar: "👩‍🦱",
-    rating: 5,
-    content: "Tính năng 3 hũ xu giúp con học được bài học quan trọng về chia sẻ. Cháu giờ đã biết để dành tiền để tặng quà cho ông bà!",
-  },
+import { Star, Quote } from "lucide-react";
+import { useLang } from "@/components/app/LangProvider";
+import type { TKey } from "@/lib/i18n";
+
+const testimonials: { name: string; roleKey: TKey; avatar: string; rating: number; contentKey: TKey }[] = [
+  { name: "Lan Anh", roleKey: "lpTest1Role", avatar: "👩", rating: 5, contentKey: "lpTest1Content" },
+  { name: "Hoàng", roleKey: "lpTest2Role", avatar: "👨", rating: 5, contentKey: "lpTest2Content" },
+  { name: "Thảo", roleKey: "lpTest3Role", avatar: "👩‍🦱", rating: 5, contentKey: "lpTest3Content" },
 ];
 
 export function Testimonials() {
+  const { t } = useLang();
   return (
     <section id="testimonials" className="py-16 sm:py-24 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-12 sm:mb-16">
           <span className="inline-block bg-amber-100 text-amber-700 px-4 py-1.5 rounded-full text-sm font-medium mb-4">
-            Phụ huynh nói gì
+            {t("lpTestEyebrow")}
           </span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 text-balance">
-            Được tin tưởng bởi hàng ngàn gia đình
+            {t("lpTestTitle")}
           </h2>
           <p className="mt-4 text-lg text-gray-500 max-w-2xl mx-auto">
-            Xem những câu chuyện thành công từ các gia đình đang sử dụng GrowWise
+            {t("lpTestSub")}
           </p>
         </div>
 
@@ -60,7 +47,7 @@ export function Testimonials() {
 
               {/* Content */}
               <p className="text-gray-900 leading-relaxed mb-6">
-                {`"${testimonial.content}"`}
+                {`"${t(testimonial.contentKey)}"`}
               </p>
 
               {/* Author */}
@@ -70,7 +57,7 @@ export function Testimonials() {
                 </div>
                 <div>
                   <div className="font-semibold text-gray-900">{testimonial.name}</div>
-                  <div className="text-sm text-gray-500">{testimonial.role}</div>
+                  <div className="text-sm text-gray-500">{t(testimonial.roleKey)}</div>
                 </div>
               </div>
             </div>

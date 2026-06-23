@@ -1,9 +1,11 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { cookies } from 'next/headers'
 import { createServerSupabase } from '@/lib/supabase-server'
 import { getActivePlan } from '@/lib/app/subscription'
 import type { Child, Task, TaskSubmission } from '@/lib/types'
+import { calcAge } from '@/lib/types'
 
 /**
  * Add a child to the parent's family, enforcing the plan's max_children limit.
@@ -12,7 +14,7 @@ import type { Child, Task, TaskSubmission } from '@/lib/types'
  */
 export async function addChildAction(input: {
   name: string
-  age: number
+  dateOfBirth: string
   avatarEmoji: string
 }) {
   const supabase = await createServerSupabase()
@@ -22,6 +24,7 @@ export async function addChildAction(input: {
   if (!user) return { ok: false, error: 'unauthorized' }
 
   if (!input.name.trim()) return { ok: false, error: 'Vui lòng nhập tên con' }
+  if (!input.dateOfBirth) return { ok: false, error: 'Vui lòng chọn ngày sinh' }
 
   // Ensure family exists
   let { data: family } = await supabase
@@ -57,10 +60,12 @@ export async function addChildAction(input: {
     }
   }
 
+  const age = calcAge(input.dateOfBirth)
   const { error } = await supabase.from('children').insert({
     family_id: family.id,
     name: input.name.trim(),
-    age: input.age,
+    age,
+    date_of_birth: input.dateOfBirth,
     avatar_emoji: input.avatarEmoji,
   })
   if (error) return { ok: false, error: error.message }
@@ -70,11 +75,11 @@ export async function addChildAction(input: {
   return { ok: true }
 }
 
-/** Edit a child's name / age / avatar (only within the parent's own family). */
+/** Edit a child's name / DOB / avatar (only within the parent's own family). */
 export async function updateChildAction(input: {
   childId: string
   name: string
-  age: number
+  dateOfBirth: string
   avatarEmoji: string
 }) {
   const supabase = await createServerSupabase()
@@ -83,6 +88,7 @@ export async function updateChildAction(input: {
   } = await supabase.auth.getUser()
   if (!user) return { ok: false, error: 'unauthorized' }
   if (!input.name.trim()) return { ok: false, error: 'Vui lòng nhập tên con' }
+  if (!input.dateOfBirth) return { ok: false, error: 'Vui lòng chọn ngày sinh' }
 
   const { data: family } = await supabase
     .from('families')
@@ -100,11 +106,13 @@ export async function updateChildAction(input: {
     .maybeSingle()
   if (!child) return { ok: false, error: 'unauthorized' }
 
+  const age = calcAge(input.dateOfBirth)
   const { error } = await supabase
     .from('children')
     .update({
       name: input.name.trim(),
-      age: input.age,
+      age,
+      date_of_birth: input.dateOfBirth,
       avatar_emoji: input.avatarEmoji,
       updated_at: new Date().toISOString(),
     })
@@ -113,6 +121,54 @@ export async function updateChildAction(input: {
 
   revalidatePath('/parent/settings')
   revalidatePath('/role')
+  return { ok: true }
+}
+
+/** Update the logged-in parent's display name and avatar URL. */
+export async function updateParentProfileAction(input: {
+  fullName: string
+  avatarUrl: string
+}) {
+  const supabase = await createServerSupabase()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: 'unauthorized' }
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({ full_name: input.fullName.trim(), avatar_url: input.avatarUrl.trim() || null })
+    .eq('id', user.id)
+  if (error) return { ok: false, error: error.message }
+
+  revalidatePath('/parent/settings')
+  revalidatePath('/parent')
+  return { ok: true }
+}
+
+/** Child self-edits their own name / avatar (no DOB, no age). */
+export async function updateChildSelfAction(input: {
+  name: string
+  avatarEmoji: string
+  avatarUrl?: string
+}) {
+  const supabase = await createServerSupabase()
+  const cookieStore = await cookies()
+  const childId = cookieStore.get('gw_child_id')?.value
+  if (!childId) return { ok: false, error: 'Chưa chọn hồ sơ con' }
+  if (!input.name.trim()) return { ok: false, error: 'Vui lòng nhập tên' }
+
+  const { error } = await supabase
+    .from('children')
+    .update({
+      name: input.name.trim(),
+      avatar_emoji: input.avatarEmoji,
+      avatar_url: input.avatarUrl?.trim() || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', childId)
+  if (error) return { ok: false, error: error.message }
+
+  revalidatePath('/child')
+  revalidatePath('/child/settings')
   return { ok: true }
 }
 

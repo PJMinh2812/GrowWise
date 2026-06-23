@@ -5,32 +5,34 @@ export const dynamic = "force-dynamic";
 
 export default async function AchievementsPage() {
   const child = await getSelectedChild();
-  if (!child) return <div className="app-card p-6 text-on-surface">Chưa có hồ sơ con.</div>;
+  if (!child) return <div className="gw-card" style={{ padding: "24px", color: "var(--ink-soft)" }}>Chưa có hồ sơ con.</div>;
   const badges = await getBadges(child.id);
 
   return (
     <div>
-      <h1 className="text-2xl md:text-3xl font-extrabold text-on-surface mb-2">Thành tích</h1>
+      <div className="gw-h">
+        <h2>Thành tích 🏆</h2>
+      </div>
 
-      <div className="app-card p-5 mb-6 flex items-center gap-4">
-        <span className="text-4xl">{child.avatar_emoji}</span>
+      <div className="gw-card" style={{ marginBottom: "20px", display: "flex", alignItems: "center", gap: "16px" }}>
+        <span style={{ fontSize: "40px" }}>{child.avatar_emoji}</span>
         <div>
-          <p className="font-bold text-on-surface">Cấp độ {child.level}</p>
-          <p className="text-sm text-on-surface-variant">{badges.length} huy hiệu đã đạt</p>
+          <p style={{ fontWeight: 800, color: "var(--ink)" }}>Cấp độ {child.level}</p>
+          <p style={{ fontSize: "13px", color: "var(--ink-soft)" }}>{badges.length} huy hiệu đã đạt</p>
         </div>
       </div>
 
       {badges.length === 0 ? (
-        <div className="app-card p-8 text-center text-on-surface-variant">
+        <div className="gw-card" style={{ padding: "32px", textAlign: "center", color: "var(--ink-soft)" }}>
           Chưa có huy hiệu nào. Hoàn thành nhiệm vụ để mở khoá nhé! 🏅
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="gw-grid">
           {badges.map((b) => (
-            <div key={b.id} className="app-card p-5 text-center">
-              <div className="text-4xl mb-2">{b.emoji}</div>
-              <p className="font-bold text-on-surface text-sm">{b.title}</p>
-              <p className="text-xs text-on-surface-variant mt-1">
+            <div key={b.id} className="gw-card" style={{ textAlign: "center" }}>
+              <div style={{ fontSize: "36px", marginBottom: "8px" }}>{b.emoji}</div>
+              <p style={{ fontWeight: 800, color: "var(--ink)", fontSize: "14px" }}>{b.title}</p>
+              <p style={{ fontSize: "12px", color: "var(--ink-soft)", marginTop: "4px" }}>
                 {new Date(b.earned_at).toLocaleDateString("vi-VN")}
               </p>
             </div>

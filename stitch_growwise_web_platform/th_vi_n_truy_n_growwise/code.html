@@ -1,0 +1,225 @@
+<!DOCTYPE html><html lang="vi"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>GrowWise - Story Library</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@500;600;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-fixed-variant": "#6e3900",
+                        "secondary-fixed": "#99f894",
+                        "surface": "#fff8f3",
+                        "on-tertiary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "secondary-container": "#96f592",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-container": "#0a7320",
+                        "primary-fixed-dim": "#ffb77d",
+                        "surface-container": "#f3ede8",
+                        "on-background": "#1d1b18",
+                        "outline": "#897362",
+                        "primary-fixed": "#ffdcc3",
+                        "surface-container-lowest": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "tertiary-fixed-dim": "#cdbdff",
+                        "secondary": "#006e1c",
+                        "background": "#fff8f3",
+                        "tertiary-container": "#b29bff",
+                        "on-secondary-fixed": "#002204",
+                        "primary": "#904d00",
+                        "on-tertiary-container": "#4600bb",
+                        "on-error-container": "#93000a",
+                        "on-primary": "#ffffff",
+                        "surface-tint": "#904d00",
+                        "tertiary": "#6833ea",
+                        "on-primary-container": "#623200",
+                        "outline-variant": "#ddc1ae",
+                        "primary-container": "#ff8c00",
+                        "surface-container-low": "#f9f2ed",
+                        "inverse-on-surface": "#f6efeb",
+                        "secondary-fixed-dim": "#7edb7b",
+                        "surface-container-high": "#eee7e2",
+                        "tertiary-fixed": "#e8deff",
+                        "on-primary-fixed": "#2f1500",
+                        "surface-container-highest": "#e8e1dc",
+                        "surface-dim": "#dfd9d4",
+                        "on-tertiary-fixed-variant": "#4f00d0",
+                        "inverse-primary": "#ffb77d",
+                        "surface-variant": "#e8e1dc",
+                        "on-surface": "#1d1b18",
+                        "on-tertiary-fixed": "#20005f",
+                        "on-secondary-fixed-variant": "#005313",
+                        "inverse-surface": "#33302d",
+                        "surface-bright": "#fff8f3",
+                        "on-surface-variant": "#564334",
+                        "error": "#ba1a1a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "md": "16px",
+                        "lg": "24px",
+                        "3d-offset": "4px",
+                        "unit": "4px",
+                        "xs": "4px",
+                        "xl": "32px",
+                        "sm": "8px"
+                    },
+                    "fontFamily": {
+                        "label-lg": ["Nunito Sans"],
+                        "label-md": ["Nunito Sans"],
+                        "body-md": ["Nunito Sans"],
+                        "body-lg": ["Nunito Sans"],
+                        "headline-xl": ["Nunito Sans"],
+                        "headline-md": ["Nunito Sans"],
+                        "headline-lg": ["Nunito Sans"]
+                    },
+                    "fontSize": {
+                        "label-lg": ["15px", { "lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "800" }],
+                        "label-md": ["13px", { "lineHeight": "18px", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "body-lg": ["18px", { "lineHeight": "26px", "fontWeight": "600" }],
+                        "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "700" }],
+                        "headline-lg": ["24px", { "lineHeight": "32px", "fontWeight": "800" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #fff8f3; /* Custom cream background requested */
+            /* Tailwind classes for Playful Modernism */
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        .pill-button {
+            border-bottom-width: 4px;
+            transition: all 0.15s ease;
+        }
+        
+        .pill-button:active {
+            transform: translateY(2px);
+            border-bottom-width: 2px;
+            margin-bottom: 2px;
+        }
+
+        .card-3d {
+            border-bottom-width: 4px;
+        }
+    </style>
+</head>
+<body class="bg-surface font-body-md text-on-background pb-24 md:pb-0 pt-[72px] md:pt-[88px]">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-lg py-md max-w-full bg-surface dark:bg-background border-b-2 border-surface-container-highest dark:border-outline-variant flat no shadows">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-headline-xl text-primary" data-icon="flag">flag</span>
+<span class="font-headline-lg text-headline-lg font-black text-primary dark:text-primary-fixed-dim">GrowWise</span>
+</div>
+<div class="font-label-lg text-label-lg text-primary dark:text-primary-fixed-dim flex items-center gap-2">
+            🔥 1  🪙 800  ❤️ 5
+        </div>
+<!-- Desktop Nav Cluster (Hidden on Mobile) -->
+<nav class="hidden md:flex gap-md items-center"><a class="font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-low px-md py-sm rounded-xl" href="#">Trang chủ</a><a class="font-label-lg text-label-lg text-primary bg-primary-fixed rounded-xl px-md py-sm border-b-[4px] border-on-primary-fixed-variant" href="#">Học tập</a><a class="font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-low px-md py-sm rounded-xl" href="#">Tiết kiệm</a><a class="font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-low px-md py-sm rounded-xl" href="#">Nhiệm vụ</a><a class="font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-low px-md py-sm rounded-xl" href="#">Cửa hàng</a></nav>
+</header>
+<!-- Main Content -->
+<main class="px-md md:px-lg max-w-7xl mx-auto pt-md pb-xl">
+<!-- Pill Tab Switcher -->
+<div class="bg-surface-container-high rounded-full p-1 mb-lg flex border-2 border-surface-dim mx-auto max-w-md">
+<button class="flex-1 rounded-full py-2 font-label-lg text-label-lg text-on-surface-variant text-center transition-colors">
+                📘 Bài học
+            </button>
+<button class="flex-1 rounded-full py-2 font-label-lg text-label-lg bg-primary text-on-primary shadow-sm text-center transition-colors">
+                📖 Đọc truyện
+            </button>
+</div>
+<!-- Category Chips -->
+<div class="flex overflow-x-auto gap-sm pb-sm mb-lg no-scrollbar snap-x">
+<button class="pill-button bg-primary-container text-on-primary-container border-on-primary-fixed-variant font-label-md text-label-md px-md py-sm rounded-full whitespace-nowrap snap-start shrink-0">
+                Tất cả
+            </button>
+<button class="pill-button bg-surface-container text-on-surface border-surface-dim font-label-md text-label-md px-md py-sm rounded-full whitespace-nowrap snap-start shrink-0">
+                Cổ tích
+            </button>
+<button class="pill-button bg-surface-container text-on-surface border-surface-dim font-label-md text-label-md px-md py-sm rounded-full whitespace-nowrap snap-start shrink-0">
+                Tài chính
+            </button>
+<button class="pill-button bg-surface-container text-on-surface border-surface-dim font-label-md text-label-md px-md py-sm rounded-full whitespace-nowrap snap-start shrink-0">
+                Kỹ năng
+            </button>
+</div>
+<!-- Story Grid -->
+<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-md">
+<!-- Story Card 1 -->
+<div class="bg-surface-container-lowest rounded-[24px] border-2 border-surface-dim card-3d p-sm flex flex-col relative group cursor-pointer">
+<div class="relative w-full aspect-[3/4] mb-sm rounded-[16px] overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A beautifully illustrated cover for a children's storybook showing a cute anthropomorphic piggy bank in a lush green forest, warm sunlight filtering through trees. Playful modern style, soft 3D rendering, vibrant cheerful colors, bright lighting, emphasizing financial literacy for kids." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBNqqagUwdf3Qy6W_vGzBOVq0zFEfSrnzWZ6C1poumgOvhx7CirqRVHXmq2tDK3oAUli-rQqpwPZAKukukw4Qz2YQSDhaArSLuFkKAWXb_KV2k9mzQE7r1MgcE7ju1TNYmXeUldIXxFwZ-P4dNZ-47Li1cNZSv2S71BP_HcjZl-hZCnftn9xfhnEGNDCJpEEr_mx64pvuThaF07njN0YqLbMc1fPi7A8tQNEVes3LP5PbAZ-iBIT54I-lYCV-EBpS0o-EzawPX05sQ">
+</div>
+<h3 class="font-headline-md text-headline-md text-on-background line-clamp-2 mb-xs">Sự tích Heo đất</h3>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2 mb-sm flex-grow">Bài học đầu tiên về tiết kiệm.</p>
+<div class="flex justify-between items-center mt-auto">
+<span class="bg-secondary-container text-on-secondary-container font-label-md text-label-md px-sm py-xs rounded-full inline-block">
+                        📖 5 trang
+                    </span>
+</div>
+</div>
+<!-- Story Card 2 (Premium Locked) -->
+<div class="bg-surface-container-lowest rounded-[24px] border-2 border-surface-dim card-3d p-sm flex flex-col relative group cursor-pointer opacity-90">
+<div class="absolute top-md right-md z-10 bg-surface-container-high rounded-full p-xs shadow-md">
+<span class="material-symbols-outlined text-outline" data-icon="lock">lock</span>
+</div>
+<div class="relative w-full aspect-[3/4] mb-sm rounded-[16px] overflow-hidden">
+<img class="w-full h-full object-cover filter brightness-75" data-alt="A charming illustration of a magical beanstalk growing rapidly towards clouds made of gold coins. Colorful, energetic Playful Modernism aesthetic, tactile 3D elements, hyper-rounded shapes, warm and friendly lighting, illustrating an educational story about growth." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCO957zbAcfrbvBewrbH2UX6m5_u4FeLBjU1fdKt532K5YsMiFIevLNs6MCbhn2GslonOyaJrYIT1jslgUx61MRpIxNB8IYEbBJtYWTLOZbm794tZvWOQyvwQrajmN-jlwGfiC2cx-vGB2nwu0q2W68XBVWsqBPDeVx80tatvydEOhtwRgdZDRN8lGlZQwFjUTIcYN8g_U5NBHQbuQclnZrGyXupW_osbZH_4wPUoogAoKkJt37s3B9A6SO9MhAgJ5GkjXBtjwLLdc">
+</div>
+<h3 class="font-headline-md text-headline-md text-on-background line-clamp-2 mb-xs">Hạt đậu Vàng</h3>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2 mb-sm flex-grow">Hành trình phiêu lưu cùng cậu bé ngoan.</p>
+<div class="flex justify-between items-center mt-auto">
+<span class="bg-surface-container text-on-surface font-label-md text-label-md px-sm py-xs rounded-full inline-block">
+                        📖 8 trang
+                    </span>
+</div>
+</div>
+<!-- Story Card 3 -->
+<div class="bg-surface-container-lowest rounded-[24px] border-2 border-surface-dim card-3d p-sm flex flex-col relative group cursor-pointer">
+<div class="relative w-full aspect-[3/4] mb-sm rounded-[16px] overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A vibrant cover illustration depicting a friendly fox character organizing a tiny marketplace stall with colorful fruits. Warm, inviting colors, skeuo-minimalist style with soft lighting and drop shadows, appealing to young learners exploring economics." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBDN_rv7xY25xwSGELMQgv8YflGcV3Qwvw3XqHc_zpRQFLUY_AJhEjb2R4uTAy9orIw2LH46gWWIIfJkQf0QKJsoWlOOnf3xcGXmk_2LhSaAd3vr61fG-2FOoNk46DHKhzsqiUp8w9YMlcf0bCBWq7Bnjr34QLah3mtjdlcw6e01SRXiTN_vrK7caTHaIgytlYewg8TR8UBPZxU68LBOSv9BDhyNB47t8KpprbK9_-2KqjRI5O2LxlZAneLELLtf6Nf8yxqdr5XBhg">
+</div>
+<h3 class="font-headline-md text-headline-md text-on-background line-clamp-2 mb-xs">Chợ của Cáo</h3>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2 mb-sm flex-grow">Tập làm kinh doanh nhỏ.</p>
+<div class="flex justify-between items-center mt-auto">
+<span class="bg-secondary-container text-on-secondary-container font-label-md text-label-md px-sm py-xs rounded-full inline-block">
+                        📖 6 trang
+                    </span>
+</div>
+</div>
+<!-- Story Card 4 -->
+<div class="bg-surface-container-lowest rounded-[24px] border-2 border-surface-dim card-3d p-sm flex flex-col relative group cursor-pointer">
+<div class="relative w-full aspect-[3/4] mb-sm rounded-[16px] overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A cozy scene showing a bear cub learning to ride a bicycle with training wheels, surrounded by autumn leaves. Playful 3D modern style, rich warm oranges and yellows, soft rounded forms, conveying a sense of skill-building and encouragement." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCYm-oWF8zZVT9B8S04RtI-ee6ZAEqjVOTQTuFz7Uf05GPO_6anYC6LAqP1C1zJd4oyDijTV9iASmW0LBxuV_BzRPI2X9OU6opCPWa3gqQQ8WC0hcfdQCD53iGSzlPFYMK58V54wSZI_2mFweMG248adqwFMn0niywlNd8KRRZvW79cwTnMjMpFPEUE1-xsYWSKfW-UgD7-Z2vbdmrEG7uPed6iSLtXcIQIrDvRaSBBpdA4aPkzlIw9Wk0UDLfHpVk298vxTFcz2DQ">
+</div>
+<h3 class="font-headline-md text-headline-md text-on-background line-clamp-2 mb-xs">Gấu tập xe đạp</h3>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2 mb-sm flex-grow">Không từ bỏ khi vấp ngã.</p>
+<div class="flex justify-between items-center mt-auto">
+<span class="bg-secondary-container text-on-secondary-container font-label-md text-label-md px-sm py-xs rounded-full inline-block">
+                        📖 4 trang
+                    </span>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-md py-sm bg-surface dark:bg-background border-t-2 border-surface-container-highest dark:border-outline-variant flat no shadows"><a class="text-on-surface-variant hover:bg-surface-container-low p-sm rounded-xl flex flex-col items-center gap-1" href="#"><span class="material-symbols-outlined" data-icon="home">home</span><span class="text-label-md font-label-md">Trang chủ</span></a><a class="bg-primary-fixed text-primary border-b-[4px] border-on-primary-fixed-variant rounded-xl p-sm flex flex-col items-center gap-1 translate-y-[2px]" href="#"><span class="material-symbols-outlined" data-icon="school" style="font-variation-settings: 'FILL' 1;">school</span><span class="text-label-md font-label-md">Học tập</span></a><a class="text-on-surface-variant hover:bg-surface-container-low p-sm rounded-xl flex flex-col items-center gap-1" href="#"><span class="material-symbols-outlined" data-icon="savings">savings</span><span class="text-label-md font-label-md">Tiết kiệm</span></a><a class="text-on-surface-variant hover:bg-surface-container-low p-sm rounded-xl flex flex-col items-center gap-1" href="#"><span class="material-symbols-outlined" data-icon="military_tech">military_tech</span><span class="text-label-md font-label-md">Nhiệm vụ</span></a><a class="text-on-surface-variant hover:bg-surface-container-low p-sm rounded-xl flex flex-col items-center gap-1" href="#"><span class="material-symbols-outlined" data-icon="storefront">storefront</span><span class="text-label-md font-label-md">Cửa hàng</span></a></nav>
+
+
+</body></html>

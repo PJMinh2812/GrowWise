@@ -1,5 +1,17 @@
 import { createServerSupabase } from '@/lib/supabase-server'
+import { createAdminClient } from '@/lib/supabase-admin'
 import type { Lesson } from '@/lib/types'
+
+/** IDs of lessons a child has completed (for the learning-path progress). */
+export async function getCompletedLessonIds(childId: string): Promise<string[]> {
+  if (!childId) return []
+  const admin = createAdminClient()
+  const { data } = await admin
+    .from('lesson_completions')
+    .select('lesson_id')
+    .eq('child_id', childId)
+  return (data ?? []).map((r) => r.lesson_id as string)
+}
 
 /** Published lessons (optionally filtered by audience) with nested quizzes + options. */
 export async function getLessons(audience?: 'child' | 'parent'): Promise<Lesson[]> {

@@ -1,54 +1,38 @@
-import { PiggyBank, Gamepad2, Sparkles, Heart } from "lucide-react";
+"use client";
 
-const features = [
-  {
-    icon: PiggyBank,
-    title: "3 Hũ Xu",
-    subtitle: "Tiêu dùng · Tiết kiệm · Sẻ chia",
-    description: "Hệ thống 3 hũ giúp con học cách phân bổ tiền thông minh ngay từ nhỏ",
-    color: "bg-secondary",
-    bgColor: "bg-secondary/10",
-  },
-  {
-    icon: Gamepad2,
-    title: "Gamification",
-    subtitle: "XP, cấp độ, huy hiệu, streak",
-    description: "Biến việc học quản lý tiền thành trò chơi thú vị với phần thưởng hấp dẫn",
-    color: "bg-secondary",
-    bgColor: "bg-secondary/10",
-  },
-  {
-    icon: Sparkles,
-    title: "AI Dream Coach",
-    subtitle: "Gợi ý nhiệm vụ & mục tiêu cá nhân",
-    description: "Trợ lý AI thông minh giúp con đặt mục tiêu và theo dõi tiến độ tài chính",
-    color: "bg-gray-900",
-    bgColor: "bg-gray-900/10",
-  },
-  {
-    icon: Heart,
-    title: "Bonding",
-    subtitle: "Kết nối phụ huynh & con cái",
-    description: "Tăng cường gắn kết gia đình qua các hoạt động và nhiệm vụ cùng nhau",
-    color: "bg-primary",
-    bgColor: "bg-amber-100",
-  },
+import { PiggyBank, Gamepad2, Sparkles, Heart } from "lucide-react";
+import { useLang } from "@/components/app/LangProvider";
+import type { TKey } from "@/lib/i18n";
+
+const features: {
+  icon: typeof PiggyBank;
+  titleKey: TKey;
+  subtitleKey: TKey;
+  descKey: TKey;
+  color: string;
+  bgColor: string;
+}[] = [
+  { icon: PiggyBank, titleKey: "lpFeat1Title", subtitleKey: "lpFeat1Sub", descKey: "lpFeat1Desc", color: "bg-secondary", bgColor: "bg-secondary/10" },
+  { icon: Gamepad2, titleKey: "lpFeat2Title", subtitleKey: "lpFeat2Sub", descKey: "lpFeat2Desc", color: "bg-secondary", bgColor: "bg-secondary/10" },
+  { icon: Sparkles, titleKey: "lpFeat3Title", subtitleKey: "lpFeat3Sub", descKey: "lpFeat3Desc", color: "bg-gray-900", bgColor: "bg-gray-900/10" },
+  { icon: Heart, titleKey: "lpFeat4Title", subtitleKey: "lpFeat4Sub", descKey: "lpFeat4Desc", color: "bg-primary", bgColor: "bg-amber-100" },
 ];
 
 export function Features() {
+  const { t } = useLang();
   return (
     <section id="features" className="py-16 sm:py-24 bg-[#f0fdf4]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-12 sm:mb-16">
           <span className="inline-block bg-secondary/10 text-secondary px-4 py-1.5 rounded-full text-sm font-medium mb-4">
-            Tính năng nổi bật
+            {t("lpFeatEyebrow")}
           </span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 text-balance">
-            Tất cả những gì con bạn cần
+            {t("lpFeatTitle")}
           </h2>
           <p className="mt-4 text-lg text-gray-500 max-w-2xl mx-auto">
-            GrowWise kết hợp công nghệ và tâm lý học để tạo ra trải nghiệm học tập tài chính hoàn hảo
+            {t("lpFeatSub")}
           </p>
         </div>
 
@@ -66,13 +50,13 @@ export function Features() {
 
               {/* Content */}
               <h3 className="text-xl font-bold text-gray-900 mb-1">
-                {feature.title}
+                {t(feature.titleKey)}
               </h3>
               <p className="text-sm font-medium text-secondary mb-3">
-                {feature.subtitle}
+                {t(feature.subtitleKey)}
               </p>
               <p className="text-gray-500 text-sm leading-relaxed">
-                {feature.description}
+                {t(feature.descKey)}
               </p>
             </div>
           ))}
@@ -84,7 +68,7 @@ export function Features() {
             href="#download"
             className="inline-flex items-center gap-2 text-secondary font-medium hover:underline"
           >
-            Khám phá thêm tính năng
+            {t("lpFeatMore")}
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
             </svg>

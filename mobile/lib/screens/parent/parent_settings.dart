@@ -1,5 +1,7 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_state.dart';
 import '../../services/supabase_service.dart';
@@ -303,44 +305,113 @@ class ParentSettings extends StatelessWidget {
 
   void _editAvatarDialog(BuildContext context, AppState appState) {
     const avatars = ['👦', '👧', '🧒', '👶', '🐱', '🐶', '🦊', '🐼', '🦄', '🐯'];
+    final s = appState.strings;
+    bool uploading = false;
+
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text('😀 Đổi avatar',
-            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 18)),
-        content: Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: avatars.map((a) {
-            final selected = a == appState.childAvatarEmoji;
-            return GestureDetector(
-              onTap: () {
-                appState.updateChildEmoji(a);
-                Navigator.pop(ctx);
-              },
-              child: Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: selected ? AppTheme.primaryFixed : AppTheme.surfaceBright,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: selected ? AppTheme.vibrantPrimary : AppTheme.surfaceContainerHigh,
-                    width: 2,
-                  ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setLocal) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: Text(s.chooseAvatar,
+              style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 18)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Current avatar preview
+              GestureDetector(
+                onTap: uploading ? null : () async {
+                  final picker = ImagePicker();
+                  final xFile = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+                  if (xFile == null || appState.childId == null) return;
+                  setLocal(() => uploading = true);
+                  final bytes = await xFile.readAsBytes();
+                  final url = await SupabaseService.uploadAvatarImage(
+                    pathPrefix: 'children',
+                    entityId: appState.childId!,
+                    imageBytes: bytes,
+                  );
+                  if (url != null) {
+                    await appState.updateChildAvatarUrl(url);
+                  }
+                  setLocal(() => uploading = false);
+                  if (ctx.mounted) Navigator.pop(ctx);
+                },
+                child: Stack(
+                  alignment: Alignment.bottomRight,
+                  children: [
+                    CircleAvatar(
+                      radius: 36,
+                      backgroundColor: AppTheme.primaryFixed,
+                      child: appState.childAvatarUrl != null
+                          ? ClipOval(
+                              child: CachedNetworkImage(
+                                imageUrl: appState.childAvatarUrl!,
+                                width: 72, height: 72, fit: BoxFit.cover,
+                              ),
+                            )
+                          : Text(appState.childAvatarEmoji, style: const TextStyle(fontSize: 34)),
+                    ),
+                    if (uploading)
+                      const CircleAvatar(
+                        radius: 36,
+                        backgroundColor: Colors.black38,
+                        child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
+                      )
+                    else
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(color: AppTheme.vibrantPrimary, shape: BoxShape.circle),
+                        child: const Icon(Icons.camera_alt, color: Colors.white, size: 14),
+                      ),
+                  ],
                 ),
-                child: Center(child: Text(a, style: const TextStyle(fontSize: 22))),
               ),
-            );
-          }).toList(),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('Đóng', style: GoogleFonts.plusJakartaSans(color: AppTheme.textSecondary)),
+              const SizedBox(height: 12),
+              if (appState.childAvatarUrl != null)
+                TextButton(
+                  onPressed: uploading ? null : () async {
+                    await appState.updateChildAvatarUrl(null);
+                    if (ctx.mounted) Navigator.pop(ctx);
+                  },
+                  child: Text(s.removePhoto, style: GoogleFonts.plusJakartaSans(color: AppTheme.onErrorContainer, fontSize: 13)),
+                ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: avatars.map((a) {
+                  final selected = a == appState.childAvatarEmoji;
+                  return GestureDetector(
+                    onTap: () {
+                      appState.updateChildEmoji(a);
+                      Navigator.pop(ctx);
+                    },
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: selected ? AppTheme.primaryFixed : AppTheme.surfaceBright,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: selected ? AppTheme.vibrantPrimary : AppTheme.surfaceContainerHigh,
+                          width: 2,
+                        ),
+                      ),
+                      child: Center(child: Text(a, style: const TextStyle(fontSize: 22))),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
           ),
-        ],
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(s.close, style: GoogleFonts.plusJakartaSans(color: AppTheme.textSecondary)),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -402,7 +473,7 @@ class ParentSettings extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: Text('Hủy', style: GoogleFonts.plusJakartaSans(color: AppTheme.textSecondary)),
+              child: Text(appState.strings.cancel, style: GoogleFonts.plusJakartaSans(color: AppTheme.textSecondary)),
             ),
             FilledButton(
               style: FilledButton.styleFrom(backgroundColor: AppTheme.vibrantPrimary),
@@ -422,7 +493,7 @@ class ParentSettings extends StatelessWidget {
                   messenger.showSnackBar(SnackBar(content: Text(err)));
                 }
               },
-              child: Text('Thêm', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+              child: Text(appState.strings.addBtn, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
             ),
           ],
         ),
@@ -466,7 +537,7 @@ class ParentSettings extends StatelessWidget {
                 fontSize: 18, fontWeight: FontWeight.w800,
                 color: AppTheme.textPrimary)),
             const SizedBox(height: 4),
-            Text(hasPin ? 'Đã đặt mã PIN 🔐' : 'Chưa có mã PIN',
+            Text(hasPin ? appState.strings.hasPinLabel : appState.strings.noPinLabel,
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 13, color: AppTheme.textHint)),
             const SizedBox(height: 20),
@@ -474,7 +545,7 @@ class ParentSettings extends StatelessWidget {
               width: double.infinity,
               child: FilledButton.icon(
                 icon: const Icon(Icons.lock_outline_rounded),
-                label: Text(hasPin ? 'Đổi mã PIN' : 'Đặt mã PIN',
+                label: Text(hasPin ? appState.strings.changePinLabel : appState.strings.setPinLabel,
                   style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
                 style: FilledButton.styleFrom(
                   backgroundColor: AppTheme.vibrantPrimary,
@@ -494,7 +565,7 @@ class ParentSettings extends StatelessWidget {
                 width: double.infinity,
                 child: OutlinedButton.icon(
                   icon: const Icon(Icons.lock_open_rounded, color: Colors.red),
-                  label: Text('Xóa mã PIN',
+                  label: Text(appState.strings.deletePinLabel,
                     style: GoogleFonts.plusJakartaSans(
                       fontWeight: FontWeight.w700, color: Colors.red)),
                   style: OutlinedButton.styleFrom(
@@ -509,7 +580,7 @@ class ParentSettings extends StatelessWidget {
                     await appState.loadChildrenList();
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Đã xóa mã PIN ✓')));
+                        SnackBar(content: Text(appState.strings.deletePinSuccess)));
                     }
                   },
                 ),
@@ -550,7 +621,7 @@ class ParentSettings extends StatelessWidget {
             }
             if (conf.length != 4) return;
             if (pin != conf) {
-              setState(() { errorMsg = 'Mã PIN không khớp. Thử lại.'; inConfirm = false; });
+              setState(() { errorMsg = appState.strings.pinMismatch; inConfirm = false; });
               for (final c in controllers) { c.clear(); }
               for (final c in confirmCtrls) { c.clear(); }
               Future.delayed(const Duration(milliseconds: 50),
@@ -562,7 +633,7 @@ class ParentSettings extends StatelessWidget {
             await appState.loadChildrenList();
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Đã đặt mã PIN cho $childName ✓')));
+                SnackBar(content: Text(appState.strings.setPinSuccess(childName))));
             }
           }
 
@@ -573,13 +644,13 @@ class ParentSettings extends StatelessWidget {
               children: [
                 const Text('🔐', style: TextStyle(fontSize: 40)),
                 const SizedBox(height: 12),
-                Text(inConfirm ? 'Xác nhận mã PIN' : 'Đặt mã PIN cho $childName',
+                Text(inConfirm ? appState.strings.confirmPinTitle : appState.strings.setPinFor(childName),
                   textAlign: TextAlign.center,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 16, fontWeight: FontWeight.w700,
                     color: AppTheme.textPrimary)),
                 const SizedBox(height: 4),
-                Text(inConfirm ? 'Nhập lại mã PIN để xác nhận' : 'Nhập 4 chữ số',
+                Text(inConfirm ? appState.strings.reenterPin : appState.strings.enterPin4,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 13, color: AppTheme.textHint)),
                 const SizedBox(height: 20),
@@ -632,14 +703,14 @@ class ParentSettings extends StatelessWidget {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: Text('Hủy',
+                child: Text(appState.strings.cancel,
                   style: GoogleFonts.plusJakartaSans(color: AppTheme.textHint)),
               ),
               FilledButton(
                 onPressed: onComplete,
                 style: FilledButton.styleFrom(
                   backgroundColor: AppTheme.vibrantPrimary),
-                child: Text(inConfirm ? 'Lưu' : 'Tiếp',
+                child: Text(inConfirm ? appState.strings.save : appState.strings.next,
                   style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
               ),
             ],
@@ -655,7 +726,10 @@ class ParentSettings extends StatelessWidget {
   }
 
   void _showManagePlanDialog(BuildContext context, AppState appState) {
-    final planLabel = appState.planType == 'family' ? 'Gia Đình' : 'Nâng Cao';
+    final s = appState.strings;
+    final planLabel = appState.planType == 'family'
+        ? (s.isEn ? 'Family' : 'Gia Đình')
+        : (s.isEn ? 'Advanced' : 'Nâng Cao');
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -666,7 +740,7 @@ class ParentSettings extends StatelessWidget {
             const Text('✨', style: TextStyle(fontSize: 48)),
             const SizedBox(height: 12),
             Text(
-              'Gói đang hoạt động',
+              s.isEn ? 'Active Plan' : 'Gói đang hoạt động',
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
@@ -675,7 +749,9 @@ class ParentSettings extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              'Bạn đang dùng gói $planLabel. Cảm ơn đã đồng hành cùng GrowWise! 🌱',
+              s.isEn
+                  ? 'You are on the $planLabel plan. Thank you for joining GrowWise! 🌱'
+                  : 'Bạn đang dùng gói $planLabel. Cảm ơn đã đồng hành cùng GrowWise! 🌱',
               textAlign: TextAlign.center,
               style: GoogleFonts.plusJakartaSans(fontSize: 14, color: AppTheme.textSecondary, height: 1.5),
             ),
@@ -687,7 +763,7 @@ class ParentSettings extends StatelessWidget {
             child: FilledButton(
               onPressed: () => Navigator.pop(ctx),
               style: FilledButton.styleFrom(backgroundColor: AppTheme.vibrantPrimary),
-              child: Text('Đóng', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+              child: Text(s.close, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
             ),
           ),
         ],

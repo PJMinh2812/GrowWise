@@ -67,7 +67,7 @@ export interface Lesson {
   id?: string
   title: string
   description: string
-  youtube_id: string
+  youtube_id?: string | null
   /** 'video' = bài giảng YouTube; 'story' = truyện tranh (story_pages). */
   lesson_type?: 'video' | 'story'
   /** Các trang truyện (chỉ dùng khi lesson_type === 'story'). */
@@ -112,6 +112,7 @@ export interface Child {
   user_id: string | null
   name: string
   age: number
+  date_of_birth?: string | null  // ISO "YYYY-MM-DD"; age is derived from this
   avatar_emoji: string
   level: number
   total_coins: number
@@ -120,9 +121,15 @@ export interface Child {
   share_jar: number
   xp: number
   xp_to_next_level: number
+  avatar_url?: string | null
   child_pin_hash?: string | null
   created_at?: string
   updated_at?: string
+}
+
+/** Calculate age in whole years from an ISO date string ("YYYY-MM-DD"). */
+export function calcAge(dob: string): number {
+  return Math.floor((Date.now() - new Date(dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
 }
 
 export interface Task {

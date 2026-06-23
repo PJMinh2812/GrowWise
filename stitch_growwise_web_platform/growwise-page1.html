@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GrowWise · Bài học</title>
+<style>
+  :root{
+    --cream:#FAF6EF;
+    --brown:#8A5A24;
+    --brown-dark:#5E3815;
+    --brown-active:#7A4A1F;
+    --orange:#F39314;
+    --orange-dark:#D97C0A;
+    --text:#4A3B28;
+    --muted:#9C8E78;
+    --lock-top:#E9E3D8;
+    --lock-bot:#CFC7B8;
+    --lock-icon:#AC9F89;
+    --road:#DBD4C7;
+    --road-dash:#C7BEAD;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{background:#E7E0D4;font-family:"Nunito","Segoe UI",system-ui,sans-serif;display:flex;justify-content:center;min-height:100vh}
+  .phone{width:100%;max-width:420px;background:var(--cream);min-height:100vh;display:flex;flex-direction:column;position:relative}
+
+  /* top bar */
+  .topbar{display:flex;align-items:center;gap:10px;padding:16px 18px 12px;border-bottom:1px solid #ECE5D9}
+  .flag{width:30px;height:30px;color:var(--brown)}
+  .brand{font-size:25px;font-weight:900;color:var(--brown);letter-spacing:.3px;margin-right:auto}
+  .stat{display:flex;align-items:center;gap:5px;font-weight:800;font-size:16px;color:var(--text)}
+  .stat svg{width:21px;height:21px}
+
+  /* tabs */
+  .tabs{margin:14px 16px 4px;background:#fff;border:2px solid #ECE5D9;border-radius:30px;display:flex;padding:5px;gap:4px}
+  .tab{flex:1;text-align:center;padding:11px 0;border-radius:24px;font-weight:800;font-size:16px;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:8px}
+  .tab.active{background:var(--brown);color:#fff;box-shadow:0 4px 0 var(--brown-dark)}
+  .tab svg{width:19px;height:19px}
+
+  /* banner */
+  .banner{margin:14px 16px 0;background:linear-gradient(135deg,#996A2E,#7E4F1E);border-radius:22px;padding:20px 22px;color:#fff;position:relative;overflow:hidden}
+  .banner h2{font-size:22px;font-weight:900;margin-bottom:6px}
+  .banner p{font-size:15px;opacity:.9;font-weight:600;max-width:78%}
+  .banner .ghost{position:absolute;right:-8px;top:6px;font-size:120px;opacity:.12;line-height:1}
+
+  /* map */
+  .map{position:relative;flex:1;margin-top:4px}
+  .map svg{display:block;width:100%;height:auto}
+  .node{cursor:pointer}
+  .node:active .node-top{transform:translateY(3px)}
+  .node-top{transition:transform .08s}
+
+  /* bottom nav */
+  .nav{position:sticky;bottom:0;background:var(--cream);border-top:1px solid #ECE5D9;display:flex;justify-content:space-around;padding:8px 6px 12px}
+  .nav-item{display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--muted);font-size:12px;font-weight:800;flex:1}
+  .nav-item svg{width:26px;height:26px}
+  .nav-item.active{color:#fff}
+  .nav-item.active .ico{background:var(--orange);box-shadow:0 4px 0 var(--orange-dark);color:#fff;border-radius:16px;padding:6px 14px}
+  .ico{padding:4px}
+</style>
+</head>
+<body>
+<div class="phone">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <svg class="flag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V4M4 4l11 4-4 3 4 3-11 2"/></svg>
+    <div class="brand">GrowWise</div>
+    <div class="stat"><svg viewBox="0 0 24 24" fill="#F0641E"><path d="M12 2c1 4-3 5-3 9a3 3 0 006 0c0-1-1-2-1-3 2 1 3 3 3 6a6 6 0 11-12 0c0-5 5-7 7-12z"/></svg>1</div>
+    <div class="stat"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="#F2C200" stroke="#D9A300" stroke-width="2"/><text x="12" y="16" font-size="9" text-anchor="middle" fill="#A77B00" font-weight="900">$</text></svg>800</div>
+    <div class="stat"><svg viewBox="0 0 24 24" fill="#E8455A"><path d="M12 21s-7-4.6-9.3-9C1 8.5 3 5 6.3 5 8.3 5 10 6.3 12 8.6 14 6.3 15.7 5 17.7 5 21 5 23 8.5 21.3 12 19 16.4 12 21 12 21z"/></svg>5</div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab active"><svg viewBox="0 0 24 24" fill="#fff"><rect x="4" y="3" width="14" height="18" rx="2"/></svg>Bài học</div>
+    <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="#9C8E78" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h7v15H3zM21 5h-7v15h7z"/></svg>Đọc truyện</div>
+  </div>
+
+  <!-- BANNER -->
+  <div class="banner">
+    <span class="ghost">🦉</span>
+    <h2>Phần 1 · Tiết kiệm cơ bản</h2>
+    <p>Bắt đầu hành trình quản lý tiền bạc của bạn.</p>
+  </div>
+
+  <!-- MAP (road + nodes share one coordinate space) -->
+  <div class="map"><svg id="map1" viewBox="0 0 390 760" xmlns="http://www.w3.org/2000/svg"></svg></div>
+
+  <!-- BOTTOM NAV -->
+  <div class="nav">
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg>Trang chủ</div>
+    <div class="nav-item active"><span class="ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 1 9l11 6 9-4.9V17h2V9z"/><path d="M5 13v4c0 1.7 3.1 3 7 3s7-1.3 7-3v-4l-7 3.8z" fill="currentColor"/></svg></span>Bài học</div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9a4 4 0 00-4-4H9a5 5 0 00-5 5c0 2 1 3 1 4v2h3v-2h6v2h3v-3c1-1 2-2 2-4z"/><circle cx="15" cy="10" r="1" fill="currentColor"/></svg>Tiết kiệm</div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M9 13l-1 8 4-3 4 3-1-8"/></svg>Nhiệm vụ</div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h16l-1-4H5zM4 9v11h16V9M4 9l1 3M20 9l-1 3"/></svg>Cửa hàng</div>
+  </div>
+</div>
+
+<script>
+/* ---------- single source of truth: node centers ---------- */
+const nodes = [
+  {x:240, y:205, type:"star",   state:"active", progress:0.78},
+  {x:120, y:355, type:"lock"},
+  {x:278, y:475, type:"lock"},
+  {x:150, y:595, type:"lock"},
+  {x:215, y:710, type:"trophy"}
+];
+
+/* ---------- smooth curve that passes through every center ---------- */
+function smoothPath(pts){
+  let d = `M ${pts[0].x} ${pts[0].y}`;
+  for(let i=0;i<pts.length-1;i++){
+    const p0=pts[i-1]||pts[i], p1=pts[i], p2=pts[i+1], p3=pts[i+2]||p2;
+    const c1x=p1.x+(p2.x-p0.x)/6, c1y=p1.y+(p2.y-p0.y)/6;
+    const c2x=p2.x-(p3.x-p1.x)/6, c2y=p2.y-(p3.y-p1.y)/6;
+    d+=` C ${c1x} ${c1y}, ${c2x} ${c2y}, ${p2.x} ${p2.y}`;
+  }
+  return d;
+}
+
+/* ---------- icons (centered at 0,0) ---------- */
+function icon(type){
+  switch(type){
+    case "star":  return `<path d="M0,-17 5,-5.3 18,-5.3 7.5,2.8 11.5,15.5 0,7.7 -11.5,15.5 -7.5,2.8 -18,-5.3 -5,-5.3 Z" fill="none" stroke="#fff" stroke-width="3.2" stroke-linejoin="round"/>`;
+    case "lock":  return `<rect x="-12" y="-2" width="24" height="19" rx="4" fill="${'#'}AC9F89"/><path d="M-7.5,-2 v-5 a7.5,7.5 0 0 1 15,0 v5" fill="none" stroke="#AC9F89" stroke-width="4"/>`;
+    case "check": return `<path d="M-9,1 -2.5,8 11,-7" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+    case "trophy":return `<path d="M-13,-13 h26 v6 a13,8 0 0 1 -26,0 z" fill="#AC9F89"/><path d="M-13,-11 h-6 a6,7 0 0 0 7,9" fill="none" stroke="#AC9F89" stroke-width="3.5"/><path d="M13,-11 h6 a6,7 0 0 1 -7,9" fill="none" stroke="#AC9F89" stroke-width="3.5"/><rect x="-4" y="0" width="8" height="7" fill="#AC9F89"/><rect x="-11" y="13" width="22" height="5" rx="2" fill="#AC9F89"/>`;
+    default: return "";
+  }
+}
+
+/* ---------- build node group ---------- */
+function nodeGroup(n){
+  let r = (n.type==="lock") ? 36 : 42;
+  let top = n.state==="active" ? "var(--brown-active)" : "var(--lock-top)";
+  let bot = n.state==="active" ? "var(--brown-dark)"   : "var(--lock-bot)";
+  let topColor = n.state==="active" ? "#7A4A1F" : "#E9E3D8";
+  let botColor = n.state==="active" ? "#5E3815" : "#CFC7B8";
+
+  let ring = "";
+  if(n.progress!=null){
+    const R=r+8, C=2*Math.PI*R, off=C*(1-n.progress);
+    ring = `<circle r="${R}" fill="none" stroke="#E6DBCA" stroke-width="6"/>
+            <circle r="${R}" fill="none" stroke="${'#F39314'}" stroke-width="6" stroke-linecap="round"
+              stroke-dasharray="${C}" stroke-dashoffset="${off}" transform="rotate(-90)"/>`;
+  }
+  return `<g class="node" transform="translate(${n.x},${n.y})">
+      ${ring}
+      <circle cy="9" r="${r}" fill="${botColor}"/>
+      <g class="node-top"><circle r="${r}" fill="${topColor}"/>${icon(n.type)}</g>
+    </g>`;
+}
+
+/* ---------- render everything ---------- */
+const svg = document.getElementById("map1");
+const roadPts = nodes.map(n=>({x:n.x,y:n.y}));
+const d = smoothPath(roadPts);
+
+svg.innerHTML = `
+  <!-- road follows the exact same centers as the nodes -->
+  <path d="${d}" fill="none" stroke="var(--road)" stroke-width="28" stroke-linecap="round"/>
+  <path d="${d}" fill="none" stroke="var(--road-dash)" stroke-width="4" stroke-linecap="round" stroke-dasharray="1 20"/>
+
+  <!-- section start marker + bubble (decorative, above first node) -->
+  <g transform="translate(240,70)">
+    <circle cy="6" r="30" fill="#D97C0A"/><circle r="30" fill="#F39314"/>${icon("check")}
+  </g>
+  <g transform="translate(240,130)">
+    <rect x="-52" y="-19" width="104" height="38" rx="19" fill="#fff" stroke="#ECE5D9" stroke-width="2"/>
+    <path d="M-7,18 0,30 7,18 Z" fill="#fff"/>
+    <text x="0" y="6" text-anchor="middle" font-size="15" font-weight="900" fill="#7A4A1F">BẮT ĐẦU</text>
+  </g>
+
+  <!-- owl mascot peeking left of the active node -->
+  <g transform="translate(78,200)">
+    <path d="M44,0 l-12,-6 0,12 Z" fill="#fff"/>
+    <circle r="30" fill="#fff" stroke="#ECE5D9" stroke-width="2"/>
+    <g transform="translate(0,2) scale(.9)">
+      <ellipse cy="3" rx="16" ry="17" fill="#8A5A24"/>
+      <path d="M-14,-10 q-4,-9 4,-7 M14,-10 q4,-9 -4,-7" fill="#8A5A24"/>
+      <circle cx="-6" cy="-2" r="7" fill="#fff"/><circle cx="6" cy="-2" r="7" fill="#fff"/>
+      <circle cx="-6" cy="-2" r="3" fill="#3A2A16"/><circle cx="6" cy="-2" r="3" fill="#3A2A16"/>
+      <path d="M0,3 l-3,4 6,0 Z" fill="#F39314"/>
+    </g>
+  </g>
+
+  ${nodes.map(nodeGroup).join("")}
+`;
+</script>
+</body>
+</html>

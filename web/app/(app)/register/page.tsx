@@ -48,64 +48,67 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-2 bg-white font-[Plus_Jakarta_Sans] relative">
-      <div className="absolute top-4 right-4 z-10">
+    <div className="lg:grid-cols-2" style={{ minHeight: "100vh", display: "grid", background: "var(--cream)", position: "relative" }}>
+      <div style={{ position: "absolute", top: "16px", right: "16px", zIndex: 10 }}>
         <LanguageToggle />
       </div>
-      <div className="hidden lg:flex flex-col items-center justify-center bg-gradient-to-br from-[#EBF9F1] to-[#FFFDE7] p-12">
-        <div className="text-[120px]">🐷</div>
-        <h2 className="text-2xl font-extrabold text-[#1A1A2E] mt-4">{t("tagline")}</h2>
+      <div className="hidden lg:flex" style={{ flexDirection: "column", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, var(--primary-fixed) 0%, var(--cream) 100%)", padding: "48px" }}>
+        <div style={{ fontSize: "120px" }}>🐷</div>
+        <h2 style={{ fontSize: "24px", fontWeight: 900, color: "var(--ink)", marginTop: "16px" }}>{t("tagline")}</h2>
       </div>
 
-      <div className="flex items-center justify-center p-6">
-        <div className="w-full max-w-sm">
-          <div className="text-center mb-8">
-            <div className="text-4xl mb-2">🌱</div>
-            <h1 className="text-2xl font-extrabold text-[#1A1A2E]">{t("registerTitle")}</h1>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
+        <div style={{ width: "100%", maxWidth: "360px" }}>
+          <div style={{ textAlign: "center", marginBottom: "32px" }}>
+            <div style={{ fontSize: "40px", marginBottom: "8px" }}>🌱</div>
+            <h1 style={{ fontSize: "24px", fontWeight: 900, color: "var(--ink)" }}>{t("registerTitle")}</h1>
           </div>
 
           {info ? (
-            <div className="text-center">
-              <p className="text-sm text-[#1A1A2E]">{info}</p>
+            <div style={{ textAlign: "center" }}>
+              <p style={{ fontSize: "14px", color: "var(--ink)" }}>{info}</p>
               <Link
                 href="/login"
-                className="inline-block mt-4 bg-[#3DBE6E] text-white rounded-[14px] px-6 py-2.5 text-sm font-bold"
+                className="gw-btn gw-btn--primary"
+                style={{ marginTop: "16px", display: "inline-flex" }}
               >
                 Đến trang đăng nhập
               </Link>
             </div>
           ) : (
-            <form onSubmit={handleRegister} className="space-y-3">
+            <form onSubmit={handleRegister} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               <Field label={t("fullName")} value={fullName} onChange={setFullName} placeholder="Nguyễn Văn A" />
               <Field label={t("email")} type="email" value={email} onChange={setEmail} placeholder="email@vidu.com" />
               <Field label={t("password")} type="password" value={password} onChange={setPassword} placeholder="••••••••" />
               <Field label={t("confirmPassword")} type="password" value={confirm} onChange={setConfirm} placeholder="••••••••" />
 
-              <label className="flex items-start gap-2 text-sm text-[#64748B]">
+              <label style={{ display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "14px", color: "var(--ink-soft)" }}>
                 <input
                   type="checkbox"
                   checked={agree}
                   onChange={(e) => setAgree(e.target.checked)}
-                  className="mt-1 accent-[#3DBE6E]"
+                  className="accent-primary"
+                  style={{ marginTop: "2px" }}
                 />
                 <span>{t("agreeTerms")}</span>
               </label>
 
-              {error && <p className="text-sm text-red-600">{error}</p>}
+              {error && <p style={{ fontSize: "14px", color: "var(--color-error)" }}>{error}</p>}
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-[#3DBE6E] text-white rounded-[14px] py-2.5 text-sm font-bold hover:brightness-95 disabled:opacity-50 transition"
+                className="gw-btn gw-btn--primary"
+                style={{ width: "100%", marginTop: "4px" }}
               >
                 {loading ? "..." : t("register")}
               </button>
             </form>
           )}
 
-          <p className="text-center text-sm text-[#64748B] mt-6">
+          <p style={{ textAlign: "center", fontSize: "14px", color: "var(--ink-soft)", marginTop: "24px" }}>
             {t("haveAccount")}{" "}
-            <Link href="/login" className="font-semibold text-[#3DBE6E] hover:underline">
+            <Link href="/login" style={{ fontWeight: 700, color: "var(--primary-c)" }}>
               {t("login")}
             </Link>
           </p>
@@ -133,26 +136,24 @@ function Field({
   const inputType = isPassword && showPw ? "text" : type;
   return (
     <div>
-      <label className="block text-sm font-semibold text-[#1A1A2E] mb-1">{label}</label>
-      <div className="relative">
+      <label style={{ display: "block", fontSize: "14px", fontWeight: 600, color: "var(--ink)", marginBottom: "4px" }}>{label}</label>
+      <div className="gw-field">
         <input
           type={inputType}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           required
           placeholder={placeholder}
-          className={`w-full border border-gray-300 rounded-[14px] px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#3DBE6E] text-black ${
-            isPassword ? "pr-11" : ""
-          }`}
+          className="gw-input"
         />
         {isPassword && (
           <button
             type="button"
             onClick={() => setShowPw((s) => !s)}
             aria-label={showPw ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="gw-eye"
           >
-            <span className="material-symbols-outlined text-xl">
+            <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>
               {showPw ? "visibility_off" : "visibility"}
             </span>
           </button>

@@ -2,7 +2,26 @@
 
 import { revalidatePath } from 'next/cache'
 import { createServerSupabase } from '@/lib/supabase-server'
+import { createAdminClient } from '@/lib/supabase-admin'
 import type { Task, TaskSubmission, Child } from '@/lib/types'
+
+/**
+ * Mark a lesson completed for a child (idempotent). Uses the service-role client
+ * so it works regardless of RLS. Called when a child finishes a video/story.
+ */
+export async function completeLesson(childId: string, lessonId: string) {
+  if (!childId || !lessonId) return { ok: false }
+  const admin = createAdminClient()
+  const { error } = await admin
+    .from('lesson_completions')
+    .upsert({ child_id: childId, lesson_id: lessonId }, { onConflict: 'child_id,lesson_id' })
+  if (error) {
+    console.error('[completeLesson]', error)
+    return { ok: false, error: error.message }
+  }
+  revalidatePath('/child/learn')
+  return { ok: true }
+}
 
 function splitJars(amount: number) {
   const toSave = Math.round(amount * 0.4)

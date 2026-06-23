@@ -58,7 +58,7 @@ export default function MemoryGallery({
         <button
           onClick={exportAll}
           disabled={allBusy}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-[14px] bg-primary text-on-primary font-bold disabled:opacity-50"
+          className="gw-btn gw-btn--primary gw-btn--sm"
         >
           <span className="material-symbols-outlined text-xl">download</span>
           {allBusy ? t("creatingImage") : t("downloadAll")}
@@ -67,9 +67,9 @@ export default function MemoryGallery({
 
       {error && <p className="text-sm text-error mb-3">{error}</p>}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="gw-grid">
         {memories.map((m) => (
-          <div key={m.id} className="app-card overflow-hidden flex flex-col">
+          <div key={m.id} className="gw-card" style={{ overflow: "hidden", display: "flex", flexDirection: "column" }}>
             {m.proof_image_url && (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={m.proof_image_url} alt={m.task_title} className="w-full h-40 object-cover" />
@@ -92,7 +92,8 @@ export default function MemoryGallery({
               <button
                 onClick={() => exportOne(m)}
                 disabled={busyId === m.id}
-                className="mt-3 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-[14px] bg-primary-container/40 text-primary font-bold text-sm disabled:opacity-50"
+                className="gw-btn gw-btn--secondary gw-btn--sm"
+              style={{ marginTop: "12px", width: "100%" }}
               >
                 <span className="material-symbols-outlined text-lg">image</span>
                 {busyId === m.id ? t("creatingImage") : t("downloadImage")}

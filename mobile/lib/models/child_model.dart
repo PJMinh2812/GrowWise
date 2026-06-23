@@ -5,6 +5,7 @@ class ChildModel {
   final String name;
   final int age;
   final String avatarEmoji;
+  final String? avatarUrl;
   final int level;
   final int totalCoins;
   final int spendJar;
@@ -21,6 +22,7 @@ class ChildModel {
     required this.name,
     this.age = 8,
     this.avatarEmoji = '👦',
+    this.avatarUrl,
     this.level = 1,
     this.totalCoins = 0,
     this.spendJar = 0,
@@ -42,6 +44,7 @@ class ChildModel {
       name: json['name'] as String,
       age: json['age'] as int? ?? 8,
       avatarEmoji: json['avatar_emoji'] as String? ?? '👦',
+      avatarUrl: json['avatar_url'] as String?,
       level: json['level'] as int? ?? 1,
       totalCoins: json['total_coins'] as int? ?? 0,
       spendJar: json['spend_jar'] as int? ?? 0,
@@ -57,6 +60,8 @@ class ChildModel {
     String? name,
     int? age,
     String? avatarEmoji,
+    String? avatarUrl,
+    bool clearAvatarUrl = false,
     int? level,
     int? totalCoins,
     int? spendJar,
@@ -73,6 +78,7 @@ class ChildModel {
       name: name ?? this.name,
       age: age ?? this.age,
       avatarEmoji: avatarEmoji ?? this.avatarEmoji,
+      avatarUrl: clearAvatarUrl ? null : (avatarUrl ?? this.avatarUrl),
       level: level ?? this.level,
       totalCoins: totalCoins ?? this.totalCoins,
       spendJar: spendJar ?? this.spendJar,

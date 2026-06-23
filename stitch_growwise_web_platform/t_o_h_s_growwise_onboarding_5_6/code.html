@@ -1,0 +1,308 @@
+<!DOCTYPE html><html lang="vi"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>GrowWise - Tạo hồ sơ cho bé</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "error-container": "#ffdad6",
+                    "background": "#fff8f2",
+                    "on-surface": "#211b10",
+                    "on-error-container": "#93000a",
+                    "surface-variant": "#eee1cf",
+                    "on-surface-variant": "#564334",
+                    "on-secondary": "#ffffff",
+                    "secondary-fixed-dim": "#7edb7b",
+                    "tertiary": "#6833ea",
+                    "surface-tint": "#904d00",
+                    "on-secondary-fixed-variant": "#005313",
+                    "surface-container-highest": "#eee1cf",
+                    "surface": "#fff8f2",
+                    "inverse-primary": "#ffb77d",
+                    "secondary-fixed": "#99f894",
+                    "secondary-container": "#96f592",
+                    "surface-container-low": "#fff2e0",
+                    "primary-fixed-dim": "#ffb77d",
+                    "tertiary-fixed-dim": "#cdbdff",
+                    "outline": "#897362",
+                    "tertiary-container": "#b29bff",
+                    "primary": "#904d00",
+                    "error": "#ba1a1a",
+                    "on-error": "#ffffff",
+                    "on-secondary-container": "#0a7320",
+                    "on-primary-container": "#623200",
+                    "on-tertiary": "#ffffff",
+                    "on-secondary-fixed": "#002204",
+                    "on-background": "#211b10",
+                    "inverse-surface": "#362f23",
+                    "on-tertiary-fixed-variant": "#4f00d0",
+                    "inverse-on-surface": "#fcefdd",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-high": "#f3e6d4",
+                    "on-primary-fixed": "#2f1500",
+                    "surface-dim": "#e5d8c6",
+                    "on-primary-fixed-variant": "#6e3900",
+                    "on-primary": "#ffffff",
+                    "tertiary-fixed": "#e8deff",
+                    "surface-bright": "#fff8f2",
+                    "surface-container": "#f9ecda",
+                    "secondary": "#006e1c",
+                    "primary-container": "#ff8c00",
+                    "on-tertiary-container": "#4600bb",
+                    "primary-fixed": "#ffdcc3",
+                    "outline-variant": "#ddc1ae",
+                    "on-tertiary-fixed": "#20005f"
+            },
+            "borderRadius": {
+                    "DEFAULT": "1rem",
+                    "lg": "2rem",
+                    "xl": "3rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "xs": "8px",
+                    "sm": "16px",
+                    "base": "4px",
+                    "xl": "48px",
+                    "md": "24px",
+                    "gutter": "16px",
+                    "container-margin": "20px",
+                    "lg": "32px"
+            },
+            "fontFamily": {
+                    "body-lg": [
+                            "Nunito Sans"
+                    ],
+                    "display-lg-mobile": [
+                            "Nunito Sans"
+                    ],
+                    "display-lg": [
+                            "Nunito Sans"
+                    ],
+                    "label-sm": [
+                            "Nunito Sans"
+                    ],
+                    "label-bold": [
+                            "Nunito Sans"
+                    ],
+                    "body-md": [
+                            "Nunito Sans"
+                    ],
+                    "headline-md": [
+                            "Nunito Sans"
+                    ]
+            },
+            "fontSize": {
+                    "body-lg": [
+                            "18px",
+                            {
+                                    "lineHeight": "26px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "display-lg-mobile": [
+                            "32px",
+                            {
+                                    "lineHeight": "38px",
+                                    "fontWeight": "900"
+                            }
+                    ],
+                    "display-lg": [
+                            "40px",
+                            {
+                                    "lineHeight": "48px",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "900"
+                            }
+                    ],
+                    "label-sm": [
+                            "12px",
+                            {
+                                    "lineHeight": "16px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "label-bold": [
+                            "14px",
+                            {
+                                    "lineHeight": "20px",
+                                    "fontWeight": "800"
+                            }
+                    ],
+                    "body-md": [
+                            "16px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "headline-md": [
+                            "24px",
+                            {
+                                    "lineHeight": "32px",
+                                    "fontWeight": "800"
+                            }
+                    ]
+            }
+        },
+        },
+      }
+    </script>
+<style>
+        /* Custom UI behaviors based on Brand Anchors */
+        .tactile-btn {
+            border-bottom: 2px solid #904d00;
+            transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1), border-bottom-width 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .tactile-btn:active {
+            transform: translateY(2px);
+            border-bottom-width: 0px;
+            margin-bottom: 2px; /* Compensate for layout shift */
+        }
+        
+        .child-glow {
+            box-shadow: 0 0 0px rgba(255, 140, 0, 0);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .child-glow.active {
+            box-shadow: 0 0 20px rgba(255, 140, 0, 0.4);
+            transform: scale(1.05);
+            border-color: #ff8c00;
+        }
+
+        /* Hide number input spinners */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+    </style>
+</head>
+<body class="bg-surface-bright text-on-surface font-body-md min-h-screen flex flex-col antialiased selection:bg-primary-container selection:text-on-primary-container">
+<!-- Top Navigation suppressed due to Onboarding flow -->
+<main class="flex-1 flex flex-col px-container-margin pt-xl pb-[120px] max-w-md mx-auto w-full relative z-10">
+<!-- Header -->
+<header class="mb-lg text-center animate-[fadeIn_0.5s_ease-out]">
+<h1 class="font-display-lg-mobile text-display-lg-mobile text-primary mb-xs tracking-tight">Tạo hồ sơ cho bé</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Chọn một người bạn đồng hành thật ngầu nhé!</p>
+</header>
+<!-- Avatar Selection Grid -->
+<section class="mb-xl animate-[slideUp_0.6s_ease-out]">
+<div class="grid grid-cols-3 gap-sm p-sm bg-surface rounded-xl shadow-[0_4px_24px_rgba(144,77,0,0.05)] border border-surface-variant"><button aria-label="Tải ảnh lên" class="avatar-btn child-glow relative aspect-square rounded-full flex flex-col items-center justify-center border-2 border-dashed border-outline-variant bg-surface-container-low focus:outline-none hover:border-primary transition-all" type="button">
+  <span class="material-symbols-outlined text-primary mb-1" style="font-variation-settings: 'FILL' 0; font-size: 24px;">add_a_photo</span>
+  <span class="text-[10px] font-label-bold text-on-surface-variant leading-tight">Tải ảnh lên</span>
+</button>
+<!-- Avatar 1 (Active by default) -->
+<button aria-label="Select Tiger Avatar" class="avatar-btn child-glow relative aspect-square rounded-full overflow-hidden border-4 focus:outline-none border-transparent" type="button">
+<img class="w-full h-full object-cover" data-alt="A cute 3D rendered cartoon face of a smiling tiger cub, bright playful colors, soft warm lighting, isolated on a light orange circular background, modern playful design style suitable for a children's app." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD4_tYaaIFrdOI9iKqYxkU6-zefWODMLPf0I0t6IBBviFTJ9WK7h1pl2RAJhjyafk4MwRG7CaB3KP33VaAVZ72P6Jj_rvEMX7D7geMuUAVdOLjDLIk3qgOpNQi88H95CHUYyETq4bqzFe5SJ9xrCLLILAk-ekfse1-Oy5XbE073ZtnMP0D_-aGwedawSWx-13rDAwZRw4ICf-FdNnERbMqsgK-rcr-RYkiZRavi3q8uzdH8EDVvgTv_5_ZlE8XPa_4tl2TQYwxSXcA">
+</button>
+<!-- Avatar 2 -->
+<button aria-label="Select Monkey Avatar" class="avatar-btn child-glow relative aspect-square rounded-full overflow-hidden border-4 border-transparent focus:outline-none hover:border-outline-variant" type="button">
+<img class="w-full h-full object-cover" data-alt="A cute 3D rendered cartoon face of a playful monkey with big eyes, bright vibrant colors, soft lighting, isolated on a light green circular background, modern playful design style suitable for a children's financial app." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDkb3DoG779kp1yYH0X4LZyRzYh0_MyuSCjZnhoK-jpMNfnco--4_WYS1eeXpesfGkczhpeFdXaM-DA9w83sPIX8LCEzUKnjBjpQctoN8N3idO9nnsu2v5jqkUOYU6Zn832bLsZg6jKVOP2Cr_M4h0JKgnYcSoC3LV8Gun0ruMJnn8CG41fGYXjz6yHZM7S3d3Tq3FmHhcCnFpMRnSpyQZLm06jXqZHo8mVq4KyU3rNCeEMIQHUAeQYjpv03L7zoO-__YFm8IE7CXk">
+</button>
+<!-- Avatar 3 -->
+<button aria-label="Select Bear Avatar" class="avatar-btn child-glow relative aspect-square rounded-full overflow-hidden border-4 border-transparent focus:outline-none hover:border-outline-variant" type="button">
+<img class="w-full h-full object-cover" data-alt="A cute 3D rendered cartoon face of a gentle brown bear cub, bright pastel colors, soft studio lighting, isolated on a light blue circular background, modern playful design style suitable for a children's app." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCP_NSmYtJFbyVFg9HG5sifUCLQFsg4DF9LAVkVJ7MXpaGbpEZmVGCjBgCxAh1xvuy56zENJBgaPhMEWGJgSUru_fGgpMn0ffX0rtUK2FJWDQLJrg6wc3FRwCTSjDaFSwGzv9MBBESMNHJ1Z6h-i5U9i59R2Bts9AfYMzNSHq4wNnTO6WVSP4i-Ir_J2aeznsHf-mTwtTYtpu-GCe0pMWH-5Q5X56BhgHVkpzuhlop6wI7Twptu8gcjodDCyylOUjlV6TCBkL-yxTM">
+</button>
+<!-- Avatar 4 -->
+<button aria-label="Select Panda Avatar" class="avatar-btn child-glow relative aspect-square rounded-full overflow-hidden border-4 border-transparent focus:outline-none hover:border-outline-variant" type="button">
+<img class="w-full h-full object-cover" data-alt="A cute 3D rendered cartoon face of a happy panda bear, black and white with soft pink cheeks, bright lighting, isolated on a light purple circular background, modern playful design style suitable for a children's app." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDx3lOcTnBiEFgwLXNukrBb2FQwsJUk_2rE2ePm5bBolLlKFdmLDLXOjtrZBepr1fQrJZgKhkD76_Ov7zrFiifGfOlH8UmFzIr31wbPa-JNw8EifctSYG7EFhZoL561IOy96iHlio_ZB1IXP16fHGAA7yPD0UcEmRGJAOKS__UpgtpQ1rm89vpYMZHgerOhx4qQ_3fpSuvYptc4owA7XogXa28MMUKx7ElGxdfkLvEXHGBQ2uRyH2-_oX9B7ramcTWBkHPYpIaIHfY">
+</button>
+<!-- Avatar 5 -->
+<button aria-label="Select Fox Avatar" class="avatar-btn child-glow relative aspect-square rounded-full overflow-hidden border-4 border-transparent focus:outline-none hover:border-outline-variant" type="button">
+<img class="w-full h-full object-cover" data-alt="A cute 3D rendered cartoon face of a clever red fox, bright orange and white colors, soft glowing lighting, isolated on a pale yellow circular background, modern playful design style suitable for a children's app." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC3Wgu3x0IvC4EaJlAtKLPwkaV8GF6bdfNxTiSdbxqRKev1LVXVmDh-3-Vgb0yaWZ4_I5vWzF0TMb86Xzlj-T1R0TcHth9yZ5ta5FSnh2e_C-89sT90x13OpeVm26LAHLW841IiyFQaVjqut0U2XQqse3Oy8ox1WnJ4d-q4SoYfGTHCEnH_EswzMxueoXlbf2YuB2ujvHl0JQhMjJucpiFfkIhnEHv_4eqEzEuQmL1qb7N90i2avjj8JKh4Dpun7oJ39nNArL64yw8">
+</button>
+<!-- Avatar 6 -->
+<button aria-label="Select Robot Avatar" class="avatar-btn child-glow relative aspect-square rounded-full overflow-hidden border-4 border-transparent focus:outline-none hover:border-outline-variant" type="button">
+<img class="w-full h-full object-cover" data-alt="A cute 3D rendered friendly robot face with glowing blue eyes and a small antenna, metallic but soft textures, bright lighting, isolated on a light grey circular background, modern playful design style suitable for a children's app." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDP6MMZwuM8O60341zX2xWW5hv5c9KzlczXX7vUHkfMw7AmeJYC92SriXnAe1Yojf87Fa5RMzU9ARJgFZ9zVqeFflkX7_PiiY4u5B9O1LXK7BMEUc_0llQrcXE2tUv2kZkrjNhQgFnFyfF9QKlWdWfY-YVhTFstnV4Jdinu0fmgnxDnxEG8o3818k6WZLdQ1F23qGNcKH3WeT96e7HzBq9hOp4oiSDrcNq_Kdd8yymJpXdOfWMiPaGJ-tDyRwlhMoKBVkiSznuPtsU">
+</button>
+</div>
+</section>
+<!-- Profile Form -->
+<section class="space-y-md animate-[slideUp_0.7s_ease-out]">
+<!-- Name Input -->
+<div class="relative">
+<label class="block font-label-bold text-label-bold text-on-surface mb-base ml-2" for="child_name">Tên của bé</label>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-4 text-on-surface-variant pointer-events-none" style="font-variation-settings: 'FILL' 0;">face</span>
+<input class="w-full h-12 rounded bg-surface border border-on-surface-variant pl-12 pr-4 font-body-md text-body-md text-on-surface placeholder:text-outline focus:outline-none focus:ring-0 focus:border-2 focus:border-primary-container transition-all" id="child_name" placeholder="Ví dụ: Bo, Mít, Anna..." type="text">
+</div>
+</div>
+<!-- Age Input -->
+<div class="relative space-y-md">
+  <div class="flex justify-between items-end mb-base ml-2">
+    <label class="block font-label-bold text-label-bold text-on-surface" for="child_age_slider">Tuổi của bé</label>
+    <span id="age_display" class="font-headline-md text-primary">6 <span class="text-body-md text-on-surface-variant">tuổi</span></span>
+  </div>
+  <div class="relative flex items-center px-2 h-12">
+    <input type="range" id="child_age_slider" min="3" max="15" value="6" class="w-full h-2 bg-surface-variant rounded-full appearance-none cursor-pointer accent-primary focus:outline-none" oninput="document.getElementById('age_display').innerHTML = this.value + ' &lt;span class=\'text-body-md text-on-surface-variant\'&gt;tuổi&lt;/span&gt;'">
+  </div>
+  <div class="flex justify-between px-2 text-[10px] font-label-bold text-outline">
+    <span class="">3 tuổi</span>
+    <span class="">15 tuổi</span>
+  </div>
+</div>
+</section>
+</main>
+<!-- Bottom Fixed Action Area -->
+<!-- BottomNavBar is suppressed, using a custom fixed footer for Onboarding actions -->
+<footer class="fixed bottom-0 left-0 w-full bg-gradient-to-t from-surface-bright via-surface-bright to-transparent pt-lg pb-md px-container-margin z-50">
+<div class="max-w-md mx-auto flex flex-col gap-sm">
+<!-- Step Indicator (6 dots, 5th active) -->
+<div aria-label="Tiến trình đăng ký: Bước 5 trên 6" class="flex items-center justify-center gap-2 mb-xs">
+<div class="w-2 h-2 rounded-full bg-surface-variant"></div>
+<div class="w-2 h-2 rounded-full bg-surface-variant"></div>
+<div class="w-2 h-2 rounded-full bg-surface-variant"></div>
+<div class="w-2 h-2 rounded-full bg-surface-variant"></div>
+<div class="w-6 h-2 rounded-full bg-primary shadow-[0_0_8px_rgba(144,77,0,0.4)]"></div> <!-- Active -->
+<div class="w-2 h-2 rounded-full bg-surface-variant"></div>
+</div>
+<!-- Action Button -->
+<button class="w-full h-12 bg-primary text-on-primary font-headline-md text-headline-md-mobile rounded-full tactile-btn flex items-center justify-center gap-2 hover:bg-on-primary-fixed-variant transition-colors group">
+                Tiếp
+                <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform" style="font-variation-settings: 'FILL' 1;">arrow_forward</span>
+</button>
+</div>
+</footer>
+<!-- Interactive Logic -->
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const avatars = document.querySelectorAll('.avatar-btn');
+            
+            avatars.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // Remove active state from all
+                    avatars.forEach(a => {
+                        a.classList.remove('active', 'border-primary-container');
+                        a.classList.add('border-transparent');
+                    });
+                    
+                    // Add active state to clicked
+                    btn.classList.add('active', 'border-primary-container');
+                    btn.classList.remove('border-transparent');
+                    
+                    // Simple tactile feedback via haptics if supported
+                    if (navigator.vibrate) {
+                        navigator.vibrate(50);
+                    }
+                });
+            });
+        });
+    </script>
+
+
+
+
+</body></html>

@@ -1,6 +1,10 @@
+"use client";
+
 import Link from "next/link";
+import { useLang } from "@/components/app/LangProvider";
 
 export function Footer() {
+  const { t } = useLang();
   return (
     <footer className="bg-[#1d1a24] text-white py-12 sm:py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -14,64 +18,64 @@ export function Footer() {
               <span className="font-bold text-xl text-white">GrowWise</span>
             </Link>
             <p className="text-white/70 text-sm leading-relaxed">
-              Ứng dụng giáo dục tài chính hàng đầu dành cho trẻ em Việt Nam, giúp con bạn học quản lý tiền một cách vui vẻ.
+              {t("lpFootDesc")}
             </p>
           </div>
 
           {/* Links */}
           <div>
-            <h4 className="font-semibold text-white mb-4">Sản phẩm</h4>
+            <h4 className="font-semibold text-white mb-4">{t("lpFootProduct")}</h4>
             <ul className="space-y-3">
               <li>
                 <Link href="#features" className="text-white/70 hover:text-white transition-colors text-sm">
-                  Tính năng
+                  {t("lpNavFeatures")}
                 </Link>
               </li>
               <li>
                 <Link href="#how-it-works" className="text-white/70 hover:text-white transition-colors text-sm">
-                  Cách hoạt động
+                  {t("lpNavHow")}
                 </Link>
               </li>
               <li>
                 <Link href="#download" className="text-white/70 hover:text-white transition-colors text-sm">
-                  Tải ứng dụng
+                  {t("lpDownload")}
                 </Link>
               </li>
             </ul>
           </div>
 
           <div>
-            <h4 className="font-semibold text-white mb-4">Hỗ trợ</h4>
+            <h4 className="font-semibold text-white mb-4">{t("lpFootSupport")}</h4>
             <ul className="space-y-3">
               <li>
                 <Link href="#" className="text-white/70 hover:text-white transition-colors text-sm">
-                  Câu hỏi thường gặp
+                  {t("lpFootFaq")}
                 </Link>
               </li>
               <li>
                 <Link href="#" className="text-white/70 hover:text-white transition-colors text-sm">
-                  Liên hệ
+                  {t("lpFootContact")}
                 </Link>
               </li>
               <li>
                 <Link href="#" className="text-white/70 hover:text-white transition-colors text-sm">
-                  Blog
+                  {t("lpFootBlog")}
                 </Link>
               </li>
             </ul>
           </div>
 
           <div>
-            <h4 className="font-semibold text-white mb-4">Pháp lý</h4>
+            <h4 className="font-semibold text-white mb-4">{t("lpFootLegal")}</h4>
             <ul className="space-y-3">
               <li>
                 <Link href="#" className="text-white/70 hover:text-white transition-colors text-sm">
-                  Điều khoản sử dụng
+                  {t("lpFootTerms")}
                 </Link>
               </li>
               <li>
                 <Link href="#" className="text-white/70 hover:text-white transition-colors text-sm">
-                  Chính sách bảo mật
+                  {t("lpFootPrivacy")}
                 </Link>
               </li>
             </ul>
@@ -81,7 +85,7 @@ export function Footer() {
         {/* Bottom */}
         <div className="mt-12 pt-8 border-t border-background/20 flex flex-col sm:flex-row justify-between items-center gap-4">
           <p className="text-white/60 text-sm">
-            © 2024 GrowWise. Tất cả quyền được bảo lưu.
+            {t("lpFootRights")}
           </p>
           <div className="flex items-center gap-4">
             <a href="#" className="text-white/60 hover:text-white transition-colors" aria-label="Facebook">

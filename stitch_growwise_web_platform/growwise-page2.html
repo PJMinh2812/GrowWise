@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GrowWise · Tiết kiệm thông minh</title>
+<style>
+  :root{
+    --bg:#FBF2EA;
+    --orange:#F7941D;
+    --orange-dark:#D9731A;
+    --text:#3A352F;
+    --muted:#B6A48E;
+    --lock-top:#E4E4E4;
+    --lock-bot:#CFCFCF;
+    --lock-icon:#9A9A9A;
+    --dot:#E9CBA9;
+    --diamond:#6C2BD9;
+    --heart:#E8455A;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{background:#EDE3D8;font-family:"Nunito","Segoe UI",system-ui,sans-serif;display:flex;justify-content:center;min-height:100vh}
+  .phone{width:100%;max-width:420px;background:var(--bg);min-height:100vh;display:flex;flex-direction:column;position:relative;overflow:hidden}
+  .phone::before{content:"";position:absolute;inset:0;background:
+    radial-gradient(circle at 20% 30%, #F6E5D4 0 3px, transparent 4px) 0 0/46px 46px,
+    radial-gradient(circle at 70% 70%, #F6E5D4 0 3px, transparent 4px) 0 0/46px 46px;
+    opacity:.6;pointer-events:none}
+
+  /* top bar */
+  .topbar{display:flex;align-items:center;gap:14px;padding:16px 18px 12px;position:relative;z-index:1}
+  .avatar{width:34px;height:34px;border-radius:50%;background:#DA251D;border:3px solid #fff;box-shadow:0 0 0 1px #eee;display:flex;align-items:center;justify-content:center;color:#FFFF00;font-size:16px;margin-right:auto}
+  .stat{display:flex;align-items:center;gap:5px;font-weight:800;font-size:16px;color:var(--text)}
+  .stat svg{width:22px;height:22px}
+
+  /* banner */
+  .banner{margin:8px 16px 0;background:linear-gradient(135deg,#FBA53A,#F7941D);border-radius:22px;padding:18px 22px;position:relative;overflow:hidden;box-shadow:0 5px 0 var(--orange-dark);z-index:1}
+  .banner .eyebrow{font-size:12px;font-weight:900;letter-spacing:1px;color:#7A4A12;opacity:.85}
+  .banner h2{font-size:27px;font-weight:900;color:#4A3110;line-height:1.1;margin-top:4px;max-width:74%}
+  .banner .book{position:absolute;right:18px;top:50%;transform:translateY(-50%);width:54px;height:54px;border:3px solid rgba(255,255,255,.6);border-radius:14px;display:flex;align-items:center;justify-content:center}
+  .banner .book svg{width:30px;height:30px;color:rgba(255,255,255,.85)}
+
+  /* map */
+  .map{position:relative;flex:1;margin-top:6px;z-index:1}
+  .map svg{display:block;width:100%;height:auto}
+  .node{cursor:pointer}
+  .node:active .node-top{transform:translateY(3px)}
+  .node-top{transition:transform .08s}
+
+  /* lesson card overlay (positioned with % so it tracks the scaled svg) */
+  .card{position:absolute;left:7%;top:30%;width:78%;background:#fff;border:2px solid #EFE6DA;border-radius:20px;padding:16px 18px;box-shadow:0 10px 24px rgba(0,0,0,.10);z-index:3}
+  .card::after{content:"";position:absolute;left:34%;bottom:-11px;width:22px;height:22px;background:#fff;border-right:2px solid #EFE6DA;border-bottom:2px solid #EFE6DA;transform:rotate(45deg)}
+  .card h3{font-size:19px;font-weight:900;color:var(--text)}
+  .card .meta{display:flex;align-items:center;gap:8px;margin:10px 0 14px}
+  .card .meta .ic{width:26px;height:26px;border:2px solid var(--orange);border-radius:7px;display:flex;align-items:center;justify-content:center;color:var(--orange)}
+  .card .meta .ic svg{width:15px;height:15px}
+  .card .meta .coin{margin-left:auto;display:flex;align-items:center;gap:4px;font-weight:900;color:#C97A12;font-size:16px}
+  .card button{width:100%;background:var(--orange);color:#fff;border:none;border-radius:14px;padding:13px;font-size:17px;font-weight:900;box-shadow:0 4px 0 var(--orange-dark);cursor:pointer;font-family:inherit}
+  .card button:active{transform:translateY(3px);box-shadow:0 1px 0 var(--orange-dark)}
+
+  /* bottom nav */
+  .nav{position:sticky;bottom:0;background:var(--bg);border-top:1px solid #EFE3D6;display:flex;justify-content:space-around;padding:8px 6px 12px;z-index:2}
+  .nav-item{display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--muted);font-size:12px;font-weight:800;flex:1;position:relative}
+  .nav-item svg{width:26px;height:26px}
+  .nav-item.active{color:var(--orange)}
+  .nav-item.active .ico{background:#FCE3C7;border-radius:16px;padding:5px 14px}
+  .ico{padding:4px}
+  .dot-badge{position:absolute;top:-2px;right:24%;width:8px;height:8px;background:#E8455A;border-radius:50%}
+</style>
+</head>
+<body>
+<div class="phone">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="avatar">★</div>
+    <div class="stat"><svg viewBox="0 0 24 24" fill="#F0641E"><path d="M12 2c1 4-3 5-3 9a3 3 0 006 0c0-1-1-2-1-3 2 1 3 3 3 6a6 6 0 11-12 0c0-5 5-7 7-12z"/></svg>1</div>
+    <div class="stat"><svg viewBox="0 0 24 24" fill="#6C2BD9"><path d="M6 3h12l4 6-10 12L2 9z" opacity=".9"/><path d="M6 3h12l4 6H2z" fill="#8B5CF6"/></svg>800</div>
+    <div class="stat"><svg viewBox="0 0 24 24" fill="#E8455A"><path d="M12 21s-7-4.6-9.3-9C1 8.5 3 5 6.3 5 8.3 5 10 6.3 12 8.6 14 6.3 15.7 5 17.7 5 21 5 23 8.5 21.3 12 19 16.4 12 21 12 21z"/></svg>5</div>
+  </div>
+
+  <!-- BANNER -->
+  <div class="banner">
+    <div class="eyebrow">PHẦN 1 · TIẾT KIỆM CƠ BẢN</div>
+    <h2>Tiết kiệm thông minh</h2>
+    <div class="book"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h7v15H3zM21 5h-7v15h7z"/></svg></div>
+  </div>
+
+  <!-- MAP -->
+  <div class="map">
+    <svg id="map2" viewBox="0 0 390 720" xmlns="http://www.w3.org/2000/svg"></svg>
+
+    <!-- lesson card -->
+    <div class="card">
+      <h3>Bài 3: Hũ tiết kiệm</h3>
+      <div class="meta">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 4l14 8-14 8z"/></svg></span>
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 9h6M9 13h4"/></svg></span>
+        <span class="coin">
+          <svg viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="9" fill="#F2C200" stroke="#D9A300" stroke-width="2"/><text x="12" y="16" font-size="9" text-anchor="middle" fill="#A77B00" font-weight="900">$</text></svg>
+          +15
+        </span>
+      </div>
+      <button>BẮT ĐẦU</button>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="nav">
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg>Home</div>
+    <div class="nav-item active"><span class="ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 1 9l11 6 9-4.9V17h2V9z"/><path d="M5 13v4c0 1.7 3.1 3 7 3s7-1.3 7-3v-4l-7 3.8z"/></svg></span>Learn</div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9a4 4 0 00-4-4H9a5 5 0 00-5 5c0 2 1 3 1 4v2h3v-2h6v2h3v-3c1-1 2-2 2-4z"/><circle cx="15" cy="10" r="1" fill="currentColor"/></svg>Save</div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M9 13l-1 8 4-3 4 3-1-8"/></svg>Quests</div>
+    <div class="nav-item"><span class="dot-badge"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h16l-1-4H5zM4 9v11h16V9M4 9l1 3M20 9l-1 3"/></svg>Shop</div>
+  </div>
+</div>
+
+<script>
+/* single source of truth */
+const nodes = [
+  {x:200, y:150, type:"star", state:"active"},
+  {x:215, y:360, type:"play", state:"current", progress:0.7},
+  {x:300, y:500, type:"lock"},
+  {x:210, y:630, type:"lock"}
+];
+
+function smoothPath(pts){
+  let d=`M ${pts[0].x} ${pts[0].y}`;
+  for(let i=0;i<pts.length-1;i++){
+    const p0=pts[i-1]||pts[i],p1=pts[i],p2=pts[i+1],p3=pts[i+2]||p2;
+    const c1x=p1.x+(p2.x-p0.x)/6,c1y=p1.y+(p2.y-p0.y)/6;
+    const c2x=p2.x-(p3.x-p1.x)/6,c2y=p2.y-(p3.y-p1.y)/6;
+    d+=` C ${c1x} ${c1y}, ${c2x} ${c2y}, ${p2.x} ${p2.y}`;
+  }
+  return d;
+}
+
+function icon(type){
+  switch(type){
+    case "star": return `<path d="M0,-17 5,-5.3 18,-5.3 7.5,2.8 11.5,15.5 0,7.7 -11.5,15.5 -7.5,2.8 -18,-5.3 -5,-5.3 Z" fill="none" stroke="#7A4A12" stroke-width="3.2" stroke-linejoin="round"/>`;
+    case "play": return `<path d="M-8,-12 13,0 -8,12 Z" fill="#fff"/>`;
+    case "lock": return `<rect x="-12" y="-2" width="24" height="19" rx="4" fill="#9A9A9A"/><path d="M-7.5,-2 v-5 a7.5,7.5 0 0 1 15,0 v5" fill="none" stroke="#9A9A9A" stroke-width="4"/>`;
+    default:return "";
+  }
+}
+
+function nodeGroup(n){
+  const r = (n.type==="lock")?36 : (n.type==="play"?46:42);
+  let topColor,botColor;
+  if(n.type==="lock"){topColor="#E4E4E4";botColor="#CFCFCF";}
+  else if(n.type==="play"){topColor="#FCE0C2";botColor="#E9B988";}
+  else {topColor="#F7941D";botColor="#D9731A";}
+
+  let ring="";
+  if(n.progress!=null){
+    const R=r+7,C=2*Math.PI*R,off=C*(1-n.progress);
+    ring=`<circle r="${R}" fill="none" stroke="#F1DCC2" stroke-width="7"/>
+          <circle r="${R}" fill="none" stroke="#F7941D" stroke-width="7" stroke-linecap="round"
+            stroke-dasharray="${C}" stroke-dashoffset="${off}" transform="rotate(-90)"/>`;
+  }
+  const playArrow = n.type==="play" ? `<path d="M-8,-12 13,0 -8,12 Z" fill="#F7941D"/>` : icon(n.type);
+  return `<g class="node" transform="translate(${n.x},${n.y})">
+    ${ring}
+    <circle cy="9" r="${r}" fill="${botColor}"/>
+    <g class="node-top"><circle r="${r}" fill="${topColor}"/>${playArrow}</g>
+  </g>`;
+}
+
+const svg=document.getElementById("map2");
+const pts=nodes.map(n=>({x:n.x,y:n.y}));
+const d=smoothPath(pts);
+
+svg.innerHTML=`
+  <!-- dotted road through the exact node centers -->
+  <path d="${d}" fill="none" stroke="var(--dot)" stroke-width="11" stroke-linecap="round" stroke-dasharray="0.5 24"/>
+
+  <!-- start bubble above first node -->
+  <g transform="translate(200,75)">
+    <rect x="-55" y="-19" width="110" height="38" rx="19" fill="#fff" stroke="#EFE6DA" stroke-width="2"/>
+    <path d="M-7,18 0,30 7,18 Z" fill="#fff"/>
+    <text x="0" y="6" text-anchor="middle" font-size="16" font-weight="900" fill="#D9731A">BẮT ĐẦU</text>
+  </g>
+
+  ${nodes.map(nodeGroup).join("")}
+
+  <!-- owl mascot beside the current node -->
+  <g transform="translate(330,360)">
+    <rect x="-26" y="-30" width="78" height="62" rx="10" fill="#2E2E33"/>
+    <g transform="translate(13,2) scale(1.05)">
+      <ellipse cy="6" rx="20" ry="22" fill="#1FA0C4"/>
+      <ellipse cy="-8" rx="19" ry="16" fill="#8A5A2B"/>
+      <path d="M-17,-16 q-5,-11 5,-8 M17,-16 q5,-11 -5,-8" fill="#8A5A2B"/>
+      <circle cx="-8" cy="-8" r="9" fill="#F4E9C9"/><circle cx="8" cy="-8" r="9" fill="#F4E9C9"/>
+      <circle cx="-8" cy="-8" r="4.5" fill="#2A1B0E"/><circle cx="8" cy="-8" r="4.5" fill="#2A1B0E"/>
+      <path d="M0,-3 l-4,5 8,0 Z" fill="#F7941D"/>
+    </g>
+  </g>
+`;
+</script>
+</body>
+</html>

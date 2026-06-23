@@ -424,7 +424,7 @@ class _TaskCardItem extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(color: AppTheme.primaryFixed, borderRadius: BorderRadius.circular(10)),
-                      child: Text('⚡ Tự duyệt', style: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.w700, color: AppTheme.vibrantPrimary)),
+                      child: Text(s.autoApproveChip, style: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.w700, color: AppTheme.vibrantPrimary)),
                     ),
                   ],
                 ],
@@ -452,7 +452,7 @@ class _TaskCardItem extends StatelessWidget {
                       children: [
                         const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 20),
                         const SizedBox(width: 8),
-                        Text('Bắt đầu làm!', style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white)),
+                        Text(s.startTask, style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white)),
                       ],
                     ),
                   ),
@@ -503,7 +503,7 @@ class _TaskCardItem extends StatelessWidget {
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: AppTheme.border, width: 1.5),
                       ),
-                      child: Text('Bỏ task', style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textSecondary)),
+                      child: Text(s.skipTask, style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textSecondary)),
                     ),
                   ),
                 ],
@@ -549,13 +549,13 @@ class _TaskCardItem extends StatelessWidget {
                     children: [
                       const Icon(Icons.cancel_rounded, color: Color(0xFFEF4444), size: 16),
                       const SizedBox(width: 6),
-                      Text('Ba/Mẹ chưa duyệt',
+                      Text(s.notApprovedYet,
                           style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFFEF4444))),
                     ],
                   ),
                   if (task.parentNote != null && task.parentNote!.isNotEmpty) ...[
                     const SizedBox(height: 6),
-                    Text('Lý do: ${task.parentNote}',
+                    Text('${s.reasonPrefix}${task.parentNote}',
                         style: GoogleFonts.plusJakartaSans(fontSize: 12, color: const Color(0xFFB71C1C))),
                   ],
                 ],
@@ -582,7 +582,7 @@ class _TaskCardItem extends StatelessWidget {
                     children: [
                       const Icon(Icons.refresh_rounded, color: Colors.white, size: 18),
                       const SizedBox(width: 8),
-                      Text('Nộp lại', style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white)),
+                      Text(s.resubmit, style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white)),
                     ],
                   ),
                 ),
@@ -615,6 +615,7 @@ class _AbandonTaskSheetState extends State<_AbandonTaskSheet> {
   @override
   Widget build(BuildContext context) {
     final hasPenalty = widget.task.hasPenalty;
+    final s = context.watch<AppState>().strings;
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -628,7 +629,7 @@ class _AbandonTaskSheetState extends State<_AbandonTaskSheet> {
           const SizedBox(height: 20),
           const Text('⚠️', style: TextStyle(fontSize: 48)),
           const SizedBox(height: 12),
-          Text('Bỏ task này?', style: GoogleFonts.plusJakartaSans(fontSize: 20, fontWeight: FontWeight.w800, color: AppTheme.textPrimary)),
+          Text(s.skipTaskTitle, style: GoogleFonts.plusJakartaSans(fontSize: 20, fontWeight: FontWeight.w800, color: AppTheme.textPrimary)),
           const SizedBox(height: 8),
           Text(
             hasPenalty
@@ -646,7 +647,7 @@ class _AbandonTaskSheetState extends State<_AbandonTaskSheet> {
               child: Column(children: [
                 Text('-$_penaltyCoins xu 💸', style: GoogleFonts.plusJakartaSans(fontSize: 24, fontWeight: FontWeight.w800, color: const Color(0xFFEF4444))),
                 const SizedBox(height: 4),
-                Text('${widget.task.penaltyPercent}% phần thưởng bị trừ', style: GoogleFonts.plusJakartaSans(fontSize: 12, color: const Color(0xFFDC2626))),
+                Text(s.penaltyAmount(widget.task.penaltyPercent), style: GoogleFonts.plusJakartaSans(fontSize: 12, color: const Color(0xFFDC2626))),
               ]),
             ),
           ],
@@ -677,7 +678,7 @@ class _AbandonTaskSheetState extends State<_AbandonTaskSheet> {
               ),
               child: _loading
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFEF4444)))
-                  : Text('Xác nhận bỏ task', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: const Color(0xFFEF4444))),
+                  : Text(s.confirmSkip, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: const Color(0xFFEF4444))),
             ),
           ),
           const SizedBox(height: 10),
@@ -692,7 +693,7 @@ class _AbandonTaskSheetState extends State<_AbandonTaskSheet> {
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
-                child: Text('Giữ lại task', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: Colors.white)),
+                child: Text(s.keepTask, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: Colors.white)),
               ),
             ),
           ),

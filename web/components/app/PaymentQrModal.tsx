@@ -3,17 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
+import { useLang } from "./LangProvider";
 
-type Provider = "momo" | "payos";
 type Billing = "monthly" | "yearly";
 
 interface CreateResult {
   orderId: string;
-  qrCodeUrl?: string | null; // momo
-  payUrl?: string | null;
-  deeplink?: string | null;
-  qrCode?: string | null; // payos EMV string
-  checkoutUrl?: string | null;
+  qrCode?: string | null; // SePay VietQR image URL
   accountNumber?: string | null;
   accountName?: string | null;
   amount?: number | null;
@@ -30,7 +26,7 @@ export default function PaymentQrModal({
   onClose: () => void;
 }) {
   const router = useRouter();
-  const [provider, setProvider] = useState<Provider>("payos");
+  const { t } = useLang();
   const [data, setData] = useState<CreateResult | null>(null);
   const [status, setStatus] = useState<"creating" | "waiting" | "paid" | "error">("creating");
   const [error, setError] = useState("");
@@ -50,12 +46,11 @@ export default function PaymentQrModal({
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) {
-        setError("Bạn cần đăng nhập");
+        setError(t("needLogin"));
         setStatus("error");
         return;
       }
-      const endpoint = provider === "momo" ? "/api/payment/momo/create" : "/api/payment/qr/create";
-      const res = await fetch(endpoint, {
+      const res = await fetch("/api/payment/sepay/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: user.id, planName, billingInterval }),
@@ -63,24 +58,22 @@ export default function PaymentQrModal({
       const json = await res.json();
       if (cancelled) return;
       if (!res.ok) {
-        setError(json.error ?? "Không tạo được thanh toán");
+        setError(json.error ?? t("createPaymentError"));
         setStatus("error");
         return;
       }
       setData(json);
       setStatus("waiting");
 
-      const statusUrl =
-        provider === "momo" ? "/api/payment/momo/status" : "/api/payment/qr/status";
       pollRef.current = setInterval(async () => {
-        const r = await fetch(`${statusUrl}?orderId=${json.orderId}`);
+        const r = await fetch(`/api/payment/sepay/status?orderId=${json.orderId}`);
         const s = await r.json();
         if (s.status === "paid" || s.status === "success" || s.status === "completed") {
           if (pollRef.current) clearInterval(pollRef.current);
           setStatus("paid");
         } else if (s.status === "cancelled" || s.status === "failed") {
           if (pollRef.current) clearInterval(pollRef.current);
-          setError("Thanh toán đã huỷ hoặc hết hạn.");
+          setError(t("paymentCancelled"));
           setStatus("error");
         }
       }, 3000);
@@ -90,7 +83,7 @@ export default function PaymentQrModal({
       cancelled = true;
       if (pollRef.current) clearInterval(pollRef.current);
     };
-  }, [provider, planName, billingInterval]);
+  }, [planName, billingInterval]);
 
   // 15-minute countdown — starts when QR is displayed
   useEffect(() => {
@@ -110,51 +103,28 @@ export default function PaymentQrModal({
     if (countdown === 0 && status === "waiting") {
       if (pollRef.current) clearInterval(pollRef.current);
       if (countdownRef.current) clearInterval(countdownRef.current);
-      setError("QR hết hạn. Vui lòng thử lại.");
+      setError(t("qrExpired"));
       setStatus("error");
     }
   }, [countdown, status]);
 
-  // MoMo returns `qrCodeUrl` as an EMV QR *string* (not an image URL); PayOS
-  // returns `qrCode` as an EMV string too. Render whichever we have as an image.
-  const qrPayload = provider === "momo" ? data?.qrCodeUrl : data?.qrCode;
-  const qrImg = qrPayload
-    ? /^https?:\/\//.test(qrPayload)
-      ? qrPayload
-      : `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(qrPayload)}`
-    : null;
+  // SePay returns `qrCode` as a ready-to-render VietQR image URL.
+  const qrImg = data?.qrCode ?? null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="app-card w-full max-w-sm p-6 text-center">
+      <div className="gw-card" style={{ width: "100%", maxWidth: "384px", padding: "24px", textAlign: "center" }}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-on-surface">Thanh toán {planName === "premium" ? "Nâng Cao" : "Gia Đình"}</h3>
-          <button onClick={onClose} aria-label="Đóng" className="text-on-surface-variant">
+          <h3 className="text-lg font-bold text-on-surface">{t("payTitle")} {t(planName === "premium" ? "planPremiumName" : "planFamilyName")}</h3>
+          <button onClick={onClose} aria-label={t("close")} className="text-on-surface-variant">
             <span className="material-symbols-outlined">close</span>
           </button>
-        </div>
-
-        {/* provider tabs */}
-        <div className="flex gap-2 mb-4">
-          {(["payos", "momo"] as const).map((p) => (
-            <button
-              key={p}
-              onClick={() => setProvider(p)}
-              className={`flex-1 py-2 rounded-[14px] text-sm font-semibold border ${
-                provider === p
-                  ? "bg-primary text-on-primary border-primary"
-                  : "border-outline-variant text-on-surface-variant"
-              }`}
-            >
-              {p === "payos" ? "QR Ngân hàng" : "MoMo"}
-            </button>
-          ))}
         </div>
 
         {status === "creating" && (
           <div className="py-10">
             <span className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin inline-block" />
-            <p className="text-on-surface-variant mt-3">Đang tạo mã QR…</p>
+            <p className="text-on-surface-variant mt-3">{t("creatingQr")}</p>
           </div>
         )}
 
@@ -170,33 +140,24 @@ export default function PaymentQrModal({
                 className="mx-auto rounded-xl bg-white p-2"
               />
             ) : (
-              <p className="text-on-surface-variant">Không có mã QR — dùng nút bên dưới.</p>
+              <p className="text-on-surface-variant">{t("noQrCode")}</p>
             )}
             <p className="text-sm text-on-surface-variant mt-3">
-              Quét bằng app {provider === "momo" ? "MoMo" : "ngân hàng"} trên điện thoại để thanh toán.
+              Quét bằng app ngân hàng trên điện thoại để thanh toán.
             </p>
-            {provider === "payos" && data?.accountNumber && (
+            {data?.accountNumber && (
               <div className="text-xs text-on-surface-variant mt-2">
-                <p>STK: <b>{data.accountNumber}</b> — {data.accountName}</p>
+                <p>STK: <b>{data.accountNumber}</b>{data.accountName ? ` — ${data.accountName}` : ""}</p>
+                <p>Số tiền: <b>{data.amount?.toLocaleString("vi-VN")}₫</b></p>
                 <p>Nội dung: <b>{data.description}</b></p>
               </div>
             )}
-            {(data?.checkoutUrl || data?.payUrl) && (
-              <a
-                href={(data.checkoutUrl ?? data.payUrl)!}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-block mt-3 text-sm text-primary font-semibold underline"
-              >
-                Mở trang thanh toán →
-              </a>
-            )}
             <p className="text-xs text-on-surface-variant mt-3 flex items-center justify-center gap-1">
               <span className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin inline-block" />
-              Đang chờ thanh toán…
+              {t("waitingPayment")}
             </p>
             <p className="text-xs text-on-surface-variant mt-1">
-              QR hết hạn sau{" "}
+              {t("qrExpiresIn")}{" "}
               <span className="font-mono font-semibold tabular-nums">
                 {String(Math.floor(countdown / 60)).padStart(2, "0")}:{String(countdown % 60).padStart(2, "0")}
               </span>
@@ -207,13 +168,14 @@ export default function PaymentQrModal({
         {status === "paid" && (
           <div className="py-8">
             <div className="text-6xl mb-2">🎉</div>
-            <p className="text-xl font-extrabold text-on-surface">Thanh toán thành công!</p>
-            <p className="text-sm text-on-surface-variant mt-1">Gói của bạn đã được kích hoạt.</p>
+            <p className="text-xl font-extrabold text-on-surface">{t("paymentSuccess")}</p>
+            <p className="text-sm text-on-surface-variant mt-1">{t("planActivated")}</p>
             <button
               onClick={() => router.push("/parent/settings")}
-              className="mt-4 w-full py-2.5 rounded-[14px] bg-primary text-on-primary font-bold"
+              className="gw-btn gw-btn--primary"
+              style={{ marginTop: "16px", width: "100%" }}
             >
-              Xem gói của tôi →
+              {t("viewMyPlan")}
             </button>
           </div>
         )}
@@ -223,9 +185,10 @@ export default function PaymentQrModal({
             <p className="text-error">{error}</p>
             <button
               onClick={() => router.push("/parent/pricing")}
-              className="mt-4 px-5 py-2.5 rounded-[14px] bg-primary text-on-primary font-bold"
+              className="gw-btn gw-btn--primary"
+              style={{ marginTop: "16px" }}
             >
-              Thử lại
+              {t("retry")}
             </button>
           </div>
         )}

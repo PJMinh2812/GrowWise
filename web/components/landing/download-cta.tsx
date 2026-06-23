@@ -1,6 +1,10 @@
+"use client";
+
 import { Smartphone, Sparkles } from "lucide-react";
+import { useLang } from "@/components/app/LangProvider";
 
 export function DownloadCTA() {
+  const { t } = useLang();
   return (
     <section id="download" className="py-16 sm:py-24 bg-[#f0fdf4]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -18,16 +22,16 @@ export function DownloadCTA() {
                 <div className="inline-flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full mb-6">
                   <Sparkles className="w-4 h-4 text-white" />
                   <span className="text-sm font-medium text-white">
-                    Miễn phí tải về
+                    {t("lpDlBadge")}
                   </span>
                 </div>
 
                 <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight text-balance">
-                  Bắt đầu hành trình tài chính thông minh cho con ngay hôm nay!
+                  {t("lpDlTitle")}
                 </h2>
 
                 <p className="mt-6 text-lg text-white/80 max-w-lg mx-auto lg:mx-0">
-                  Tải GrowWise miễn phí và khám phá cách giúp con bạn trở thành nhà quản lý tài chính nhí thông minh.
+                  {t("lpDlSub")}
                 </p>
 
                 {/* App Store buttons */}
@@ -40,7 +44,7 @@ export function DownloadCTA() {
                       <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
                     </svg>
                     <div className="text-left">
-                      <div className="text-[10px] opacity-80">Tải về trên</div>
+                      <div className="text-[10px] opacity-80">{t("lpDlOn")}</div>
                       <div className="text-sm font-semibold">App Store</div>
                     </div>
                   </a>
@@ -54,7 +58,7 @@ export function DownloadCTA() {
                       <path d="M21.89 3.77l-1.66-1.66c-.18-.18-.44-.18-.62 0l-8.55 8.55c-.18.18-.18.44 0 .62l1.66 1.66c.18.18.44.18.62 0l8.55-8.55c.18-.18.18-.44 0-.62zM12 13.5l-2.12-2.12L14.5 6.76l2.12 2.12L12 13.5z"/>
                     </svg>
                     <div className="text-left">
-                      <div className="text-[10px] opacity-80">Tải về trên</div>
+                      <div className="text-[10px] opacity-80">{t("lpDlOn")}</div>
                       <div className="text-sm font-semibold">Google Play</div>
                     </div>
                   </a>
@@ -76,11 +80,11 @@ export function DownloadCTA() {
                       </div>
                       <div className="text-center">
                         <h3 className="font-bold text-gray-900 text-lg">GrowWise</h3>
-                        <p className="text-sm text-gray-500 mt-1">Tài chính thông minh cho trẻ</p>
+                        <p className="text-sm text-gray-500 mt-1">{t("lpDlTagline")}</p>
                       </div>
                       <div className="mt-6 flex items-center justify-center gap-2">
                         <Smartphone className="w-5 h-5 text-secondary" />
-                        <span className="text-sm font-medium text-secondary">Tải ngay!</span>
+                        <span className="text-sm font-medium text-secondary">{t("lpDlNow")}</span>
                       </div>
                     </div>
                   </div>

@@ -39,56 +39,60 @@ export default function RolePicker({ children }: { children: Child[] }) {
   }
 
   return (
-    <div className="theme-parent min-h-screen w-full flex flex-col items-center justify-center px-4 bg-gradient-to-b from-primary-container/20 to-surface relative">
+    <div className="min-h-screen w-full flex flex-col items-center justify-center px-4 relative" style={{ background: "var(--surface)" }}>
       <div className="absolute top-4 right-4">
         <LanguageToggle />
       </div>
-      <div className="text-4xl mb-6">🦉</div>
-      <h1 className="text-3xl font-extrabold text-on-surface">{t("whoAreYou")}</h1>
-      <p className="text-on-surface-variant mt-2 mb-10">{t("chooseRole")}</p>
+      <div className="text-5xl mb-5" style={{ animation: "float 3s ease-in-out infinite" }}>🦉</div>
+      <h1 className="text-2xl font-black text-primary">{t("whoAreYou")}</h1>
+      <p className="font-bold text-on-surface-variant mt-2 mb-8">{t("chooseRole")}</p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-2xl">
+      <div className="grid grid-cols-1 gap-4 w-full max-w-sm">
         {/* Parent */}
         <button
           onClick={() => setShowPin(true)}
-          className="app-card p-8 flex flex-col items-center text-center hover:-translate-y-1 transition-transform relative"
+          className="gw-card gw-card--press flex items-center gap-4 text-left relative"
         >
-          <span className="absolute top-4 right-4 flex items-center gap-1 text-xs font-semibold bg-surface-container px-2 py-1 rounded-full text-on-surface-variant">
+          <span className="absolute top-3 right-3 flex items-center gap-1 text-xs font-extrabold bg-surface-container-high px-2 py-1 rounded-full text-on-surface-variant">
             <span className="material-symbols-outlined text-sm">lock</span> {t("security")}
           </span>
-          <div className="w-16 h-16 rounded-full bg-primary-container/30 flex items-center justify-center text-3xl mb-4">
+          <div className="w-16 h-16 rounded-full bg-tertiary-fixed flex items-center justify-center text-3xl shrink-0">
             👨‍👩‍👧
           </div>
-          <span className="text-2xl font-extrabold text-primary">{t("parent")}</span>
-          <span className="text-sm text-on-surface-variant mt-1">{t("parentSub")}</span>
+          <div>
+            <span className="block text-xl font-black text-tertiary">{t("parent")}</span>
+            <span className="text-sm font-semibold text-on-surface-variant">{t("parentSub")}</span>
+          </div>
         </button>
 
         {/* Child */}
         <button
           onClick={onChildCard}
-          className="app-card p-8 flex flex-col items-center text-center hover:-translate-y-1 transition-transform"
+          className="gw-card gw-card--press flex items-center gap-4 text-left"
         >
-          <div className="w-16 h-16 rounded-full bg-tertiary-container/40 flex items-center justify-center text-3xl mb-4">
+          <div className="w-16 h-16 rounded-full bg-primary-fixed flex items-center justify-center text-3xl shrink-0">
             {children.length > 1 ? "👨‍👧‍👦" : "🧒"}
           </div>
-          <span className="text-2xl font-extrabold text-tertiary">{t("child")}</span>
-          <span className="text-sm text-on-surface-variant mt-1">
-            {children.length > 1 ? `${children.length} hồ sơ` : t("childSub")}
-          </span>
+          <div>
+            <span className="block text-xl font-black text-primary">{t("child")}</span>
+            <span className="text-sm font-semibold text-on-surface-variant">
+              {children.length > 1 ? `${children.length} ${t("multiChildProfiles")}` : t("childSub")}
+            </span>
+          </div>
         </button>
       </div>
 
       {/* Multi-child picker */}
       {pickChild && children.length > 1 && (
-        <div className="mt-8 flex flex-wrap gap-3 justify-center">
+        <div className="mt-6 flex flex-wrap gap-3 justify-center">
           {children.map((c) => (
             <button
               key={c.id}
               onClick={() => selectChild(c)}
-              className="app-card px-5 py-3 flex items-center gap-2 hover:-translate-y-0.5 transition-transform"
+              className="gw-card gw-card--press flex items-center gap-2 py-3 px-5"
             >
               <span className="text-2xl">{c.avatar_emoji}</span>
-              <span className="font-bold text-on-surface">{c.name}</span>
+              <span className="font-extrabold text-on-surface">{c.name}</span>
               {c.child_pin_hash && (
                 <span className="material-symbols-outlined text-sm text-on-surface-variant">lock</span>
               )}
@@ -130,6 +134,7 @@ function ChildPinModal({
   const ref3 = useRef<HTMLInputElement>(null);
   const refs = [ref0, ref1, ref2, ref3];
 
+  const { t } = useLang();
   const [values, setValues] = useState(["", "", "", ""]);
   const [error, setError] = useState("");
   const [locked, setLocked] = useState(false);
@@ -157,10 +162,10 @@ function ChildPinModal({
         setTimeout(() => ref0.current?.focus(), 50);
         if (next >= 3) {
           setLocked(true);
-          setError("Sai nhiều lần. Thử lại sau 10 giây.");
+          setError(t("wrongPinLockShort"));
           setTimeout(() => { setLocked(false); setError(""); setAttempts(0); }, 10000);
         } else {
-          setError(`Mã PIN không đúng. Còn ${3 - next} lần.`);
+          setError(t("wrongPinLeft").replace("{n}", String(3 - next)));
         }
       }
     } finally {
@@ -185,13 +190,13 @@ function ChildPinModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="app-card w-full max-w-xs p-6">
+      <div className="gw-card" style={{ width: "100%", maxWidth: "320px", padding: "24px" }}>
         <div className="text-center text-4xl mb-2">{child.avatar_emoji}</div>
         <h3 className="text-lg font-bold text-on-surface text-center mb-1">
-          Mã PIN của {child.name}
+          {t("childPinOf")} {child.name}
         </h3>
         <p className="text-sm text-on-surface-variant text-center mb-5">
-          Nhập 4 chữ số để tiếp tục
+          {t("enterToContinue")}
         </p>
 
         <div className="flex gap-3 justify-center mb-4">
@@ -215,18 +220,15 @@ function ChildPinModal({
         {error && <p className="text-sm text-error text-center mb-3">{error}</p>}
 
         <div className="flex gap-2">
-          <button
-            onClick={onCancel}
-            className="flex-1 py-2.5 rounded-[14px] bg-surface-container text-on-surface-variant font-semibold"
-          >
-            Hủy
+          <button onClick={onCancel} className="gw-btn gw-btn--ghost gw-btn--sm flex-1">
+            {t("cancel")}
           </button>
           <button
             onClick={verify}
             disabled={locked || loading || values.join("").length !== 4}
-            className="flex-1 py-2.5 rounded-[14px] bg-primary text-on-primary font-bold disabled:opacity-50"
+            className="gw-btn gw-btn--primary gw-btn--sm flex-1"
           >
-            {loading ? "…" : "Xác nhận"}
+            {loading ? "…" : t("confirm")}
           </button>
         </div>
       </div>

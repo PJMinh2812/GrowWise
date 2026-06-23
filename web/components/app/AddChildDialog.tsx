@@ -4,15 +4,19 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { addChildAction } from "@/lib/app/parent-actions";
+import { calcAge } from "@/lib/types";
 import { useLang } from "./LangProvider";
 
 const AVATARS = ["👦", "👧", "🧒", "👶", "🐱", "🐶", "🦊", "🐼", "🦄", "🐯"];
+
+const TODAY = new Date().toISOString().split("T")[0];
+const MIN_DOB = new Date(Date.now() - 17 * 365.25 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
 export default function AddChildDialog({ onClose }: { onClose: () => void }) {
   const router = useRouter();
   const { t } = useLang();
   const [name, setName] = useState("");
-  const [age, setAge] = useState(8);
+  const [dob, setDob] = useState("");
   const [emoji, setEmoji] = useState(AVATARS[0]);
   const [error, setError] = useState("");
   const [limit, setLimit] = useState(false);
@@ -26,13 +30,17 @@ export default function AddChildDialog({ onClose }: { onClose: () => void }) {
       setError(t("nameRequired"));
       return;
     }
+    if (!dob) {
+      setError(t("selectDob"));
+      return;
+    }
     start(async () => {
-      const res = await addChildAction({ name: name.trim(), age, avatarEmoji: emoji });
+      const res = await addChildAction({ name: name.trim(), dateOfBirth: dob, avatarEmoji: emoji });
       if (res.ok) {
         onClose();
         router.refresh();
       } else {
-        setError(res.error ?? "Lỗi");
+        setError(res.error ?? t("genericError"));
         setLimit(Boolean(res.limit));
       }
     });
@@ -40,7 +48,7 @@ export default function AddChildDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <form onSubmit={submit} className="app-card w-full max-w-sm p-6">
+      <form onSubmit={submit} className="gw-card" style={{ width: "100%", maxWidth: "384px", padding: "24px" }}>
         <h3 className="text-lg font-bold text-on-surface mb-4">{t("addChild")}</h3>
 
         {/* avatar */}
@@ -63,19 +71,22 @@ export default function AddChildDialog({ onClose }: { onClose: () => void }) {
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Tên con"
+          placeholder={t("childName")}
           className="w-full border border-outline-variant rounded-[14px] px-3 py-2.5 text-on-surface mb-3"
         />
 
-        <label className="block text-sm font-semibold text-on-surface mb-1">{t("childAge")}</label>
+        <label className="block text-sm font-semibold text-on-surface mb-1">{t("dobLabel")}</label>
         <input
-          type="number"
-          min={1}
-          max={17}
-          value={age}
-          onChange={(e) => setAge(Number(e.target.value))}
-          className="w-full border border-outline-variant rounded-[14px] px-3 py-2.5 text-on-surface mb-3"
+          type="date"
+          value={dob}
+          onChange={(e) => setDob(e.target.value)}
+          max={TODAY}
+          min={MIN_DOB}
+          className="w-full border border-outline-variant rounded-[14px] px-3 py-2.5 text-on-surface mb-1"
         />
+        {dob && (
+          <p className="text-xs text-on-surface-variant mb-3">{calcAge(dob)} {t("yearsOld")}</p>
+        )}
 
         {error && (
           <div className="mb-3">

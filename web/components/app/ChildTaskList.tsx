@@ -40,7 +40,7 @@ export default function ChildTaskList({
         <TaskCard key={i.task.id} item={i} childId={childId} variant="done" />
       ))}
       {items.length === 0 && (
-        <div className="app-card p-8 text-center text-on-surface-variant">
+        <div className="gw-card text-center text-on-surface-variant font-semibold py-8">
           Chưa có nhiệm vụ nào. Ghé <b>Chợ nhiệm vụ</b> để nhận thêm nhé!
         </div>
       )}
@@ -102,24 +102,39 @@ function TaskCard({
       : variant === "done"
         ? "opacity-70"
         : "";
+  const actionable = variant === "todo" || variant === "rejected";
 
   return (
-    <div className={`app-card p-4 ${border}`}>
+    <div className={`gw-card ${variant !== "done" ? "gw-card--press" : ""} mb-3 ${border}`}>
       <div className="flex items-center gap-3">
-        <span className="text-3xl">{task.icon}</span>
+        <span className="grid place-items-center w-12 h-12 rounded-2xl bg-surface-container-high text-2xl shrink-0">
+          {task.icon}
+        </span>
         <div className="flex-1 min-w-0">
-          <p className="font-bold text-on-surface truncate">{task.title}</p>
-          <p className="text-sm text-tertiary font-semibold">🪙 +{task.coin_reward}</p>
+          <p className="font-extrabold text-on-surface truncate">{task.title}</p>
+          <span className="inline-flex items-center gap-1 text-sm font-extrabold text-primary mt-0.5">
+            <span className="material-symbols-outlined text-base">toll</span>+{task.coin_reward} xu
+          </span>
         </div>
-        <StatusChip variant={variant} />
+        {actionable ? (
+          <button
+            disabled={uploading || pending}
+            onClick={() => fileRef.current?.click()}
+            className="gw-btn gw-btn--primary gw-btn--sm"
+          >
+            {uploading || pending ? "…" : variant === "rejected" ? t("resubmit") : t("submit")}
+          </button>
+        ) : (
+          <StatusChip variant={variant} />
+        )}
       </div>
 
       {variant === "rejected" && item.parentNote && (
-        <p className="mt-2 text-sm text-error">Ba/mẹ nhắn: {item.parentNote}</p>
+        <p className="mt-2 text-sm text-error font-semibold">Ba/mẹ nhắn: {item.parentNote}</p>
       )}
 
-      {(variant === "todo" || variant === "rejected") && (
-        <div className="mt-3">
+      {actionable && (
+        <div className="mt-2">
           {cameraOnly && (
             <p className="text-xs text-amber-600 mb-2">
               ⚠️ Nhiệm vụ tự động duyệt — chỉ chụp ảnh trực tiếp.
@@ -133,18 +148,7 @@ function TaskCard({
             onChange={onPickFile}
             className="hidden"
           />
-          <button
-            disabled={uploading || pending}
-            onClick={() => fileRef.current?.click()}
-            className="px-5 py-2 rounded-[14px] bg-primary text-on-primary text-sm font-bold disabled:opacity-50"
-          >
-            {uploading || pending
-              ? "…"
-              : variant === "rejected"
-                ? t("resubmit")
-                : t("submit")}
-          </button>
-          {error && <p className="text-sm text-error mt-2">{error}</p>}
+          {error && <p className="text-sm text-error mt-1">{error}</p>}
         </div>
       )}
     </div>

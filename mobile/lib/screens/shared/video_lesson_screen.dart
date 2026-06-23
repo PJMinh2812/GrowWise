@@ -58,7 +58,7 @@ class _VideoLessonScreenState extends State<VideoLessonScreen> {
   void initState() {
     super.initState();
     _vc = YoutubePlayerController.fromVideoId(
-      videoId: widget.lesson.youtubeId,
+      videoId: widget.lesson.youtubeId ?? '',
       autoPlay: false,
       params: const YoutubePlayerParams(
         showControls: false,

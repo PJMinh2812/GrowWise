@@ -30,9 +30,13 @@ class _PricingScreenState extends State<PricingScreen>
   int? _openFaq;
   bool _loading = false;
 
+  // Plan prices fetched from the web API (fallback defaults until loaded).
+  // Yearly is already discounted (-20%) by the server.
+  PlanPrice _premiumPrice = const PlanPrice(monthly: 79000, yearly: 758000);
+  PlanPrice _familyPrice = const PlanPrice(monthly: 149000, yearly: 1430000);
+
   // Real payment tracking
   String? _pendingOrderId;
-  String _paymentProvider = 'momo'; // 'momo' | 'qr'
   QRPaymentResult? _pendingQRResult;
   bool _waitingForPayment = false;
   Timer? _pollTimer;
@@ -41,7 +45,20 @@ class _PricingScreenState extends State<PricingScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _loadPrices();
   }
+
+  Future<void> _loadPrices() async {
+    final prices = await PaymentService.fetchPlanPrices();
+    if (!mounted || prices.isEmpty) return;
+    setState(() {
+      if (prices['premium'] != null) _premiumPrice = prices['premium']!;
+      if (prices['family'] != null) _familyPrice = prices['family']!;
+    });
+  }
+
+  // Approximate equivalent monthly price when paying yearly.
+  String _perMonthEquiv(int yearly) => '≈ ${_formatVND((yearly / 12).round())}/tháng';
 
   @override
   void dispose() {
@@ -81,60 +98,11 @@ class _PricingScreenState extends State<PricingScreen>
     Navigator.pop(context);
   }
 
-  // ── Real mode: MoMo payment ────────────────────────────────────────────────
-  Future<void> _payWithMoMo(String planName) async {
-    if (_loading) return;
-    final uid = SupabaseService.userId;
-    if (uid == null) {
-      _showError('Vui lòng đăng nhập để thanh toán');
-      return;
-    }
-
-    setState(() => _loading = true);
-
-    try {
-      final result = await PaymentService.createMoMoOrder(
-        userId: uid,
-        planName: planName,
-        billingInterval: _isYearly ? 'yearly' : 'monthly',
-      );
-
-      if (!mounted) return;
-
-      if (result.resultCode != 0) {
-        setState(() => _loading = false);
-        _showError('Lỗi tạo đơn: ${result.message}');
-        return;
-      }
-
-      _pendingOrderId  = result.orderId;
-      _paymentProvider = 'momo';
-
-      final launched = await PaymentService.launchMoMo(result);
-      if (!mounted) return;
-
-      if (!launched) {
-        setState(() => _loading = false);
-        _showError('Không thể mở ứng dụng MoMo. Vui lòng cài đặt MoMo và thử lại.');
-        return;
-      }
-
-      setState(() {
-        _loading = false;
-        _waitingForPayment = true;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _loading = false);
-      _showError('Không thể kết nối đến server: $e');
-    }
-  }
-
   void _startPolling() {
     _pollTimer?.cancel();
     _pollTimer = Timer.periodic(const Duration(seconds: 3), (_) async {
       if (_pendingOrderId == null) return;
-      final status = await PaymentService.checkStatus(_pendingOrderId!, provider: _paymentProvider);
+      final status = await PaymentService.checkStatus(_pendingOrderId!);
       if (status == 'completed') {
         _pollTimer?.cancel();
         if (!mounted) return;
@@ -164,69 +132,12 @@ class _PricingScreenState extends State<PricingScreen>
     if (isDemoMode) {
       _startTrial(planName);
     } else {
-      _showPaymentMethodPicker(planName);
+      _payWithSePay(planName);
     }
   }
 
-  void _showPaymentMethodPicker(String planName) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (_) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40, height: 4,
-                decoration: BoxDecoration(
-                  color: _kBorder,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Chọn phương thức thanh toán',
-              style: GoogleFonts.nunitoSans(
-                fontSize: 17,
-                fontWeight: FontWeight.w800,
-                color: _kText,
-              ),
-            ),
-            const SizedBox(height: 16),
-            _PaymentMethodTile(
-              icon: '📱',
-              label: 'Ví MoMo',
-              subtitle: 'Mở app MoMo để thanh toán',
-              onTap: () {
-                Navigator.pop(context);
-                _payWithMoMo(planName);
-              },
-            ),
-            const SizedBox(height: 10),
-            _PaymentMethodTile(
-              icon: '🏦',
-              label: 'Chuyển khoản QR',
-              subtitle: 'Quét mã QR bằng app ngân hàng bất kỳ',
-              onTap: () {
-                Navigator.pop(context);
-                _payWithQR(planName);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _payWithQR(String planName) async {
+  // ── Real mode: SePay VietQR bank transfer ──────────────────────────────────
+  Future<void> _payWithSePay(String planName) async {
     if (_loading) return;
     final uid = SupabaseService.userId;
     if (uid == null) {
@@ -237,7 +148,7 @@ class _PricingScreenState extends State<PricingScreen>
     setState(() => _loading = true);
 
     try {
-      final result = await PaymentService.createQROrder(
+      final result = await PaymentService.createSePayOrder(
         userId: uid,
         planName: planName,
         billingInterval: _isYearly ? 'yearly' : 'monthly',
@@ -247,7 +158,6 @@ class _PricingScreenState extends State<PricingScreen>
 
       _pendingOrderId   = result.orderId;
       _pendingQRResult  = result;
-      _paymentProvider  = 'qr';
 
       setState(() {
         _loading = false;
@@ -382,12 +292,14 @@ class _PricingScreenState extends State<PricingScreen>
                 _PlanCard(
                   emoji: '🚀',
                   name: 'Nâng Cao',
-                  price: _isYearly ? _formatVND(749000) : _formatVND(79000),
+                  price: _isYearly ? _formatVND(_premiumPrice.yearly) : _formatVND(_premiumPrice.monthly),
                   priceLabel: _isYearly ? '/ năm' : '/ tháng',
                   subtitle: _isYearly
-                      ? '≈ 62.400₫/tháng'
-                      : '~2.600₫/ngày — ít hơn 1 tô phở!',
-                  savingBadge: _isYearly ? 'Tiết kiệm 200.000₫' : null,
+                      ? _perMonthEquiv(_premiumPrice.yearly)
+                      : '~${_formatVND((_premiumPrice.monthly / 30).round())}/ngày',
+                  savingBadge: _isYearly
+                      ? 'Tiết kiệm ${_formatVND(_premiumPrice.monthly * 12 - _premiumPrice.yearly)}'
+                      : null,
                   features: const [
                     'Tất cả bài học (không giới hạn)',
                     'Nhiệm vụ không giới hạn',
@@ -402,8 +314,8 @@ class _PricingScreenState extends State<PricingScreen>
                   ctaLabel: isDemoMode
                       ? 'Dùng thử 7 ngày MIỄN PHÍ →'
                       : (_isYearly
-                          ? 'Mua gói năm — ${_formatVND(749000)}'
-                          : 'Mua gói tháng — ${_formatVND(79000)}'),
+                          ? 'Mua gói năm — ${_formatVND(_premiumPrice.yearly)}'
+                          : 'Mua gói tháng — ${_formatVND(_premiumPrice.monthly)}'),
                   ctaColor: _kPurple,
                   onCta: appState.isPremium
                       ? null
@@ -419,10 +331,12 @@ class _PricingScreenState extends State<PricingScreen>
                 _PlanCard(
                   emoji: '👨‍👩‍👧‍👦',
                   name: 'Gia Đình',
-                  price: _isYearly ? _formatVND(1419000) : _formatVND(149000),
+                  price: _isYearly ? _formatVND(_familyPrice.yearly) : _formatVND(_familyPrice.monthly),
                   priceLabel: _isYearly ? '/ năm' : '/ tháng',
-                  subtitle: _isYearly ? '≈ 118.250₫/tháng' : 'Tối đa 3 hồ sơ trẻ',
-                  savingBadge: _isYearly ? 'Tiết kiệm 369.000₫' : null,
+                  subtitle: _isYearly ? _perMonthEquiv(_familyPrice.yearly) : 'Tối đa 3 hồ sơ trẻ',
+                  savingBadge: _isYearly
+                      ? 'Tiết kiệm ${_formatVND(_familyPrice.monthly * 12 - _familyPrice.yearly)}'
+                      : null,
                   features: const [
                     'Tất cả tính năng Nâng Cao',
                     'Tối đa 3 hồ sơ trẻ',
@@ -435,8 +349,8 @@ class _PricingScreenState extends State<PricingScreen>
                   ctaLabel: isDemoMode
                       ? 'Dùng thử 7 ngày MIỄN PHÍ →'
                       : (_isYearly
-                          ? 'Mua gói năm — ${_formatVND(1419000)}'
-                          : 'Mua gói tháng — ${_formatVND(149000)}'),
+                          ? 'Mua gói năm — ${_formatVND(_familyPrice.yearly)}'
+                          : 'Mua gói tháng — ${_formatVND(_familyPrice.monthly)}'),
                   ctaColor: _kOrangeDark,
                   onCta: appState.planType == 'family'
                       ? null
@@ -465,7 +379,7 @@ class _PricingScreenState extends State<PricingScreen>
                         const SizedBox(width: 8),
                         Flexible(
                           child: Text(
-                            'MoMo · Chuyển khoản QR — An toàn & Bảo mật',
+                            'Chuyển khoản QR ngân hàng — An toàn & Bảo mật',
                             style: GoogleFonts.nunitoSans(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
@@ -534,7 +448,7 @@ class _PricingScreenState extends State<PricingScreen>
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(24),
                   ),
-                  child: _paymentProvider == 'qr' && _pendingQRResult != null
+                  child: _pendingQRResult != null
                       ? _QRPaymentOverlay(
                           result: _pendingQRResult!,
                           formatVND: _formatVND,
@@ -546,7 +460,7 @@ class _PricingScreenState extends State<PricingScreen>
                       : Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Text('📱', style: TextStyle(fontSize: 48)),
+                            const Text('🏦', style: TextStyle(fontSize: 48)),
                             const SizedBox(height: 16),
                             Text(
                               'Đang chờ xác nhận thanh toán...',
@@ -555,16 +469,6 @@ class _PricingScreenState extends State<PricingScreen>
                                 fontSize: 16,
                                 fontWeight: FontWeight.w800,
                                 color: _kText,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Hoàn tất thanh toán trong ứng dụng MoMo rồi quay lại đây.',
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.nunitoSans(
-                                fontSize: 13,
-                                color: _kTextMuted,
-                                height: 1.5,
                               ),
                             ),
                             const SizedBox(height: 20),
@@ -598,7 +502,7 @@ const _faqs = [
   {'q': 'Tôi có thể hủy không?', 'a': 'Có, bạn có thể hủy bất kỳ lúc nào mà không mất thêm phí.'},
   {'q': 'Dùng thử có cần thẻ không?', 'a': 'Không cần! 7 ngày dùng thử hoàn toàn miễn phí, không yêu cầu thông tin thanh toán.'},
   {'q': 'Family package dùng được mấy điện thoại?', 'a': 'Mỗi hồ sơ trẻ được dùng trên 1 thiết bị. Gói Gia Đình cho tối đa 3 hồ sơ trẻ.'},
-  {'q': 'Thanh toán qua MoMo có an toàn không?', 'a': 'Có! Toàn bộ giao dịch được mã hóa và xử lý bởi MoMo — GrowWise không lưu thông tin thẻ hay ví của bạn.'},
+  {'q': 'Thanh toán bằng chuyển khoản QR có an toàn không?', 'a': 'Có! Bạn quét mã VietQR và chuyển khoản bằng chính app ngân hàng của mình; gói tự kích hoạt ngay khi nhận được tiền. GrowWise không lưu thông tin tài khoản của bạn.'},
 ];
 
 // ── Widgets ────────────────────────────────────────────────────────────────────
@@ -1163,63 +1067,3 @@ class _InfoRow extends StatelessWidget {
   }
 }
 
-class _PaymentMethodTile extends StatelessWidget {
-  final String icon;
-  final String label;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  const _PaymentMethodTile({
-    required this.icon,
-    required this.label,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            border: Border.all(color: _kBorder),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Row(
-            children: [
-              Text(icon, style: const TextStyle(fontSize: 28)),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label,
-                      style: GoogleFonts.nunitoSans(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                        color: _kText,
-                      ),
-                    ),
-                    Text(
-                      subtitle,
-                      style: GoogleFonts.nunitoSans(
-                        fontSize: 12,
-                        color: _kTextMuted,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Icon(Icons.chevron_right_rounded, color: _kBorder),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}

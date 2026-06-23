@@ -1,12 +1,11 @@
 /* Font imports must come before @import "tailwindcss" */
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800;900&display=swap');
 
 @import "tailwindcss";
 
 .material-symbols-outlined {
-  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
   font-family: 'Material Symbols Outlined';
   font-style: normal;
   line-height: 1;
@@ -15,38 +14,63 @@
   user-select: none;
 }
 
-/* ── Stitch Design System Color Tokens ── */
+/* ============================================================
+   GrowWise · Playful Modernism — design system
+   Short aliases (mirrors stitch_growwise_web_platform mockups)
+   used by the .gw-* component classes below.
+   ============================================================ */
+:root {
+  /* surfaces */
+  --surface:#FFF8F2; --surface-low:#FFF2E0; --surface-c:#F9ECDA;
+  --surface-high:#F3E6D4; --white:#FFFFFF;
+  /* text */
+  --ink:#211B10; --ink-soft:#564334; --outline:#897362; --outline-v:#DDC1AE;
+  /* brand */
+  --primary:#904D00; --primary-c:#FF8C00; --primary-fixed:#FFDCC3; --on-primary-c:#623200;
+  --secondary:#006E1C; --secondary-c:#96F592; --secondary-dim:#7EDB7B; --on-secondary-c:#0A7320;
+  --tertiary:#6833EA; --tertiary-c:#B29BFF; --tertiary-fixed:#E8DEFF; --on-tertiary-c:#4600BB;
+  --error:#BA1A1A; --error-c:#FFDAD6;
+  /* radii */
+  --r-input:16px; --r-card:24px; --r-pill:999px;
+  /* depth */
+  --soft:0 8px 22px -12px rgba(120,70,20,.30);
+  --soft-lg:0 16px 36px -16px rgba(120,70,20,.34);
+  --glow:0 12px 26px -12px rgba(255,140,0,.45);
+}
+
+/* ── M3 token names (drive Tailwind utilities: bg-primary, text-on-surface …) ──
+   Single unified Playful Modernism palette for the whole app. */
 @theme {
-  /* Brand */
-  --color-primary:                  #630ed4;
+  /* Brand (orange) */
+  --color-primary:                  #904d00;
   --color-on-primary:               #ffffff;
-  --color-primary-container:        #7c3aed;
-  --color-on-primary-container:     #ede0ff;
-  --color-primary-fixed:            #eaddff;
-  --color-primary-fixed-dim:        #d2bbff;
-  --color-on-primary-fixed:         #25005a;
-  --color-on-primary-fixed-variant: #5a00c6;
-  --color-inverse-primary:          #d2bbff;
+  --color-primary-container:        #ff8c00;
+  --color-on-primary-container:     #623200;
+  --color-primary-fixed:            #ffdcc3;
+  --color-primary-fixed-dim:        #ffb77d;
+  --color-on-primary-fixed:         #311300;
+  --color-on-primary-fixed-variant: #6e3a00;
+  --color-inverse-primary:          #ffb77d;
 
   /* Secondary (green) */
-  --color-secondary:                #006c49;
+  --color-secondary:                #006e1c;
   --color-on-secondary:             #ffffff;
-  --color-secondary-container:      #6cf8bb;
-  --color-on-secondary-container:   #00714d;
-  --color-secondary-fixed:          #6ffbbe;
-  --color-secondary-fixed-dim:      #4edea3;
-  --color-on-secondary-fixed:       #002113;
-  --color-on-secondary-fixed-variant:#005236;
+  --color-secondary-container:      #96f592;
+  --color-on-secondary-container:   #00531a;
+  --color-secondary-fixed:          #96f592;
+  --color-secondary-fixed-dim:      #7edb7b;
+  --color-on-secondary-fixed:       #002204;
+  --color-on-secondary-fixed-variant:#00531a;
 
-  /* Tertiary (amber) */
-  --color-tertiary:                 #704500;
+  /* Tertiary (purple) */
+  --color-tertiary:                 #6833ea;
   --color-on-tertiary:              #ffffff;
-  --color-tertiary-container:       #905b00;
-  --color-on-tertiary-container:    #ffe1c0;
-  --color-tertiary-fixed:           #ffddb8;
-  --color-tertiary-fixed-dim:       #ffb95f;
-  --color-on-tertiary-fixed:        #2a1700;
-  --color-on-tertiary-fixed-variant:#653e00;
+  --color-tertiary-container:       #e8deff;
+  --color-on-tertiary-container:    #4600bb;
+  --color-tertiary-fixed:           #e8deff;
+  --color-tertiary-fixed-dim:       #b29bff;
+  --color-on-tertiary-fixed:        #21005d;
+  --color-on-tertiary-fixed-variant:#4600bb;
 
   /* Error */
   --color-error:                    #ba1a1a;
@@ -54,135 +78,215 @@
   --color-error-container:          #ffdad6;
   --color-on-error-container:       #93000a;
 
-  /* Surface */
-  --color-surface:                  #fef7ff;
-  --color-surface-dim:              #dfd7e6;
-  --color-surface-bright:           #fef7ff;
+  /* Surface (warm cream) */
+  --color-surface:                  #fff8f2;
+  --color-surface-dim:              #f3e6d4;
+  --color-surface-bright:           #ffffff;
   --color-surface-container-lowest: #ffffff;
-  --color-surface-container-low:    #f9f1ff;
-  --color-surface-container:        #f3ebfa;
-  --color-surface-container-high:   #ede5f4;
-  --color-surface-container-highest:#e8dfee;
-  --color-surface-variant:          #e8dfee;
-  --color-surface-tint:             #732ee4;
+  --color-surface-container-low:    #fff2e0;
+  --color-surface-container:        #f9ecda;
+  --color-surface-container-high:   #f3e6d4;
+  --color-surface-container-highest:#eee1cf;
+  --color-surface-variant:          #eee1cf;
+  --color-surface-tint:             #ff8c00;
 
   /* On-surface */
-  --color-on-surface:               #1d1a24;
-  --color-on-surface-variant:       #4a4455;
-  --color-on-background:            #1d1a24;
-  --color-inverse-surface:          #332f39;
-  --color-inverse-on-surface:       #f6eefc;
+  --color-on-surface:               #211b10;
+  --color-on-surface-variant:       #564334;
+  --color-on-background:            #211b10;
+  --color-inverse-surface:          #362f22;
+  --color-inverse-on-surface:       #fbefe0;
 
   /* Outline */
-  --color-outline:                  #7b7487;
-  --color-outline-variant:          #ccc3d8;
+  --color-outline:                  #897362;
+  --color-outline-variant:          #ddc1ae;
 
   /* Background */
-  --color-background:               #fef7ff;
+  --color-background:               #fff8f2;
 }
 
 body {
-  font-family: 'Inter', Arial, Helvetica, sans-serif;
-  background-color: #F9FAFB;
-  color: #1d1a24;
+  font-family: 'Nunito Sans', 'Segoe UI', system-ui, sans-serif;
+  background-color: #efe3d3;
+  color: #211b10;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Landing page uses green as primary — override within this scope */
+/* Landing page keeps a green primary — override within this scope */
 .landing-theme {
-  --color-primary:           #006c49;
+  --color-primary:           #006e1c;
   --color-on-primary:        #ffffff;
-  --color-primary-container: #6cf8bb;
-  --color-on-primary-container: #002113;
-  --color-inverse-primary:   #4edea3;
+  --color-primary-container: #96f592;
+  --color-on-primary-container: #00531a;
+  --color-inverse-primary:   #7edb7b;
 }
 
 /* ───────────────────────────────────────────────────────────────
-   GrowWise Web App — dual theme (Plus Jakarta Sans)
-   .theme-parent = TÍM (growwise_financial_learning)
-   .theme-child  = CAM (vibrant_growth)
-   Override M3 tokens within scope (same pattern as .landing-theme).
+   GrowWise Web App — single unified Playful Modernism theme.
+   .theme-parent and .theme-child now share one palette (inherited
+   from @theme above); parent simply leans on the purple tertiary.
    ─────────────────────────────────────────────────────────────── */
 .theme-parent,
 .theme-child {
-  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-family: 'Nunito Sans', 'Segoe UI', system-ui, sans-serif;
   min-height: 100%;
   background-color: var(--color-background);
   color: var(--color-on-surface);
 }
 
-/* PARENT — purple */
-.theme-parent {
-  --color-primary:                  #4f378a;
-  --color-on-primary:               #ffffff;
-  --color-primary-container:        #6750a4;
-  --color-on-primary-container:     #e0d2ff;
-  --color-inverse-primary:          #cfbcff;
+/* ============================================================
+   .gw-* component classes — ported 1:1 from the Stitch mockups
+   ============================================================ */
+.no-scrollbar::-webkit-scrollbar{display:none}.no-scrollbar{scrollbar-width:none}
 
-  --color-secondary:                #63597c;
-  --color-on-secondary:             #ffffff;
-  --color-secondary-container:      #e1d4fd;
-  --color-on-secondary-container:   #1f1635;
+/* phone shell */
+.gw-screen{max-width:430px;margin:0 auto;min-height:100vh;background:var(--surface);
+  display:flex;flex-direction:column;position:relative;box-shadow:var(--soft-lg)}
+.gw-scroll{flex:1;overflow-y:auto;padding:0 20px 110px}
 
-  --color-tertiary:                 #765b00;
-  --color-on-tertiary:              #ffffff;
-  --color-tertiary-container:       #c9a74d;
-  --color-on-tertiary-container:    #503d00;
+/* app bar */
+.gw-top{position:sticky;top:0;z-index:30;display:flex;align-items:center;justify-content:space-between;
+  gap:10px;padding:14px 20px;background:rgba(255,248,242,.85);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--outline-v)}
+.gw-top .brand{display:flex;align-items:center;gap:10px}
+.gw-top .brand b{font-size:21px;font-weight:900;color:var(--primary);letter-spacing:.2px}
+.gw-avatar{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-size:22px;
+  background:var(--primary-fixed);border:2px solid var(--primary-c);overflow:hidden}
+.gw-coin{display:inline-flex;align-items:center;gap:6px;background:var(--white);
+  border:1px solid var(--outline-v);border-bottom-width:3px;border-radius:var(--r-pill);
+  padding:7px 14px;font-weight:800;color:var(--primary);font-size:15px;cursor:pointer;transition:.12s}
+.gw-coin:active{transform:translateY(2px);border-bottom-width:1px}
+.gw-coin .material-symbols-outlined{font-size:19px;color:var(--primary-c)}
 
-  --color-surface:                  #fdf7ff;
-  --color-surface-container-lowest: #ffffff;
-  --color-surface-container-low:    #f8f2fa;
-  --color-surface-container:        #f2ecf4;
-  --color-surface-container-high:   #ece6ee;
-  --color-surface-container-highest:#e6e0e9;
-  --color-surface-variant:          #e6e0e9;
-  --color-on-surface:               #1d1b20;
-  --color-on-surface-variant:       #494551;
-  --color-outline:                  #7a7582;
-  --color-outline-variant:          #cbc4d2;
-  --color-background:               #fdf7ff;
-}
+/* buttons — tactile pills */
+.gw-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;
+  height:52px;padding:0 22px;border:none;border-radius:var(--r-pill);font-family:inherit;
+  font-size:16px;font-weight:800;letter-spacing:.02em;cursor:pointer;transition:transform .1s,box-shadow .1s,background .15s}
+.gw-btn--primary{background:var(--primary-c);color:var(--on-primary-c);border-bottom:4px solid var(--primary)}
+.gw-btn--primary:hover{filter:brightness(1.02)}
+.gw-btn--secondary{background:var(--secondary-c);color:var(--on-secondary-c);border-bottom:4px solid var(--secondary)}
+.gw-btn--tertiary{background:var(--tertiary);color:#fff;border-bottom:4px solid #4600BB}
+.gw-btn--ghost{background:var(--white);color:var(--ink);border:1.5px solid var(--outline-v);border-bottom-width:3px}
+.gw-btn--danger{background:var(--error-c);color:#93000a;border-bottom:4px solid #ba1a1a}
+.gw-btn:active{transform:translateY(3px);border-bottom-width:1px!important}
+.gw-btn--sm{height:42px;font-size:14px;width:auto;padding:0 18px}
+.gw-btn:disabled{opacity:.55;cursor:not-allowed}
 
-/* CHILD — orange/vibrant */
-.theme-child {
-  --color-primary:                  #9d4300;
-  --color-on-primary:               #ffffff;
-  --color-primary-container:        #f97316;
-  --color-on-primary-container:     #582200;
-  --color-inverse-primary:          #ffb690;
+/* inputs */
+.gw-field{position:relative}
+.gw-field .material-symbols-outlined{position:absolute;left:14px;top:50%;transform:translateY(-50%);
+  color:var(--ink-soft);font-size:22px;transition:color .15s;pointer-events:none}
+.gw-input{width:100%;height:54px;padding:0 16px 0 46px;background:var(--white);
+  border:1.5px solid var(--outline-v);border-radius:var(--r-input);font-family:inherit;font-size:16px;
+  font-weight:600;color:var(--ink);transition:border .15s,box-shadow .15s}
+.gw-input::placeholder{color:#b6a48c;font-weight:600}
+.gw-input:focus{outline:none;border:2px solid var(--primary-c);box-shadow:0 0 0 4px rgba(255,140,0,.14)}
+.gw-field:focus-within .material-symbols-outlined{color:var(--primary-c)}
+.gw-input--bare{padding-left:16px}
+.gw-eye{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;
+  color:var(--ink-soft);cursor:pointer;padding:6px;display:grid;place-items:center}
 
-  --color-secondary:                #4648d4;
-  --color-on-secondary:             #ffffff;
-  --color-secondary-container:      #6063ee;
-  --color-on-secondary-container:   #fffbff;
+/* cards */
+.gw-card{background:var(--white);border:1.5px solid #F0E6D8;border-radius:var(--r-card);
+  box-shadow:var(--soft);padding:18px}
+.gw-card--glow{box-shadow:var(--glow)}
+.gw-card--press{transition:transform .12s,box-shadow .12s;cursor:pointer}
+.gw-card--press:hover{transform:translateY(-3px)}
+.gw-card--press:active{transform:translateY(0)}
 
-  --color-tertiary:                 #006e2f;
-  --color-on-tertiary:              #ffffff;
-  --color-tertiary-container:       #00b251;
-  --color-on-tertiary-container:    #003b16;
+/* chips */
+.gw-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:var(--r-pill);
+  font-size:12px;font-weight:800}
+.chip-video{background:var(--secondary-c);color:var(--on-secondary-c)}
+.chip-story{background:var(--tertiary-fixed);color:var(--on-tertiary-c)}
+.chip-game{background:var(--surface-high);color:var(--ink-soft)}
+.chip-new{background:var(--primary-fixed);color:var(--on-primary-c)}
 
-  --color-surface:                  #f9f9ff;
-  --color-surface-container-lowest: #ffffff;
-  --color-surface-container-low:    #f0f3ff;
-  --color-surface-container:        #e7eeff;
-  --color-surface-container-high:   #dee8ff;
-  --color-surface-container-highest:#d8e3fb;
-  --color-surface-variant:          #d8e3fb;
-  --color-on-surface:               #111c2d;
-  --color-on-surface-variant:       #584237;
-  --color-outline:                  #8c7164;
-  --color-outline-variant:          #e0c0b1;
-  --color-background:               #f9f9ff;
-}
+/* progress — candy stripe */
+.gw-progress{height:16px;border-radius:var(--r-pill);background:rgba(0,0,0,.07);overflow:hidden}
+.gw-progress>i{display:block;height:100%;border-radius:var(--r-pill);position:relative;
+  background:linear-gradient(90deg,var(--secondary-dim),var(--secondary))}
+.gw-progress>i::after{content:"";position:absolute;inset:0;border-radius:inherit;
+  background-image:linear-gradient(45deg,rgba(255,255,255,.30) 25%,transparent 25%,transparent 50%,
+    rgba(255,255,255,.30) 50%,rgba(255,255,255,.30) 75%,transparent 75%);
+  background-size:18px 18px;animation:stripe 1s linear infinite}
+.gw-progress.orange>i{background:linear-gradient(90deg,#FBA53A,var(--primary-c))}
 
-/* Soft card + offset-shadow helpers (shared by app themes) */
+/* filter tabs */
+.gw-tabs{display:flex;gap:10px;overflow-x:auto;padding:2px 0 8px}
+.gw-tab{flex:none;padding:9px 16px;border-radius:var(--r-pill);font-size:14px;font-weight:800;cursor:pointer;
+  background:var(--surface-high);color:var(--ink-soft);border:none;border-bottom:3px solid var(--outline-v);transition:.12s}
+.gw-tab.active{background:var(--primary);color:#fff;border-bottom-color:#5e3300}
+.gw-tab:active{transform:translateY(2px);border-bottom-width:1px}
+
+/* content tile (library) */
+.gw-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.gw-tile{display:flex;flex-direction:column;background:var(--white);border:1.5px solid #F0E6D8;
+  border-bottom:4px solid var(--outline-v);border-radius:20px;padding:10px;cursor:pointer;
+  transition:transform .14s,box-shadow .14s;box-shadow:var(--soft)}
+.gw-tile:hover{transform:translateY(-4px)}
+.gw-tile .thumb{aspect-ratio:1;border-radius:14px;display:grid;place-items:center;font-size:54px;
+  margin-bottom:10px;overflow:hidden;position:relative}
+.gw-tile h3{font-size:15px;font-weight:800;line-height:1.2;margin-top:6px;color:var(--ink)}
+.gw-tile .lock{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:50%;
+  background:rgba(255,255,255,.92);display:grid;place-items:center;color:var(--primary);box-shadow:var(--soft)}
+
+/* section title */
+.gw-h{display:flex;align-items:center;justify-content:space-between;margin:6px 0 12px}
+.gw-h h2{font-size:21px;font-weight:900;color:var(--ink)}
+.gw-h a{font-size:14px;font-weight:800;color:var(--primary);cursor:pointer}
+
+/* floating bottom nav */
+.gw-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;z-index:40;
+  display:flex;justify-content:space-around;align-items:flex-end;
+  background:rgba(255,248,242,.92);backdrop-filter:blur(12px);border-top:1px solid var(--outline-v);
+  padding:8px 8px 14px}
+.gw-nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;text-decoration:none;
+  color:var(--outline);font-size:11px;font-weight:800;cursor:pointer}
+.gw-nav a .material-symbols-outlined{font-size:25px;font-variation-settings:'FILL' 0}
+.gw-nav a.active{color:var(--primary)}
+.gw-nav a.active .material-symbols-outlined{font-variation-settings:'FILL' 1}
+.gw-nav a.active .bubble{width:54px;height:54px;border-radius:50%;background:var(--primary-c);color:#fff;
+  display:grid;place-items:center;margin-top:-24px;border:4px solid var(--surface);
+  box-shadow:var(--glow);animation:bouncein .5s cubic-bezier(.2,1.4,.4,1)}
+.gw-nav a.active .bubble .material-symbols-outlined{font-size:28px;font-variation-settings:'FILL' 1}
+
+/* mascot bubble */
+.gw-bubble{position:relative;display:inline-block;background:#fff;border:1.5px solid var(--outline-v);
+  border-radius:16px;padding:10px 18px;font-weight:800;color:var(--primary);box-shadow:var(--soft);
+  animation:bob 2.6s ease-in-out infinite}
+.gw-bubble::after{content:"";position:absolute;left:50%;bottom:-9px;width:16px;height:16px;background:#fff;
+  border-right:1.5px solid var(--outline-v);border-bottom:1.5px solid var(--outline-v);
+  transform:translateX(-50%) rotate(45deg)}
+
+/* survey banner */
+.gw-survey{position:relative;overflow:hidden;background:linear-gradient(120deg,#C9B6F2,#A78BEC);
+  border-radius:var(--r-card);padding:16px;display:flex;align-items:center;gap:14px;cursor:pointer;
+  box-shadow:0 14px 28px -14px rgba(104,51,234,.5)}
+.gw-survey .blob{position:absolute;right:-20px;top:-20px;width:110px;height:110px;border-radius:50%;background:#fff;opacity:.18}
+.gw-survey .ico{width:48px;height:48px;border-radius:50%;background:var(--tertiary);color:#fff;display:grid;place-items:center;flex:none;z-index:1}
+.gw-survey h3{font-size:15px;font-weight:900;color:#3A1E70;z-index:1}
+.gw-survey p{font-size:13px;font-weight:700;color:#4A2E86;z-index:1}
+
+/* animations */
+@keyframes stripe{to{background-position:18px 0}}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes bouncein{0%{transform:scale(.5)}100%{transform:scale(1)}}
+@keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.rise{animation:rise .5s cubic-bezier(.2,.8,.25,1) both}
+.rise-2{animation-delay:.07s}.rise-3{animation-delay:.14s}.rise-4{animation-delay:.21s}
+@media(prefers-reduced-motion:reduce){*{animation:none!important}}
+
+/* Soft card + offset-shadow helpers (kept for back-compat; follow new tokens) */
 .app-card {
   background-color: var(--color-surface-container-lowest);
-  border-radius: 1.25rem; /* 20px */
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border-radius: var(--r-card);
+  box-shadow: var(--soft);
 }
 .app-card-pop {
   background-color: var(--color-surface-container-lowest);
-  border-radius: 1.25rem;
+  border-radius: var(--r-card);
   border: 1px solid var(--color-outline-variant);
   box-shadow: 0 4px 0 0 var(--color-outline-variant);
 }

@@ -61,6 +61,7 @@ class AppState extends ChangeNotifier {
   // Child profile (the active child)
   String _childName = '';
   String _childAvatarEmoji = '👦';
+  String? _childAvatarUrl;
   int _childAge = 8;
   int _level = 1;
   int _totalCoins = 0;
@@ -236,6 +237,7 @@ class AppState extends ChangeNotifier {
   List<TaskModel> get tasks => List.unmodifiable(_tasks);
   String get childName => _childName;
   String get childAvatarEmoji => _childAvatarEmoji;
+  String? get childAvatarUrl => _childAvatarUrl;
   int get childAge => _childAge;
   int get level => _level;
   int get totalCoins => _totalCoins;
@@ -401,6 +403,7 @@ class AppState extends ChangeNotifier {
     _tasks = [];
     _childName = '';
     _childAvatarEmoji = '👦';
+    _childAvatarUrl = null;
     _childAge = 8;
     _level = 1;
     _totalCoins = 0;
@@ -449,6 +452,7 @@ class AppState extends ChangeNotifier {
     _childId = child['id'] as String;
     _childName = child['name'] as String? ?? '';
     _childAvatarEmoji = child['avatar_emoji'] as String? ?? '👦';
+    _childAvatarUrl = child['avatar_url'] as String?;
     _childAge = child['age'] as int? ?? 8;
     _level = child['level'] as int? ?? 1;
     _totalCoins = child['total_coins'] as int? ?? 0;
@@ -1031,6 +1035,14 @@ class AppState extends ChangeNotifier {
     notifyListeners();
     if (_childId != null && !isDemoMode) {
       await SupabaseService.updateChild(_childId!, {'avatar_emoji': emoji});
+    }
+  }
+
+  Future<void> updateChildAvatarUrl(String? url) async {
+    _childAvatarUrl = url;
+    notifyListeners();
+    if (_childId != null && !isDemoMode) {
+      await SupabaseService.updateChild(_childId!, {'avatar_url': url});
     }
   }
 

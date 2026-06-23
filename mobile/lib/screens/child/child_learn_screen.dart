@@ -6,6 +6,7 @@ import '../../models/video_lesson_model.dart';
 import '../../providers/app_state.dart';
 import '../../widgets/paywall_dialog.dart';
 import '../shared/video_lesson_screen.dart';
+import '../shared/story_reader_screen.dart';
 
 // Stitch "Storybook Finance" palette
 const _kPrimary = Color(0xFF630ED4);
@@ -37,15 +38,20 @@ class ChildLearnScreen extends StatefulWidget {
 
 class _ChildLearnScreenState extends State<ChildLearnScreen> {
   String? _selectedCategory;
+  String _tab = 'video'; // 'video' | 'story'
+
+  List<VideoLesson> _tabLessons(List<VideoLesson> lessons) =>
+      lessons.where((l) => l.lessonType == _tab).toList();
 
   List<String?> _categoryKeys(List<VideoLesson> lessons) {
-    final cats = lessons.map((l) => l.category).toSet().toList();
+    final cats = _tabLessons(lessons).map((l) => l.category).toSet().toList();
     return [null, ...cats];
   }
 
   List<VideoLesson> _filteredLessons(List<VideoLesson> lessons) {
-    if (_selectedCategory == null) return lessons;
-    return lessons.where((l) => l.category == _selectedCategory).toList();
+    final tabFiltered = _tabLessons(lessons);
+    if (_selectedCategory == null) return tabFiltered;
+    return tabFiltered.where((l) => l.category == _selectedCategory).toList();
   }
 
   String _categoryEmoji(String? cat) {
@@ -76,6 +82,16 @@ class _ChildLearnScreenState extends State<ChildLearnScreen> {
               .fadeIn()
               .slideY(begin: 0.1),
           const SizedBox(height: 20),
+
+          // Tab switcher: Video / Story
+          _TabSwitcher(
+            tab: _tab,
+            onChanged: (t) => setState(() {
+              _tab = t;
+              _selectedCategory = null;
+            }),
+          ).animate(delay: 80.ms).fadeIn(),
+          const SizedBox(height: 12),
 
           // Category chips
           SingleChildScrollView(
@@ -141,7 +157,11 @@ class _ChildLearnScreenState extends State<ChildLearnScreen> {
                       ? null
                       : () => Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (_) => VideoLessonScreen(lesson: lesson)),
+                            MaterialPageRoute(
+                              builder: (_) => lesson.lessonType == 'story'
+                                  ? StoryReaderScreen(lesson: lesson)
+                                  : VideoLessonScreen(lesson: lesson),
+                            ),
                           ),
             ).animate(delay: Duration(milliseconds: 120 + entry.key * 80)).fadeIn().slideY(begin: 0.1);
           }),
@@ -467,6 +487,69 @@ class _LessonCard extends StatelessWidget {
               ),
             ],
             ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Tab Switcher ──────────────────────────────────────────────────────────────
+
+class _TabSwitcher extends StatelessWidget {
+  final String tab;
+  final void Function(String) onChanged;
+  const _TabSwitcher({required this.tab, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: _kSurfaceContainerHigh,
+        borderRadius: BorderRadius.circular(99),
+      ),
+      child: Row(
+        children: [
+          _TabPill(label: '▶ Video', value: 'video', current: tab, onTap: onChanged),
+          _TabPill(label: '📖 Truyện', value: 'story', current: tab, onTap: onChanged),
+        ],
+      ),
+    );
+  }
+}
+
+class _TabPill extends StatelessWidget {
+  final String label;
+  final String value;
+  final String current;
+  final void Function(String) onTap;
+  const _TabPill({required this.label, required this.value, required this.current, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final selected = value == current;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => onTap(value),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: selected ? _kPrimary : Colors.transparent,
+            borderRadius: BorderRadius.circular(99),
+            boxShadow: selected
+                ? [BoxShadow(color: _kPrimary.withValues(alpha: 0.35), blurRadius: 8, offset: const Offset(0, 2))]
+                : null,
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            label,
+            style: GoogleFonts.nunitoSans(
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+              color: selected ? Colors.white : _kOnSurfaceVariant,
             ),
           ),
         ),

@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { addDream, redeemDream, deleteDream, updateDream } from "@/lib/app/child-actions";
 import type { DreamItem } from "@/lib/types";
+import { useLang } from "./LangProvider";
 
 const ICONS = ["🎁", "🎮", "🚲", "📱", "🧸", "👟", "🎨", "📚", "⚽", "🎧"];
 
@@ -17,6 +18,7 @@ export default function DreamsView({
   dreams: DreamItem[];
 }) {
   const router = useRouter();
+  const { t } = useLang();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [price, setPrice] = useState(100);
@@ -36,19 +38,16 @@ export default function DreamsView({
 
   return (
     <div>
-      <button
-        onClick={() => setOpen(true)}
-        className="mb-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-[14px] bg-primary text-on-primary font-bold"
-      >
-        <span className="material-symbols-outlined">add</span> Thêm ước mơ
+      <button onClick={() => setOpen(true)} className="gw-btn gw-btn--primary gw-btn--sm" style={{ marginBottom: "20px" }}>
+        <span className="material-symbols-outlined">add</span> {t("addDream")}
       </button>
 
       {dreams.length === 0 ? (
-        <div className="app-card p-8 text-center text-on-surface-variant">
-          Chưa có ước mơ nào. Hãy thêm điều con muốn tiết kiệm để mua nhé!
+        <div className="gw-card" style={{ padding: "32px", textAlign: "center", color: "var(--ink-soft)" }}>
+          {t("noDreams")}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="gw-grid">
           {dreams.map((d) => (
             <DreamCard key={d.id} dream={d} childId={childId} totalCoins={totalCoins} />
           ))}
@@ -56,49 +55,37 @@ export default function DreamsView({
       )}
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="app-card w-full max-w-sm p-6">
-            <h3 className="text-lg font-bold text-on-surface mb-4">Thêm ước mơ</h3>
-            <div className="flex flex-wrap gap-2 mb-3">
+        <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,.45)", padding: "16px" }}>
+          <div className="gw-card" style={{ width: "100%", maxWidth: "360px" }}>
+            <h3 style={{ fontSize: "17px", fontWeight: 900, color: "var(--ink)", marginBottom: "16px" }}>{t("addDream")}</h3>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "12px" }}>
               {ICONS.map((ic) => (
                 <button
                   key={ic}
                   onClick={() => setIcon(ic)}
-                  className={`w-9 h-9 rounded-[12px] text-lg border ${
-                    icon === ic ? "border-primary bg-primary-container/20" : "border-outline-variant"
-                  }`}
+                  style={{
+                    width: "40px", height: "40px", borderRadius: "12px", fontSize: "20px",
+                    border: ic === icon ? "2px solid var(--primary-c)" : "1.5px solid var(--outline-v)",
+                    background: ic === icon ? "var(--primary-fixed)" : "var(--white)",
+                    cursor: "pointer",
+                  }}
                 >
                   {ic}
                 </button>
               ))}
             </div>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Tên món đồ"
-              className="w-full border border-outline-variant rounded-[14px] px-3 py-2.5 text-on-surface mb-3"
-            />
-            <label className="block text-sm font-semibold text-on-surface mb-1">Giá (xu)</label>
-            <input
-              type="number"
-              min={1}
-              value={price}
-              onChange={(e) => setPrice(Number(e.target.value))}
-              className="w-full border border-outline-variant rounded-[14px] px-3 py-2.5 text-on-surface mb-4"
-            />
-            <div className="flex gap-2">
-              <button
-                onClick={() => setOpen(false)}
-                className="flex-1 py-2.5 rounded-[14px] bg-surface-container text-on-surface-variant font-semibold"
-              >
-                Huỷ
-              </button>
-              <button
-                onClick={add}
-                disabled={pending}
-                className="flex-1 py-2.5 rounded-[14px] bg-primary text-on-primary font-bold disabled:opacity-50"
-              >
-                {pending ? "Đang thêm…" : "Thêm"}
+            <div className="gw-field" style={{ marginBottom: "12px" }}>
+              <span className="material-symbols-outlined">star</span>
+              <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("dreamItemName")} className="gw-input" />
+            </div>
+            <div className="gw-field" style={{ marginBottom: "16px" }}>
+              <span className="material-symbols-outlined">toll</span>
+              <input type="number" min={1} value={price} onChange={(e) => setPrice(Number(e.target.value))} className="gw-input" placeholder={t("dreamPrice")} />
+            </div>
+            <div style={{ display: "flex", gap: "8px" }}>
+              <button onClick={() => setOpen(false)} className="gw-btn gw-btn--ghost gw-btn--sm" style={{ flex: 1 }}>{t("cancel")}</button>
+              <button onClick={add} disabled={pending} className="gw-btn gw-btn--primary gw-btn--sm" style={{ flex: 1 }}>
+                {pending ? t("adding") : t("addBtn")}
               </button>
             </div>
           </div>
@@ -108,16 +95,9 @@ export default function DreamsView({
   );
 }
 
-function DreamCard({
-  dream,
-  childId,
-  totalCoins,
-}: {
-  dream: DreamItem;
-  childId: string;
-  totalCoins: number;
-}) {
+function DreamCard({ dream, childId, totalCoins }: { dream: DreamItem; childId: string; totalCoins: number }) {
   const router = useRouter();
+  const { t } = useLang();
   const [pending, start] = useTransition();
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(dream.name);
@@ -134,111 +114,92 @@ function DreamCard({
   }
 
   return (
-    <div className="app-card p-5 relative">
-      {/* Edit/Delete buttons */}
-      <div className="absolute top-3 right-3 flex gap-1">
+    <div className="gw-card" style={{ position: "relative", padding: "16px" }}>
+      <div style={{ position: "absolute", top: "10px", right: "10px", display: "flex", gap: "4px" }}>
         {!dream.is_purchased && (
           <button
             onClick={openEdit}
-            className="p-1 rounded-full hover:bg-surface-container transition-colors text-on-surface-variant"
-            title="Sửa ước mơ"
+            style={{ padding: "4px", borderRadius: "50%", border: "none", background: "none", cursor: "pointer", color: "var(--ink-soft)" }}
+            title={t("edit")}
           >
-            <span className="material-symbols-outlined text-base">edit</span>
+            <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>edit</span>
           </button>
         )}
         <button
-          onClick={() =>
-            start(async () => {
-              await deleteDream({ dreamId: dream.id });
-              router.refresh();
-            })
-          }
+          onClick={() => start(async () => { await deleteDream({ dreamId: dream.id }); router.refresh(); })}
           disabled={pending}
-          className="p-1 rounded-full hover:bg-error/10 transition-colors text-on-surface-variant hover:text-error disabled:opacity-40"
-          title="Xóa ước mơ"
+          style={{ padding: "4px", borderRadius: "50%", border: "none", background: "none", cursor: "pointer", color: "var(--ink-soft)" }}
+          title={t("deletePinTitle")}
         >
-          <span className="material-symbols-outlined text-base">delete</span>
+          <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>delete</span>
         </button>
       </div>
 
-      <div className="text-4xl mb-2">{dream.icon}</div>
-      <p className="font-bold text-on-surface pr-12">{dream.name}</p>
+      <div style={{ fontSize: "36px", marginBottom: "8px" }}>{dream.icon}</div>
+      <p style={{ fontWeight: 800, color: "var(--ink)", paddingRight: "48px" }}>{dream.name}</p>
+
       {dream.is_purchased ? (
-        <p className="text-sm text-tertiary font-semibold mt-1">✓ Đã đổi</p>
+        <p style={{ fontSize: "13px", color: "var(--secondary)", fontWeight: 700, marginTop: "4px" }}>{t("redeemed")}</p>
       ) : (
         <>
-          <p className="text-sm text-on-surface-variant mt-1">
+          <p style={{ fontSize: "12px", color: "var(--ink-soft)", marginTop: "4px" }}>
             🪙 {totalCoins.toLocaleString("vi-VN")} / {dream.price.toLocaleString("vi-VN")}
           </p>
-          <div className="h-2.5 rounded-full bg-surface-container-highest mt-2 overflow-hidden">
-            <div className="h-full bg-primary rounded-full" style={{ width: `${pct}%` }} />
+          <div className="gw-progress orange" style={{ marginTop: "8px" }}>
+            <i style={{ width: `${pct}%` }} />
           </div>
           <button
             disabled={!funded || pending}
-            onClick={() =>
-              start(async () => {
-                await redeemDream({ childId, dreamId: dream.id, price: dream.price });
-                router.refresh();
-              })
-            }
-            className="mt-3 w-full py-2 rounded-[14px] bg-primary text-on-primary text-sm font-bold disabled:opacity-40"
+            onClick={() => start(async () => { await redeemDream({ childId, dreamId: dream.id, price: dream.price }); router.refresh(); })}
+            className="gw-btn gw-btn--primary gw-btn--sm"
+            style={{ marginTop: "10px", width: "100%" }}
           >
-            {pending ? "Đang đổi…" : funded ? "Đổi ngay 🎉" : `Còn ${pct}%`}
+            {pending ? t("redeeming") : funded ? t("redeemNow") : `${pct}%`}
           </button>
         </>
       )}
 
-      {/* Edit modal */}
       {editing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="app-card w-full max-w-sm p-6">
-            <h3 className="text-lg font-bold text-on-surface mb-4">Sửa ước mơ</h3>
-            <div className="flex flex-wrap gap-2 mb-3">
+        <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,.45)", padding: "16px" }}>
+          <div className="gw-card" style={{ width: "100%", maxWidth: "360px" }}>
+            <h3 style={{ fontSize: "17px", fontWeight: 900, color: "var(--ink)", marginBottom: "16px" }}>{t("editDream")}</h3>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "12px" }}>
               {ICONS.map((ic) => (
                 <button
                   key={ic}
                   onClick={() => setEditIcon(ic)}
-                  className={`w-9 h-9 rounded-[12px] text-lg border ${
-                    editIcon === ic ? "border-primary bg-primary-container/20" : "border-outline-variant"
-                  }`}
+                  style={{
+                    width: "40px", height: "40px", borderRadius: "12px", fontSize: "20px",
+                    border: ic === editIcon ? "2px solid var(--primary-c)" : "1.5px solid var(--outline-v)",
+                    background: ic === editIcon ? "var(--primary-fixed)" : "var(--white)",
+                    cursor: "pointer",
+                  }}
                 >
                   {ic}
                 </button>
               ))}
             </div>
-            <input
-              value={editName}
-              onChange={(e) => setEditName(e.target.value)}
-              placeholder="Tên món đồ"
-              className="w-full border border-outline-variant rounded-[14px] px-3 py-2.5 text-on-surface mb-3"
-            />
-            <label className="block text-sm font-semibold text-on-surface mb-1">Giá (xu)</label>
-            <input
-              type="number"
-              min={1}
-              value={editPrice}
-              onChange={(e) => setEditPrice(Number(e.target.value))}
-              className="w-full border border-outline-variant rounded-[14px] px-3 py-2.5 text-on-surface mb-4"
-            />
-            <div className="flex gap-2">
-              <button
-                onClick={() => setEditing(false)}
-                className="flex-1 py-2.5 rounded-[14px] bg-surface-container text-on-surface-variant font-semibold"
-              >
-                Huỷ
-              </button>
+            <div className="gw-field" style={{ marginBottom: "12px" }}>
+              <span className="material-symbols-outlined">star</span>
+              <input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder={t("dreamItemName")} className="gw-input" />
+            </div>
+            <div className="gw-field" style={{ marginBottom: "16px" }}>
+              <span className="material-symbols-outlined">toll</span>
+              <input type="number" min={1} value={editPrice} onChange={(e) => setEditPrice(Number(e.target.value))} className="gw-input" placeholder={t("dreamPrice")} />
+            </div>
+            <div style={{ display: "flex", gap: "8px" }}>
+              <button onClick={() => setEditing(false)} className="gw-btn gw-btn--ghost gw-btn--sm" style={{ flex: 1 }}>{t("cancel")}</button>
               <button
                 disabled={pending || !editName.trim()}
-                onClick={() =>
-                  start(async () => {
-                    await updateDream({ dreamId: dream.id, name: editName.trim(), price: editPrice, icon: editIcon });
-                    setEditing(false);
-                    router.refresh();
-                  })
-                }
-                className="flex-1 py-2.5 rounded-[14px] bg-primary text-on-primary font-bold disabled:opacity-50"
+                onClick={() => start(async () => {
+                  await updateDream({ dreamId: dream.id, name: editName.trim(), price: editPrice, icon: editIcon });
+                  setEditing(false);
+                  router.refresh();
+                })}
+                className="gw-btn gw-btn--primary gw-btn--sm"
+                style={{ flex: 1 }}
               >
-                {pending ? "Đang lưu…" : "Lưu"}
+                {pending ? t("saving") : t("save")}
               </button>
             </div>
           </div>

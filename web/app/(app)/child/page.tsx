@@ -17,10 +17,10 @@ export default async function ChildHome() {
 
   if (!child) {
     return (
-      <div className="app-card p-6 text-center">
-        <p className="text-on-surface">Chưa có hồ sơ con. Nhờ ba mẹ tạo hồ sơ giúp nhé!</p>
-        <Link href="/role" className="inline-block mt-4 text-primary font-semibold underline">
-          ← Quay lại chọn vai trò
+      <div className="gw-card mt-4 text-center">
+        <p className="text-on-surface font-semibold">{t(lang, "childNoProfile")}</p>
+        <Link href="/role" className="inline-block mt-4 text-primary font-extrabold underline">
+          {t(lang, "backToRole")}
         </Link>
       </div>
     );
@@ -45,39 +45,74 @@ export default async function ChildHome() {
   const survey = await getActiveSurveyFor("child", { id: child.id, age: child.age });
 
   return (
-    <div>
-      {survey && <SurveyBanner survey={survey} childId={child.id} />}
-      <div className="mb-6">
-        <div className="flex items-center gap-3">
-          <span className="text-4xl">{child.avatar_emoji}</span>
-          <div>
-            <h1 className="text-2xl md:text-3xl font-extrabold text-on-surface">
-              {lang === "en" ? `Hi ${child.name}! ` : `Chào ${child.name}! `}
-              {t(lang, "hiDoTasks")}
-            </h1>
-            <p className="text-sm text-on-surface-variant">
-              Lv.{child.level} · 🪙 {child.total_coins.toLocaleString("vi-VN")}
-            </p>
-          </div>
-        </div>
-        <div className="mt-4 max-w-md">
-          <div className="h-3 rounded-full bg-surface-container-highest overflow-hidden">
-            <div className="h-full bg-primary rounded-full" style={{ width: `${xpPct}%` }} />
-          </div>
-          <p className="text-xs text-on-surface-variant mt-1">
-            {Math.max(0, child.xp_to_next_level - child.xp)} XP nữa để lên cấp {child.level + 1}
-          </p>
+    <div className="pt-4">
+      {/* Greeting */}
+      <div className="flex items-center gap-3 mb-4 rise">
+        <span className="gw-avatar text-2xl">{child.avatar_emoji}</span>
+        <div className="min-w-0">
+          <h1 className="text-xl font-black text-primary truncate">
+            {lang === "en" ? `Hi ${child.name}!` : `Chào bé ${child.name}!`}
+          </h1>
+          <p className="text-sm font-bold text-on-surface-variant">{t(lang, "hiDoTasks")}</p>
         </div>
       </div>
 
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-bold text-on-surface">{t(lang, "myTasks")}</h2>
-        <Link href="/child/market" className="text-sm font-semibold text-primary">
-          {t(lang, "market")} →
-        </Link>
-      </div>
+      {/* Bento: level (XP) + coins */}
+      <section className="grid grid-cols-2 gap-3 mb-4">
+        <div className="gw-card gw-card--glow gw-card--press rise" style={{ minHeight: 128 }}>
+          <div className="flex items-start justify-between">
+            <span className="font-extrabold text-on-surface-variant text-sm">{t(lang, "childLevel")}</span>
+            <span className="grid place-items-center w-9 h-9 rounded-full bg-secondary-container text-secondary">
+              <span className="material-symbols-outlined text-xl">star</span>
+            </span>
+          </div>
+          <div className="mt-4">
+            <div className="flex justify-between items-end mb-1.5">
+              <span className="text-xl font-black text-on-surface">Level {child.level}</span>
+              <span className="text-xs font-extrabold text-secondary">
+                {child.xp}/{child.xp_to_next_level} XP
+              </span>
+            </div>
+            <div className="gw-progress">
+              <i style={{ width: `${xpPct}%` }} />
+            </div>
+          </div>
+        </div>
+        <div
+          className="gw-card gw-card--press rise rise-2"
+          style={{ minHeight: 128, background: "linear-gradient(150deg,#3A2F22,#241D12)", color: "#fff", border: "none" }}
+        >
+          <div className="flex items-start justify-between">
+            <span className="font-extrabold opacity-85 text-sm">{t(lang, "childCoins")}</span>
+            <span className="grid place-items-center w-9 h-9 rounded-full bg-primary-container text-on-primary-container">
+              <span className="material-symbols-outlined text-xl">savings</span>
+            </span>
+          </div>
+          <div className="flex items-end gap-2 mt-4">
+            <span className="text-4xl font-black leading-none">
+              {child.total_coins.toLocaleString("vi-VN")}
+            </span>
+            <span className="font-extrabold pb-1" style={{ color: "#FFB77D" }}>
+              {t(lang, "coinUnit")}
+            </span>
+          </div>
+        </div>
+      </section>
 
-      <ChildTaskList childId={child.id} items={items} />
+      {survey && (
+        <div className="mb-2 rise rise-2">
+          <SurveyBanner survey={survey} childId={child.id} />
+        </div>
+      )}
+
+      {/* Tasks */}
+      <section className="mt-4 rise rise-3">
+        <div className="gw-h">
+          <h2>{t(lang, "myTasks")}</h2>
+          <Link href="/child/market">{t(lang, "market")} →</Link>
+        </div>
+        <ChildTaskList childId={child.id} items={items} />
+      </section>
     </div>
   );
 }

@@ -33,7 +33,7 @@ export default function EmotionCheckIn() {
         await videoRef.current.play();
       }
     } catch {
-      setErrMsg("Không truy cập được camera. Hãy cho phép quyền camera.");
+      setErrMsg(t("moodCameraDenied"));
       setStage("error");
     }
   }
@@ -67,50 +67,51 @@ export default function EmotionCheckIn() {
       const data = await res.json();
       if (res.status === 429) {
         setLimitReached(true);
-        setErrMsg(data.message ?? "Hết lượt kiểm tra tâm trạng hôm nay.");
+        setErrMsg(data.message ?? t("moodLimitReached"));
         setStage("error");
         return;
       }
       if (!res.ok) {
-        setErrMsg(data.error ?? "Phân tích thất bại");
+        setErrMsg(data.error ?? t("moodAnalyzeFailed"));
         setStage("error");
         return;
       }
       setResult(data);
       setStage("result");
     } catch {
-      setErrMsg("Lỗi kết nối");
+      setErrMsg(t("moodConnError"));
       setStage("error");
     }
   }
 
   return (
     <>
-      <div className="app-card p-4 flex items-center gap-4 justify-between">
+      <div className="gw-card" style={{ padding: "16px", display: "flex", alignItems: "center", gap: "16px", justifyContent: "space-between" }}>
         <div className="text-left min-w-0">
-          <p className="font-bold text-on-surface mb-1">Tâm trạng hôm nay 🎭</p>
-          <p className="text-sm font-semibold text-on-surface mb-1">Vì sao nên dùng? 💡</p>
+          <p className="font-bold text-on-surface mb-1">{t("moodToday")}</p>
+          <p className="text-sm font-semibold text-on-surface mb-1">{t("moodWhyTitle")}</p>
           <ul className="space-y-0.5 text-xs text-on-surface-variant">
-            <li>🔍 Nhận biết sớm thay đổi cảm xúc mỗi ngày</li>
-            <li>💬 Biết lúc nào nên dừng lại, lắng nghe và trò chuyện</li>
-            <li>🌱 Hiểu cảm xúc để đồng hành cùng con nhẹ nhàng hơn</li>
+            <li>{t("moodWhy1")}</li>
+            <li>{t("moodWhy2")}</li>
+            <li>{t("moodWhy3")}</li>
           </ul>
         </div>
         <button
           onClick={start}
-          className="shrink-0 flex items-center gap-1.5 px-4 py-2.5 rounded-[14px] bg-primary text-on-primary font-bold text-sm"
+          className="gw-btn gw-btn--primary gw-btn--sm"
+          style={{ flexShrink: 0 }}
         >
-          <span className="material-symbols-outlined text-xl">photo_camera</span>
+          <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>photo_camera</span>
           <span className="hidden sm:inline">{t("checkMood")}</span>
         </button>
       </div>
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="app-card w-full max-w-sm p-6 text-center">
+          <div className="gw-card" style={{ width: "100%", maxWidth: "384px", padding: "24px", textAlign: "center" }}>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-lg font-bold text-on-surface">Tâm trạng hôm nay 🎭</h3>
-              <button onClick={close} aria-label="Đóng" className="text-on-surface-variant">
+              <h3 className="text-lg font-bold text-on-surface">{t("moodToday")}</h3>
+              <button onClick={close} aria-label={t("close")} className="text-on-surface-variant">
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
@@ -124,13 +125,14 @@ export default function EmotionCheckIn() {
                   playsInline
                 />
                 <p className="text-xs text-on-surface-variant mt-2">
-                  Ảnh không được lưu, chỉ dùng để phân tích cảm xúc.
+                  {t("moodPhotoNotice")}
                 </p>
                 <button
                   onClick={capture}
-                  className="mt-3 w-full py-2.5 rounded-[14px] bg-primary text-on-primary font-bold"
+                  className="gw-btn gw-btn--primary"
+                  style={{ marginTop: "12px", width: "100%" }}
                 >
-                  📸 Chụp
+                  {t("moodCapture")}
                 </button>
               </>
             )}
@@ -138,7 +140,7 @@ export default function EmotionCheckIn() {
             {stage === "loading" && (
               <div className="py-10">
                 <span className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin inline-block" />
-                <p className="text-on-surface-variant mt-3">AI đang phân tích…</p>
+                <p className="text-on-surface-variant mt-3">{t("moodAnalyzing")}</p>
               </div>
             )}
 
@@ -151,9 +153,10 @@ export default function EmotionCheckIn() {
                 </p>
                 <button
                   onClick={close}
-                  className="mt-4 w-full py-2.5 rounded-[14px] bg-primary text-on-primary font-bold"
+                  className="gw-btn gw-btn--primary"
+                  style={{ marginTop: "16px", width: "100%" }}
                 >
-                  Đóng
+                  {t("close")}
                 </button>
               </div>
             )}
@@ -165,17 +168,19 @@ export default function EmotionCheckIn() {
                   <Link
                     href="/parent/pricing"
                     onClick={close}
-                    className="inline-flex items-center gap-1.5 mt-4 px-5 py-2.5 rounded-[14px] bg-primary text-on-primary font-bold"
+                    className="gw-btn gw-btn--primary"
+                    style={{ marginTop: "16px", display: "inline-flex" }}
                   >
-                    <span className="material-symbols-outlined text-lg">workspace_premium</span>
-                    Nâng cấp
+                    <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>workspace_premium</span>
+                    {t("upgrade")}
                   </Link>
                 ) : (
                   <button
                     onClick={start}
-                    className="mt-4 px-5 py-2.5 rounded-[14px] bg-primary text-on-primary font-bold"
+                    className="gw-btn gw-btn--primary"
+                    style={{ marginTop: "16px" }}
                   >
-                    Thử lại
+                    {t("retry")}
                   </button>
                 )}
               </div>
