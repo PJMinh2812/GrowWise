@@ -43,6 +43,9 @@ class AppStrings {
   String get wrongCredentials => isEn ? 'Wrong email or password: ' : 'Sai email hoặc mật khẩu: ';
   String get googleError      => isEn ? 'Google error: '       : 'Google lỗi: ';
   String get signOut          => isEn ? 'Sign Out'             : 'Đăng xuất';
+  String get switchRole       => isEn ? 'Switch role'          : 'Đổi vai trò';
+  String get switchToEnglish  => isEn ? 'Switch to Vietnamese' : 'Switch to English';
+  String get languageLabel    => isEn ? 'Language'             : 'Ngôn ngữ';
 
   // Register
   String get createAccount     => isEn ? 'Create Account'        : 'Tạo tài khoản';
@@ -127,6 +130,8 @@ class AppStrings {
   String get setupTitle       => isEn ? 'Add Child Profile'           : 'Thêm hồ sơ con';
   String get setupSubtitle    => isEn ? "Let's start the GrowWise journey together!" : 'Cùng con bắt đầu hành trình GrowWise!';
   String get chooseAvatar     => isEn ? 'Choose avatar for your child' : 'Chọn avatar cho con';
+  String get uploadPhoto      => isEn ? 'Upload photo'                : 'Tải ảnh lên';
+  String get removePhoto      => isEn ? 'Remove photo'               : 'Xóa ảnh';
   String get childNameLabel   => isEn ? "Child's Name"                : 'Tên con';
   String get childNameHint    => isEn ? 'E.g: Tom, Lily, Bee...'      : 'VD: Tôm, Bống, Bi...';
   String get childAgeLabel    => isEn ? "Child's Age"                 : 'Tuổi con';
@@ -353,6 +358,48 @@ class AppStrings {
       : 'Nền tảng EdTech/Family-Tech giáo dục tài chính cho trẻ 6–12 tuổi.\n\nEXE201 Project · FPT University';
 
   String ageDisplay(int age)     => isEn ? '$age years old' : '$age tuổi';
+  String get addBtn              => isEn ? 'Add'             : 'Thêm';
+  String get deletePinLabel      => isEn ? 'Delete PIN'      : 'Xóa mã PIN';
+  String get deletePinSuccess    => isEn ? 'PIN deleted ✓'   : 'Đã xóa mã PIN ✓';
+  String setPinSuccess(String name) => isEn ? 'PIN set for $name ✓' : 'Đã đặt mã PIN cho $name ✓';
+  String get moodToday           => isEn ? 'Mood today'       : 'Tâm trạng hôm nay';
+  String get aiSelfieAnalysis    => isEn ? 'AI analyzes emotion via selfie' : 'AI phân tích cảm xúc qua ảnh selfie';
+  String get whyUseThis          => isEn ? 'Why use this? 💡' : 'Vì sao nên dùng? 💡';
+  String get moodTodayPrefix     => isEn ? 'Mood today: '    : 'Tâm trạng hôm nay: ';
+  String get refresh             => isEn ? '↺ Refresh'       : '↺ Làm mới';
+  String get faceNotDetected     => isEn ? 'Face not detected — try better lighting 💡' : 'Không nhận diện được khuôn mặt — thử lại với ánh sáng tốt hơn nhé 💡';
+  String get reviewAndApprove    => isEn ? 'Review & Approve' : 'Đánh giá & Duyệt';
+  String get qualityRating       => isEn ? 'Rate completion quality' : 'Đánh giá chất lượng hoàn thành';
+  String get qualityRatingSub    => isEn ? 'Choose level to calculate reward' : 'Chọn mức độ để tính xu thưởng';
+  String approveWithCoins(int n) => isEn ? 'Approve & Send 🪙 $n coins' : 'Duyệt & Gửi 🪙 $n xu';
+  String get cancelAutoTitle     => isEn ? 'Cancel auto-approve?' : 'Huỷ duyệt tự động?';
+  String get nah                 => isEn ? 'No'               : 'Thôi';
+  String get cancelledAutoMsg    => isEn ? 'Auto-approve cancelled — child needs to resubmit' : 'Đã huỷ duyệt — con cần nộp lại đúng cách';
+  String get cancelAutoBtn       => isEn ? 'Cancel approve'   : 'Huỷ duyệt';
+  String get pauseTaskLabel      => isEn ? 'Pause'            : 'Tạm dừng';
+  String get deleteTaskLabel     => isEn ? 'Delete'           : 'Xóa hẳn';
+  String get pauseTaskTitle      => isEn ? 'Pause task?'      : 'Tạm dừng nhiệm vụ?';
+  String get deleteTaskTitle     => isEn ? 'Delete task?'     : 'Xóa nhiệm vụ?';
+  String get autoApproveChip     => isEn ? '⚡ Auto'          : '⚡ Tự duyệt';
+  String get startTask           => isEn ? 'Start!'           : 'Bắt đầu làm!';
+  String get skipTask            => isEn ? 'Skip task'        : 'Bỏ task';
+  String get notApprovedYet      => isEn ? 'Parent not approved yet' : 'Ba/Mẹ chưa duyệt';
+  String get reasonPrefix        => isEn ? 'Reason: '         : 'Lý do: ';
+  String get resubmit            => isEn ? 'Resubmit'         : 'Nộp lại';
+  String get skipTaskTitle       => isEn ? 'Skip this task?'  : 'Bỏ task này?';
+  String penaltyAmount(int n)    => isEn ? '$n% reward deducted' : '$n% phần thưởng bị trừ';
+  String get confirmSkip         => isEn ? 'Confirm skip'     : 'Xác nhận bỏ task';
+  String get keepTask            => isEn ? 'Keep task'        : 'Giữ lại task';
+  String get noMemoriesToExport  => isEn ? 'No memories to export.' : 'Chưa có kỷ niệm nào để xuất.';
+  String get pinMismatch         => isEn ? 'PINs do not match. Try again.' : 'Mã PIN không khớp. Thử lại.';
+  String get confirmPinTitle     => isEn ? 'Confirm PIN'            : 'Xác nhận mã PIN';
+  String get reenterPin          => isEn ? 'Re-enter PIN to confirm' : 'Nhập lại mã PIN để xác nhận';
+  String get enterPin4           => isEn ? 'Enter 4 digits'         : 'Nhập 4 chữ số';
+  String setPinFor(String name)  => isEn ? 'Set PIN for $name'      : 'Đặt mã PIN cho $name';
+  String get hasPinLabel         => isEn ? 'PIN set 🔐'             : 'Đã đặt mã PIN 🔐';
+  String get noPinLabel          => isEn ? 'No PIN set'             : 'Chưa có mã PIN';
+  String get changePinLabel      => isEn ? 'Change PIN'             : 'Đổi mã PIN';
+  String get setPinLabel         => isEn ? 'Set PIN'                : 'Đặt mã PIN';
 
   // FAQ
   String get faq1q => isEn ? 'How to create tasks for my child?' : 'Cách tạo nhiệm vụ cho con?';

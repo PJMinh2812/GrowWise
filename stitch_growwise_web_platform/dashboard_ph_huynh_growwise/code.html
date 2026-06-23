@@ -1,0 +1,240 @@
+<!DOCTYPE html><html lang="vi"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Dashboard Phụ Huynh</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;800;900&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-fixed": "#99f894",
+                        "on-background": "#211b10",
+                        "surface-variant": "#eee1cf",
+                        "primary-container": "#ff8c00",
+                        "tertiary-fixed-dim": "#cdbdff",
+                        "on-tertiary": "#ffffff",
+                        "on-surface-variant": "#564334",
+                        "error": "#ba1a1a",
+                        "primary-fixed-dim": "#ffb77d",
+                        "on-primary-fixed": "#2f1500",
+                        "inverse-primary": "#ffb77d",
+                        "tertiary-container": "#b29bff",
+                        "tertiary": "#6833ea",
+                        "background": "#fff8f2",
+                        "on-secondary-container": "#0a7320",
+                        "surface-container": "#f9ecda",
+                        "secondary-container": "#96f592",
+                        "on-primary": "#ffffff",
+                        "inverse-surface": "#362f23",
+                        "secondary": "#006e1c",
+                        "primary-fixed": "#ffdcc3",
+                        "surface-container-low": "#fff2e0",
+                        "on-tertiary-container": "#4600bb",
+                        "surface-dim": "#e5d8c6",
+                        "on-primary-fixed-variant": "#6e3900",
+                        "tertiary-fixed": "#e8deff",
+                        "surface-container-lowest": "#ffffff",
+                        "surface": "#fff8f2",
+                        "on-secondary": "#ffffff",
+                        "outline": "#897362",
+                        "on-error-container": "#93000a",
+                        "surface-container-high": "#f3e6d4",
+                        "on-surface": "#211b10",
+                        "on-secondary-fixed-variant": "#005313",
+                        "error-container": "#ffdad6",
+                        "on-secondary-fixed": "#002204",
+                        "surface-bright": "#fff8f2",
+                        "surface-tint": "#904d00",
+                        "on-tertiary-fixed-variant": "#4f00d0",
+                        "primary": "#904d00",
+                        "outline-variant": "#ddc1ae",
+                        "on-primary-container": "#623200",
+                        "secondary-fixed-dim": "#7edb7b",
+                        "on-tertiary-fixed": "#20005f",
+                        "on-error": "#ffffff",
+                        "inverse-on-surface": "#fcefdd",
+                        "surface-container-highest": "#eee1cf"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "8px",
+                        "sm": "16px",
+                        "md": "24px",
+                        "container-margin": "20px",
+                        "gutter": "16px",
+                        "xl": "48px",
+                        "lg": "32px",
+                        "base": "4px"
+                    },
+                    "fontFamily": {
+                        "label-bold": ["Nunito Sans"],
+                        "display-lg-mobile": ["Nunito Sans"],
+                        "body-md": ["Nunito Sans"],
+                        "body-lg": ["Nunito Sans"],
+                        "label-sm": ["Nunito Sans"],
+                        "headline-md": ["Nunito Sans"],
+                        "display-lg": ["Nunito Sans"]
+                    },
+                    "fontSize": {
+                        "label-bold": ["14px", { "lineHeight": "20px", "fontWeight": "800" }],
+                        "display-lg-mobile": ["32px", { "lineHeight": "38px", "fontWeight": "900" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-lg": ["18px", { "lineHeight": "26px", "fontWeight": "600" }],
+                        "label-sm": ["12px", { "lineHeight": "16px", "fontWeight": "600" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "800" }],
+                        "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "900" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .btn-press:active {
+            transform: translateY(2px);
+            border-bottom-width: 0px;
+            margin-top: 2px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface font-body-md antialiased overflow-x-hidden pb-32">
+<!-- Ambient Parent Mode Glassmorphism Background -->
+<div class="fixed top-0 left-0 w-full h-[353px] bg-tertiary-fixed-dim/20 backdrop-blur-[12px] -z-10 rounded-b-[4rem]"></div>
+<div class="fixed -top-20 -right-20 w-64 h-64 bg-tertiary-container/30 rounded-full blur-3xl -z-20 pointer-events-none"></div>
+<!-- TopAppBar -->
+<header class="bg-surface/80 backdrop-blur-md shadow-[0_4px_12px_rgba(33,27,16,0.05)] w-full top-0 sticky z-40 flex justify-between items-center px-container-margin py-sm">
+<div class="flex items-center gap-sm hover:translate-y-[1px] transition-transform cursor-pointer">
+<img alt="Child Avatar" class="w-10 h-10 rounded-full object-cover border-2 border-surface-container-lowest shadow-sm" data-alt="A small circular avatar illustration of a child with a playful, happy expression. The art style is modern, vibrant, and clean with a light-mode aesthetic, utilizing soft shading and a subtle warm glow, fitting a high-end mobile app interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8NU9uf1EFn_94KYq_aQMiWNuhQPs3lGdE3YQJVK70iZpAts3121YynpiSWCPihiiQOE_Lf5zUDSwcZp-P6WfbDlp3-RdahO7T2F85I3cM29krZl5glsUsUPporiETADcyCojH7a3GiSRgV_8ML9RhukERd5-ojRCc4CmO9uaIObCn5Lxkm1NuaUviW1EmmIq-oN9TMnF6BKj-yR0EYQbLZh4Lb1LkMdLzkA3zAzH1zfmTCtHr0rNXIE3CNH9mgcbw5nP6I-7dU2g">
+</div>
+<h1 class="font-display-lg-mobile text-display-lg-mobile text-primary tracking-tight">GrowWise</h1>
+<div class="flex items-center gap-xs bg-surface-container-low px-3 py-1.5 rounded-full border border-outline-variant/50 hover:translate-y-[1px] transition-transform cursor-pointer shadow-sm">
+<span class="font-label-bold text-label-bold text-primary">150</span>
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">stars</span>
+</div>
+</header>
+<!-- Main Content -->
+<main class="w-full max-w-md mx-auto pt-md flex flex-col gap-md">
+<!-- Header Section -->
+<section class="px-container-margin flex flex-col items-start gap-2">
+<h2 class="font-headline-md text-headline-md-mobile text-on-surface">Chào buổi sáng, Mẹ! ✨</h2>
+<button class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-surface-container-lowest/60 backdrop-blur-md border border-tertiary-fixed-dim text-on-tertiary-container shadow-[0_4px_12px_rgba(33,27,16,0.05)] hover:-translate-y-1 transition-all active:translate-y-0">
+<span class="material-symbols-outlined text-tertiary">mood</span>
+<span class="font-label-bold text-label-bold">Emotion Check-in</span>
+</button>
+</section>
+<!-- Stats Grid (Bento style) -->
+<section class="px-container-margin grid grid-cols-2 gap-gutter">
+<!-- Pending Card -->
+<div class="bg-surface-container-lowest rounded-lg p-sm shadow-[0_4px_12px_rgba(33,27,16,0.05)] border border-tertiary-fixed-dim/30 flex flex-col justify-between min-h-[120px] relative overflow-hidden group hover:shadow-lg transition-shadow">
+<div class="absolute -right-4 -top-4 w-16 h-16 bg-error-container/40 rounded-full blur-xl group-hover:bg-error-container/60 transition-colors"></div>
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-error bg-error-container p-1 rounded-md" style="font-variation-settings: 'FILL' 1;">pending_actions</span>
+</div>
+<div>
+<h3 class="font-display-lg-mobile text-display-lg-mobile text-on-surface leading-none">3</h3>
+<p class="font-label-sm text-label-sm text-on-surface-variant mt-1">Việc chờ duyệt</p>
+</div>
+</div>
+<!-- Coins Card -->
+<div class="bg-surface-container-lowest rounded-lg p-sm shadow-[0_4px_12px_rgba(33,27,16,0.05)] border border-primary-fixed-dim/30 flex flex-col justify-between min-h-[120px] relative overflow-hidden group hover:shadow-lg transition-shadow">
+<div class="absolute -right-4 -top-4 w-16 h-16 bg-primary-container/20 rounded-full blur-xl group-hover:bg-primary-container/40 transition-colors"></div>
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-primary bg-primary-fixed p-1 rounded-md" style="font-variation-settings: 'FILL' 1;">monetization_on</span>
+</div>
+<div>
+<h3 class="font-display-lg-mobile text-display-lg-mobile text-on-surface leading-none">420</h3>
+<p class="font-label-sm text-label-sm text-on-surface-variant mt-1">Xu con đã kiếm</p>
+</div>
+</div>
+</section>
+<!-- Tasks to Approve List -->
+<section class="px-container-margin flex flex-col gap-sm">
+<div class="flex justify-between items-end mb-1">
+<h3 class="font-label-bold text-label-bold text-on-surface-variant uppercase tracking-wider">Việc cần duyệt</h3>
+<button class="font-label-sm text-label-sm text-tertiary hover:underline">Xem tất cả</button>
+</div>
+<!-- Task Item 1 -->
+<div class="bg-surface-container-lowest rounded-[1.25rem] p-3 shadow-[0_4px_12px_rgba(33,27,16,0.05)] border border-outline-variant/30 flex gap-3 items-center">
+<div class="w-16 h-16 shrink-0 rounded-lg overflow-hidden bg-surface-container relative">
+<img class="w-full h-full object-cover" data-alt="A close-up, slightly blurry photograph taken by a child showing a neatly swept floor with a broom resting against a wall. The lighting is warm and natural, suggesting a domestic indoor setting. The image acts as photographic proof of a completed household chore, styled within a modern app interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAuh3gla8EmBLj5vFJkXozwFylUuy_SxhxQ4Nfid6Fukd8GaroFuDROwa0tPd4VKnnRZet6cQxP2gBpYNI76IZr9ySt1JMVfZEjCld67hKMTxWeZOLKuGwILAZKkJl5VsSHtTqNJoDsiBUPRz8OyxsyqQtfCKaM-lLyxfqdfA7zSACe2Ij0scsAdK6FtiJAHv7LrTxZnMpeiwQ8U6wLPsqM_kFNF096TtqnaXzGp4pBR5FRLH-Bi3LHRbS-Ka0zv0hPMVwczEx0z4M">
+<div class="absolute inset-0 ring-1 ring-inset ring-black/10 rounded-lg"></div>
+</div>
+<div class="flex-1 flex flex-col justify-center">
+<h4 class="font-body-lg text-body-lg text-on-surface">Quét nhà phòng khách</h4>
+<span class="inline-flex items-center gap-1 font-label-sm text-label-sm text-primary mt-1 bg-primary-fixed/50 w-fit px-2 py-0.5 rounded-full">
+<span class="material-symbols-outlined text-[14px]">stars</span> +15 xu
+                    </span>
+</div>
+<div class="flex flex-col gap-2 shrink-0">
+<button class="w-8 h-8 rounded-full bg-secondary text-on-secondary flex items-center justify-center shadow-sm hover:scale-105 active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">check</span>
+</button>
+</div>
+</div>
+<!-- Task Item 2 -->
+<div class="bg-surface-container-lowest rounded-[1.25rem] p-3 shadow-[0_4px_12px_rgba(33,27,16,0.05)] border border-outline-variant/30 flex gap-3 items-center">
+<div class="w-16 h-16 shrink-0 rounded-lg overflow-hidden bg-surface-container relative">
+<img class="w-full h-full object-cover" data-alt="A photo taken from a slightly high angle showing an open math workbook with completed exercises written in pencil. The lighting is bright desk-lamp style, highlighting the educational focus. The image serves as verification of completed homework within a playful yet structured parent-child task management app." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAH9v3nP0za5cVKNCgecxfBcFi7n0Z-4TWMF8dQGGvyA8q64kNlhhe6GzANakVaJ5111Ua7Cyu00yeaKijHheYGuUd2vKzPa8VO_B39FZp0ZnniLUfABb0OPON7d7R3sHZ3-Ve1epOYsZ1QNyUFEVMaDvYzzvtlxQRvwIQieoBNVIkDl2X9nksM1WpisjkoxOfofPRbDeI_f0CCMair9bC3MjlNBft0NpfGPt9cYxxFVW8yelxWrHhaewkxfr8NV2c-YNgHvrSfDn0">
+<div class="absolute inset-0 ring-1 ring-inset ring-black/10 rounded-lg"></div>
+</div>
+<div class="flex-1 flex flex-col justify-center">
+<h4 class="font-body-lg text-body-lg text-on-surface">Làm xong bài tập Toán</h4>
+<span class="inline-flex items-center gap-1 font-label-sm text-label-sm text-primary mt-1 bg-primary-fixed/50 w-fit px-2 py-0.5 rounded-full">
+<span class="material-symbols-outlined text-[14px]">stars</span> +20 xu
+                    </span>
+</div>
+<div class="flex flex-col gap-2 shrink-0">
+<button class="w-8 h-8 rounded-full bg-secondary text-on-secondary flex items-center justify-center shadow-sm hover:scale-105 active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">check</span>
+</button>
+</div>
+</div>
+</section>
+</main>
+<!-- FAB for quick task creation -->
+<button class="fixed bottom-[100px] right-container-margin w-xl h-xl rounded-full bg-primary-container text-on-primary-container shadow-lg flex items-center justify-center z-40 border-b-2 border-surface-tint hover:bg-primary-container/90 btn-press group">
+<span class="material-symbols-outlined text-[28px] group-active:scale-90 transition-transform">add</span>
+</button>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-gutter pb-xs pt-xs bg-surface shadow-[0_-4px_12px_rgba(33,27,16,0.05)] rounded-t-lg">
+<!-- Active Nav Item -->
+<button class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-4 py-2 animate-bounce Active:scale-95 transition-transform duration-150 group cursor-pointer hover:bg-surface-container-high">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-label-sm text-label-sm mt-1">Home</span>
+</button>
+<!-- Inactive Nav Items -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container-high transition-colors rounded-xl group cursor-pointer">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform" style="font-variation-settings: 'FILL' 0;">school</span>
+<span class="font-label-sm text-label-sm mt-1">Learn</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container-high transition-colors rounded-xl group cursor-pointer">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform" style="font-variation-settings: 'FILL' 0;">savings</span>
+<span class="font-label-sm text-label-sm mt-1">Save</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container-high transition-colors rounded-xl group cursor-pointer">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform" style="font-variation-settings: 'FILL' 0;">rocket_launch</span>
+<span class="font-label-sm text-label-sm mt-1">Quests</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container-high transition-colors rounded-xl group cursor-pointer">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform" style="font-variation-settings: 'FILL' 0;">storefront</span>
+<span class="font-label-sm text-label-sm mt-1">Shop</span>
+</button>
+</nav>
+</body></html>

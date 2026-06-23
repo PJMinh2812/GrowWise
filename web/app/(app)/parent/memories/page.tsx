@@ -26,13 +26,13 @@ export default async function MemoriesPage() {
       <p className="text-on-surface-variant mb-6">{t(lang, "memoriesSub")}</p>
 
       {memories.length === 0 ? (
-        <div className="app-card p-10 text-center text-on-surface-variant">
+        <div className="gw-card" style={{ padding: "40px", textAlign: "center", color: "var(--ink-soft)" }}>
           <span className="material-symbols-outlined text-5xl text-primary mb-2">photo_library</span>
-          <p>Chưa có kỷ niệm mới.</p>
+          <p>{t(lang, "memoriesEmptyTitle")}</p>
           <p className="text-sm mt-1">
-            Mỗi khi con hoàn thành nhiệm vụ, kỷ niệm sẽ xuất hiện ở đây.{" "}
+            {t(lang, "memoriesEmptyDesc")}{" "}
             <Link href="/parent" className="text-primary underline font-semibold">
-              Về bảng điều khiển
+              {t(lang, "backToDashboard")}
             </Link>
           </p>
         </div>

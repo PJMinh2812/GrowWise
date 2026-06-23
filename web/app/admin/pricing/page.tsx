@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Plan, UserSubscription } from "@/lib/types";
+import { effectiveYearly, YEARLY_DISCOUNT } from "@/lib/app/pricing-utils";
 
 interface PlanWithCount extends Plan {
   subscriber_count: number;
@@ -51,14 +52,14 @@ export default function PricingAdminPage() {
   const [loading, setLoading]           = useState(true);
   const [editingName,    setEditingName]    = useState<Record<string, string>>({});
   const [editingMonthly, setEditingMonthly] = useState<Record<string, string>>({});
-  const [editingDiscount,setEditingDiscount]= useState<Record<string, string>>({});
   const [saving, setSaving]                 = useState<string | null>(null);
 
-  function computedYearly(planId: string, planMonthly: number): number | null {
-    const monthly  = editingMonthly[planId]  !== undefined ? parseInt(editingMonthly[planId])  : planMonthly
-    const discount = editingDiscount[planId] !== undefined ? parseFloat(editingDiscount[planId]) : NaN
-    if (isNaN(monthly) || isNaN(discount) || discount < 0 || discount > 100) return null
-    return Math.round((monthly * 12 * (1 - discount / 100)) / 1000) * 1000
+  /** Monthly price currently in effect for a plan (edited value if any). */
+  function currentMonthly(planId: string, planMonthly: number): number {
+    const edited = editingMonthly[planId];
+    if (edited === undefined || edited === "") return planMonthly;
+    const n = parseInt(edited);
+    return isNaN(n) ? planMonthly : n;
   }
 
   useEffect(() => { fetchAll(); }, []);
@@ -80,10 +81,11 @@ export default function PricingAdminPage() {
 
   async function savePlan(plan: PlanWithCount) {
     const monthly     = editingMonthly[plan.id]  !== undefined ? parseInt(editingMonthly[plan.id])   : undefined;
-    const yearly      = computedYearly(plan.id, plan.price_monthly) ?? undefined;
     const display_name= editingName[plan.id]?.trim() || undefined;
     if (monthly !== undefined && isNaN(monthly)) return;
-    if (monthly === undefined && yearly === undefined && !display_name) return;
+    if (monthly === undefined && !display_name) return;
+    // Yearly is always auto 20% off the (new) monthly — keep DB in sync.
+    const yearly = monthly !== undefined ? effectiveYearly(monthly) : undefined;
     setSaving(plan.id);
     await fetch("/api/admin/pricing/plans", {
       method: "PATCH",
@@ -93,7 +95,6 @@ export default function PricingAdminPage() {
     setSaving(null);
     setEditingName(prev     => { const n = { ...prev }; delete n[plan.id]; return n; });
     setEditingMonthly(prev  => { const n = { ...prev }; delete n[plan.id]; return n; });
-    setEditingDiscount(prev => { const n = { ...prev }; delete n[plan.id]; return n; });
     fetchAll();
   }
 
@@ -165,10 +166,10 @@ export default function PricingAdminPage() {
                     {plan.price_monthly === 0 ? "Miễn phí" : formatVND(plan.price_monthly)}
                   </span>
                 </div>
-                {plan.price_yearly != null && plan.price_yearly > 0 && (
+                {plan.price_monthly > 0 && (
                   <div className="flex justify-between">
-                    <span className="text-on-surface-variant">Giá năm</span>
-                    <span className="font-semibold text-on-surface">{formatVND(plan.price_yearly)}</span>
+                    <span className="text-on-surface-variant">Giá năm (tự tính -20%)</span>
+                    <span className="font-semibold text-on-surface">{formatVND(effectiveYearly(plan.price_monthly))}</span>
                   </div>
                 )}
               </div>
@@ -197,31 +198,14 @@ export default function PricingAdminPage() {
                       <span className="text-xs text-on-surface-variant self-center whitespace-nowrap">/tháng</span>
                     </div>
 
-                    {/* Giảm giá theo năm (%) */}
-                    <div className="flex gap-2">
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        placeholder="% giảm giá theo năm"
-                        value={editingDiscount[plan.id] ?? ""}
-                        onChange={e => setEditingDiscount(prev => ({ ...prev, [plan.id]: e.target.value }))}
-                        className="flex-1 border border-outline-variant rounded-lg px-3 py-1.5 text-sm bg-surface text-on-surface outline-none focus:border-primary"
-                      />
-                      <span className="text-xs text-on-surface-variant self-center whitespace-nowrap">%/năm</span>
+                    {/* Giá năm tự tính (-20%) */}
+                    <div className="flex items-center gap-2 text-xs text-on-surface-variant bg-surface-container rounded-lg px-3 py-1.5">
+                      <span>Giá năm (tự tính -{Math.round(YEARLY_DISCOUNT * 100)}%):</span>
+                      <span className="font-semibold text-secondary">
+                        {effectiveYearly(currentMonthly(plan.id, plan.price_monthly)).toLocaleString("vi-VN")}₫
+                      </span>
+                      <span className="ml-auto text-[11px] opacity-70">/năm</span>
                     </div>
-
-                    {/* Giá năm tự tính */}
-                    {(() => {
-                      const computed = computedYearly(plan.id, plan.price_monthly);
-                      return computed !== null ? (
-                        <div className="flex items-center gap-2 text-xs text-on-surface-variant bg-surface-container rounded-lg px-3 py-1.5">
-                          <span>Giá năm:</span>
-                          <span className="font-semibold text-secondary">{computed.toLocaleString("vi-VN")}₫</span>
-                          <span className="ml-auto text-[11px] opacity-70">tự tính</span>
-                        </div>
-                      ) : null;
-                    })()}
                   </>
                 )}
 
@@ -229,7 +213,7 @@ export default function PricingAdminPage() {
                   onClick={() => savePlan(plan)}
                   disabled={
                     saving === plan.id ||
-                    (!editingName[plan.id] && !editingMonthly[plan.id] && !editingDiscount[plan.id])
+                    (!editingName[plan.id] && !editingMonthly[plan.id])
                   }
                   className="w-full bg-primary text-on-primary text-sm py-1.5 rounded-lg hover:opacity-90 disabled:opacity-50 transition-all"
                 >

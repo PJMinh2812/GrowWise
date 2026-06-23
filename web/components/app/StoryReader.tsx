@@ -4,32 +4,38 @@ import { useEffect, useState } from "react";
 import type { Lesson, LessonQuiz } from "@/lib/types";
 import { speak, stopSpeak } from "@/lib/app/tts";
 import QuizOverlay from "./QuizOverlay";
+import { completeLesson } from "@/lib/app/child-actions";
 
 const IMG_FALLBACK =
   "data:image/svg+xml;utf8," +
   encodeURIComponent(
-    "<svg xmlns='http://www.w3.org/2000/svg' width='400' height='300'><rect width='100%' height='100%' fill='#eee'/><text x='50%' y='50%' font-size='48' text-anchor='middle' dominant-baseline='middle'>📖</text></svg>",
+    "<svg xmlns='http://www.w3.org/2000/svg' width='400' height='300'><rect width='100%' height='100%' fill='#F9ECDA'/><text x='50%' y='50%' font-size='72' text-anchor='middle' dominant-baseline='middle'>📖</text></svg>",
   );
 
-export default function StoryReader({ lesson }: { lesson: Lesson }) {
+export default function StoryReader({ lesson, childId }: { lesson: Lesson; childId?: string | null }) {
   const pages = lesson.story_pages ?? [];
   const quizzes = (lesson.lesson_quizzes ?? [])
     .slice()
     .sort((a, b) => a.order_index - b.order_index);
 
-  // page = chỉ số trang đang đọc; -1 = đã đọc xong (chuyển sang quiz / chúc mừng).
   const [page, setPage] = useState(0);
   const [quizIdx, setQuizIdx] = useState<number | null>(null);
   const [finished, setFinished] = useState(false);
 
-  // Dừng đọc to khi đổi trang hoặc rời màn hình.
   useEffect(() => {
     return () => stopSpeak();
   }, []);
 
+  // Mark the lesson complete once the child reaches the finish screen.
+  useEffect(() => {
+    if (finished && childId && lesson.id) {
+      completeLesson(childId, lesson.id);
+    }
+  }, [finished, childId, lesson.id]);
+
   if (pages.length === 0) {
     return (
-      <div className="app-card p-6 text-on-surface-variant">
+      <div className="gw-card" style={{ padding: "24px", color: "var(--ink-soft)", textAlign: "center" }}>
         Truyện này chưa có trang nào.
       </div>
     );
@@ -46,7 +52,7 @@ export default function StoryReader({ lesson }: { lesson: Lesson }) {
     setPage(next);
   }
 
-  // Câu hỏi cuối truyện
+  // Quiz sau truyện
   if (quizIdx !== null && quizIdx < quizzes.length) {
     const current = quizzes[quizIdx] as LessonQuiz;
     return (
@@ -66,15 +72,25 @@ export default function StoryReader({ lesson }: { lesson: Lesson }) {
     );
   }
 
-  // Màn hình chúc mừng
+  // Màn hình hoàn thành
   if (finished) {
     return (
       <div>
         <StoryHeader lesson={lesson} />
-        <div className="app-card p-8 mt-4 text-center">
-          <div className="text-6xl mb-3">🎉</div>
-          <h2 className="text-xl font-extrabold text-on-surface">Hoàn thành truyện!</h2>
-          <p className="text-on-surface-variant mt-1">Bé giỏi lắm! Cùng đọc truyện khác nhé.</p>
+        <div className="gw-card gw-card--glow" style={{ padding: "40px 24px", marginTop: "16px", textAlign: "center" }}>
+          <div style={{ fontSize: "64px", marginBottom: "12px", animation: "bouncein .5s cubic-bezier(.2,1.4,.4,1)" }}>🎉</div>
+          <h2 style={{ fontSize: "22px", fontWeight: 900, color: "var(--ink)" }}>Hoàn thành truyện!</h2>
+          <p style={{ color: "var(--ink-soft)", marginTop: "8px", fontWeight: 600 }}>Bé giỏi lắm! Cùng đọc truyện khác nhé.</p>
+          <div style={{ marginTop: "24px" }}>
+            <button
+              type="button"
+              className="gw-btn gw-btn--primary"
+              onClick={() => { setFinished(false); setPage(0); }}
+            >
+              <span className="material-symbols-outlined">replay</span>
+              Đọc lại
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -82,70 +98,85 @@ export default function StoryReader({ lesson }: { lesson: Lesson }) {
 
   const current = pages[page];
   const isLast = page === pages.length - 1;
+  const progress = ((page + 1) / pages.length) * 100;
 
   return (
     <div>
       <StoryHeader lesson={lesson} />
 
-      <div className="app-card overflow-hidden mt-4">
-        <div className="bg-black/5 flex items-center justify-center">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={current.image_url || IMG_FALLBACK}
-            alt={`Trang ${page + 1}`}
-            className="w-full max-h-[60vh] object-contain bg-white"
-            onError={(e) => {
-              const el = e.currentTarget;
-              el.onerror = null;
-              el.src = IMG_FALLBACK;
-            }}
-          />
-        </div>
+      {/* Story card: image + caption */}
+      <div className="gw-card" style={{ padding: 0, overflow: "hidden", marginTop: "16px" }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={current.image_url || IMG_FALLBACK}
+          alt={`Trang ${page + 1}`}
+          style={{ width: "100%", maxHeight: "60vh", objectFit: "contain", background: "var(--surface-low)", display: "block" }}
+          onError={(e) => {
+            const el = e.currentTarget;
+            el.onerror = null;
+            el.src = IMG_FALLBACK;
+          }}
+        />
 
         {current.caption && (
-          <div className="p-4 flex items-start gap-3">
+          <div style={{ padding: "16px", display: "flex", alignItems: "flex-start", gap: "12px" }}>
             <button
               type="button"
+              className="gw-btn gw-btn--ghost gw-btn--sm"
+              style={{ width: "42px", padding: 0, flexShrink: 0, borderRadius: "50%" }}
               onClick={() => speak(current.caption)}
               aria-label="Đọc to"
-              title="Đọc to"
-              className="shrink-0 w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center hover:bg-primary/20 active:scale-95 transition"
             >
-              <span className="material-symbols-outlined">volume_up</span>
+              <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>volume_up</span>
             </button>
-            <p className="text-base leading-relaxed text-on-surface flex-1">{current.caption}</p>
+            <p style={{ fontSize: "15px", lineHeight: 1.6, color: "var(--ink)", fontWeight: 600, flex: 1 }}>
+              {current.caption}
+            </p>
           </div>
         )}
       </div>
 
-      {/* Điều hướng */}
-      <div className="flex items-center justify-between gap-3 mt-4">
+      {/* Progress bar */}
+      <div style={{ margin: "16px 0 4px", display: "flex", alignItems: "center", gap: "10px" }}>
+        <div className="gw-progress" style={{ flex: 1 }}>
+          <i style={{ width: `${progress}%` }} />
+        </div>
+        <span style={{ fontSize: "13px", fontWeight: 800, color: "var(--ink-soft)", whiteSpace: "nowrap" }}>
+          {page + 1} / {pages.length}
+        </span>
+      </div>
+
+      {/* Navigation */}
+      <div style={{ display: "flex", gap: "12px", marginTop: "12px" }}>
         <button
           type="button"
           disabled={page === 0}
           onClick={() => goTo(page - 1)}
-          className="px-4 py-2.5 rounded-[14px] border border-outline text-on-surface font-semibold disabled:opacity-40"
+          className="gw-btn gw-btn--ghost gw-btn--sm"
+          style={{ flex: 1 }}
         >
-          ← Trang trước
+          <span className="material-symbols-outlined">arrow_back</span>
+          Trước
         </button>
-        <span className="text-sm text-on-surface-variant font-medium">
-          Trang {page + 1}/{pages.length}
-        </span>
         {isLast ? (
           <button
             type="button"
             onClick={startQuizOrFinish}
-            className="px-4 py-2.5 rounded-[14px] bg-primary text-on-primary font-bold active:scale-95 transition"
+            className="gw-btn gw-btn--primary gw-btn--sm"
+            style={{ flex: 1 }}
           >
-            {quizzes.length > 0 ? "Làm câu hỏi →" : "Hoàn thành ✓"}
+            {quizzes.length > 0 ? "Làm bài" : "Xong"}
+            <span className="material-symbols-outlined">{quizzes.length > 0 ? "quiz" : "check_circle"}</span>
           </button>
         ) : (
           <button
             type="button"
             onClick={() => goTo(page + 1)}
-            className="px-4 py-2.5 rounded-[14px] bg-primary text-on-primary font-bold active:scale-95 transition"
+            className="gw-btn gw-btn--primary gw-btn--sm"
+            style={{ flex: 1 }}
           >
-            Trang sau →
+            Trang sau
+            <span className="material-symbols-outlined">arrow_forward</span>
           </button>
         )}
       </div>
@@ -155,10 +186,10 @@ export default function StoryReader({ lesson }: { lesson: Lesson }) {
 
 function StoryHeader({ lesson }: { lesson: Lesson }) {
   return (
-    <div>
-      <h1 className="text-xl font-extrabold text-on-surface">{lesson.title}</h1>
+    <div style={{ marginBottom: "4px" }}>
+      <h1 style={{ fontSize: "20px", fontWeight: 900, color: "var(--ink)" }}>{lesson.title}</h1>
       {lesson.description && (
-        <p className="text-on-surface-variant mt-1">{lesson.description}</p>
+        <p style={{ color: "var(--ink-soft)", marginTop: "4px", fontWeight: 600 }}>{lesson.description}</p>
       )}
     </div>
   );

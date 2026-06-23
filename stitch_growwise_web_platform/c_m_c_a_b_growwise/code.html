@@ -1,0 +1,252 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>GrowWise - Ước mơ</title>
+<!-- Google Fonts: Nunito Sans -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,800;6..12,900&amp;display=swap" rel="stylesheet">
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-fixed": "#99f894",
+                    "on-background": "#211b10",
+                    "surface-variant": "#eee1cf",
+                    "primary-container": "#ff8c00",
+                    "tertiary-fixed-dim": "#cdbdff",
+                    "on-tertiary": "#ffffff",
+                    "on-surface-variant": "#564334",
+                    "error": "#ba1a1a",
+                    "primary-fixed-dim": "#ffb77d",
+                    "on-primary-fixed": "#2f1500",
+                    "inverse-primary": "#ffb77d",
+                    "tertiary-container": "#b29bff",
+                    "tertiary": "#6833ea",
+                    "background": "#fff8f2",
+                    "on-secondary-container": "#0a7320",
+                    "surface-container": "#f9ecda",
+                    "secondary-container": "#96f592",
+                    "on-primary": "#ffffff",
+                    "inverse-surface": "#362f23",
+                    "secondary": "#006e1c",
+                    "primary-fixed": "#ffdcc3",
+                    "surface-container-low": "#fff2e0",
+                    "on-tertiary-container": "#4600bb",
+                    "surface-dim": "#e5d8c6",
+                    "on-primary-fixed-variant": "#6e3900",
+                    "tertiary-fixed": "#e8deff",
+                    "surface-container-lowest": "#ffffff",
+                    "surface": "#fff8f2",
+                    "on-secondary": "#ffffff",
+                    "outline": "#897362",
+                    "on-error-container": "#93000a",
+                    "surface-container-high": "#f3e6d4",
+                    "on-surface": "#211b10",
+                    "on-secondary-fixed-variant": "#005313",
+                    "error-container": "#ffdad6",
+                    "on-secondary-fixed": "#002204",
+                    "surface-bright": "#fff8f2",
+                    "surface-tint": "#904d00",
+                    "on-tertiary-fixed-variant": "#4f00d0",
+                    "primary": "#904d00",
+                    "outline-variant": "#ddc1ae",
+                    "on-primary-container": "#623200",
+                    "secondary-fixed-dim": "#7edb7b",
+                    "on-tertiary-fixed": "#20005f",
+                    "on-error": "#ffffff",
+                    "inverse-on-surface": "#fcefdd",
+                    "surface-container-highest": "#eee1cf"
+            },
+            "borderRadius": {
+                    "DEFAULT": "1rem",
+                    "lg": "2rem",
+                    "xl": "3rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "xs": "8px",
+                    "sm": "16px",
+                    "md": "24px",
+                    "container-margin": "20px",
+                    "gutter": "16px",
+                    "xl": "48px",
+                    "lg": "32px",
+                    "base": "4px"
+            },
+            "fontFamily": {
+                    "label-bold": ["Nunito Sans"],
+                    "display-lg-mobile": ["Nunito Sans"],
+                    "body-md": ["Nunito Sans"],
+                    "body-lg": ["Nunito Sans"],
+                    "label-sm": ["Nunito Sans"],
+                    "headline-md": ["Nunito Sans"],
+                    "display-lg": ["Nunito Sans"]
+            },
+            "fontSize": {
+                    "label-bold": ["14px", { "lineHeight": "20px", "fontWeight": "800" }],
+                    "display-lg-mobile": ["32px", { "lineHeight": "38px", "fontWeight": "900" }],
+                    "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                    "body-lg": ["18px", { "lineHeight": "26px", "fontWeight": "600" }],
+                    "label-sm": ["12px", { "lineHeight": "16px", "fontWeight": "600" }],
+                    "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "800" }],
+                    "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "900" }]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        .candy-stripe {
+            background-image: linear-gradient(
+                -45deg,
+                rgba(255, 255, 255, 0.25) 25%,
+                transparent 25%,
+                transparent 50%,
+                rgba(255, 255, 255, 0.25) 50%,
+                rgba(255, 255, 255, 0.25) 75%,
+                transparent 75%,
+                transparent
+            );
+            background-size: 20px 20px;
+            animation: moveStripe 2s linear infinite;
+        }
+
+        @keyframes moveStripe {
+            from { background-position: 0 0; }
+            to { background-position: 40px 0; }
+        }
+
+        .spring-bounce {
+            animation: springBounce 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes springBounce {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-8px); }
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen pb-[120px]">
+<!-- TopAppBar -->
+<header class="docked full-width top-0 bg-surface dark:bg-surface-dim shadow-[0_4px_12px_rgba(33,27,16,0.05)] z-40 fixed">
+<div class="flex justify-between items-center px-container-margin py-sm w-full">
+<div class="flex items-center gap-sm">
+<img class="w-10 h-10 rounded-full object-cover border-2 border-primary-container" data-alt="A small circular profile picture of a young child with a bright, playful expression. The child has messy, energetic hair and is wearing a colorful t-shirt. The background is a soft, warm pastel color, fitting a modern kids app aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDAecEBRismrwc-LusIQwRlIpPY_9s6bCL5CKDDtTiIIwBO7GOGrpsb56mKZhlxE40LGg6MzQKT7xRg-gusobsw7urCRlIVFSTWw-Ksl87qr6M25FfzdGEuMJQ7SG43PFY08pucPnliHVb7wN_NI5oTfA9pvTzivfsQGjlLjuCuFNSicSaqDUX7K8DMe7A4HnA4CK5CfK9J0qEeGRBrcs0JsfYUNlIFzKx4Fg-QAksc6ko-KHYglGl6ABbLXP7dw0ZOmcpBmLFDO2k">
+<h1 class="font-display-lg-mobile text-display-lg-mobile text-primary dark:text-primary-fixed-dim">GrowWise</h1>
+</div>
+<div class="flex items-center gap-xs bg-surface-container-high px-sm py-xs rounded-full font-label-bold text-label-bold text-primary">
+<span>150</span>
+<span>🪙</span>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="pt-[90px]">
+<!-- Dream Coach (Wisy) Section -->
+<section class="px-container-margin mb-lg mt-sm">
+<div class="bg-surface-container-lowest rounded-xl p-sm shadow-[0_4px_24px_rgba(255,140,0,0.1)] relative overflow-hidden flex items-center gap-md border border-surface-variant">
+<div class="shrink-0 relative">
+<div class="absolute inset-0 bg-primary-container blur-xl opacity-20 rounded-full"></div>
+<img class="w-[80px] h-[80px] object-contain spring-bounce relative z-10" data-alt="A cute, 3D stylized cartoon owl character named Wisy, designed as a playful financial coach for kids. The owl has large friendly eyes, a small graduation cap, and is holding one wing up in a cheering, encouraging pose. Rendered in bright, warm colors with soft lighting, isolated on a transparent-like background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBRc-SNzsGxbbGAUIBcvUtusbokS_ee6p8DWH3BnXnzQHlBbPmaJmUyJuIQgxvoCUTKGQudk664VOfNUJRxxSaFG9LMW3SiJnTbGRTWVglXJsJ9U0EjRzBm4c1Qc6ugD5WDbVDXcMyk2lyfNWT5cqC5C3B-H3GFYio5F72untalVMC6W6GpN8cILYS9e1wjRy3MuRv-ID6u4GLzAKPYaHMsK1js7iPsw291ShSgpst6OFJaZzDPxEgZnWdhqMpg8DMoRufvBRfFY1Q">
+</div>
+<div>
+<h2 class="font-headline-md text-headline-md-mobile text-primary mb-base">Cố lên Bo ơi!</h2>
+<p class="font-body-md text-body-md text-on-surface">Chỉ còn <span class="font-label-bold text-label-bold text-primary-container">20 xu</span> nữa là có xe đạp rồi! Đừng bỏ cuộc nhé!</p>
+</div>
+</div>
+</section>
+<!-- Dreams List -->
+<section class="px-container-margin flex flex-col gap-md">
+<h3 class="font-headline-md text-headline-md-mobile text-on-background mb-xs">Các Ước Mơ</h3>
+<!-- Dream Card: Bicycle -->
+<div class="bg-surface-container-lowest rounded-xl p-md shadow-[0_4px_24px_rgba(255,140,0,0.1)] border border-surface-variant relative overflow-hidden transition-transform hover:translate-y-[1px]">
+<div class="flex justify-between items-start mb-md">
+<div class="flex items-center gap-sm">
+<div class="w-12 h-12 bg-surface-container rounded-full flex items-center justify-center text-2xl shadow-inner">
+                            🚲
+                        </div>
+<h4 class="font-body-lg text-body-lg text-on-surface">Xe đạp</h4>
+</div>
+<div class="flex flex-col items-end">
+<div class="flex items-center gap-xs font-label-bold text-label-bold text-primary">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">stars</span> 150 / 170
+                        </div>
+<span class="font-label-sm text-label-sm text-on-surface-variant mt-base">88%</span>
+</div>
+</div>
+<!-- Progress Bar -->
+<div class="w-full h-[16px] bg-surface-variant rounded-full overflow-hidden shadow-inner relative">
+<div class="h-full bg-primary-container rounded-full candy-stripe absolute left-0 top-0 transition-all duration-500 ease-out" style="width: 88%;"></div>
+</div>
+</div>
+<!-- Dream Card: Lego Set -->
+<div class="bg-surface-container-lowest rounded-xl p-md shadow-[0_4px_24px_rgba(255,140,0,0.1)] border border-surface-variant relative overflow-hidden transition-transform hover:translate-y-[1px]">
+<div class="flex justify-between items-start mb-md">
+<div class="flex items-center gap-sm">
+<div class="w-12 h-12 bg-surface-container rounded-full flex items-center justify-center text-2xl shadow-inner">
+                            🧱
+                        </div>
+<h4 class="font-body-lg text-body-lg text-on-surface">Bộ Lego City</h4>
+</div>
+<div class="flex flex-col items-end">
+<div class="flex items-center gap-xs font-label-bold text-label-bold text-primary">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">stars</span> 45 / 300
+                        </div>
+<span class="font-label-sm text-label-sm text-on-surface-variant mt-base">15%</span>
+</div>
+</div>
+<!-- Progress Bar -->
+<div class="w-full h-[16px] bg-surface-variant rounded-full overflow-hidden shadow-inner relative">
+<div class="h-full bg-secondary-fixed-dim rounded-full candy-stripe absolute left-0 top-0 transition-all duration-500 ease-out" style="width: 15%;"></div>
+</div>
+</div>
+</section>
+<!-- Add Dream Button -->
+<section class="px-container-margin mt-xl mb-xl">
+<button class="w-full min-h-[48px] bg-primary text-on-primary rounded-full px-lg py-sm font-label-bold text-label-bold flex items-center justify-center gap-sm border-b-2 border-surface-tint hover:translate-y-[1px] active:translate-y-[2px] transition-all duration-100 shadow-md">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">add_circle</span>
+                Thêm ước mơ
+            </button>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-gutter pb-xs pt-xs bg-surface dark:bg-surface-dim shadow-lg rounded-t-lg">
+<!-- Home (Inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container-high transition-colors rounded-xl group" href="#">
+<span class="material-symbols-outlined text-[24px] group-active:scale-95 transition-transform duration-150">home</span>
+<span class="font-label-sm text-label-sm mt-base">Home</span>
+</a>
+<!-- Learn (Inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container-high transition-colors rounded-xl group" href="#">
+<span class="material-symbols-outlined text-[24px] group-active:scale-95 transition-transform duration-150">school</span>
+<span class="font-label-sm text-label-sm mt-base">Learn</span>
+</a>
+<!-- Save (Active - Semantic Match for "Dreams/Goals") -->
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-4 py-2 animate-bounce Active:scale-95 transition-transform duration-150 relative" href="#">
+<span class="material-symbols-outlined text-[24px]" style="font-variation-settings: 'FILL' 1;">savings</span>
+<span class="font-label-sm text-label-sm mt-base font-bold">Save</span>
+</a>
+<!-- Quests (Inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container-high transition-colors rounded-xl group" href="#">
+<span class="material-symbols-outlined text-[24px] group-active:scale-95 transition-transform duration-150">rocket_launch</span>
+<span class="font-label-sm text-label-sm mt-base">Quests</span>
+</a>
+<!-- Shop (Inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container-high transition-colors rounded-xl group" href="#">
+<span class="material-symbols-outlined text-[24px] group-active:scale-95 transition-transform duration-150">storefront</span>
+<span class="font-label-sm text-label-sm mt-base">Shop</span>
+</a>
+</nav>
+</body></html>

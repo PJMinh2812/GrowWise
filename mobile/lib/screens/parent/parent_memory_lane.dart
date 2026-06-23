@@ -13,7 +13,7 @@ void _openAlbumPreview(BuildContext context, AppState appState) {
   final memories = appState.memories;
   if (memories.isEmpty) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Chưa có kỷ niệm nào để xuất.')),
+      SnackBar(content: Text(appState.strings.noMemoriesToExport)),
     );
     return;
   }
@@ -234,7 +234,7 @@ class _MemoryHero extends StatelessWidget {
                 backgroundColor: const Color(0xFF5B5BD6),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
-              child: Text('Đã hiểu', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+              child: Text(context.read<AppState>().strings.understood, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
             ),
           ),
         ],

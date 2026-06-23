@@ -35,7 +35,7 @@ export default function ApprovalQueue({
           {t("pendingReview")} ({pending.length})
         </h2>
         {pending.length === 0 ? (
-          <div className="app-card p-8 text-center text-on-surface-variant">
+          <div className="gw-card" style={{ padding: "32px", textAlign: "center", color: "var(--ink-soft)" }}>
             {t("approveQueueEmpty")}
           </div>
         ) : (
@@ -50,7 +50,7 @@ export default function ApprovalQueue({
       {autoApproved.length > 0 && (
         <section>
           <h2 className="text-lg font-bold text-on-surface mb-3">
-            Đã tự động duyệt (24h)
+            {t("autoApprovedSection")}
           </h2>
           <div className="space-y-4">
             {autoApproved.map((s) => (
@@ -71,7 +71,7 @@ function PendingCard({ sub }: { sub: SubmissionWithRelations }) {
   const [pending, start] = useTransition();
 
   return (
-    <div className="app-card p-5">
+    <div className="gw-card" style={{ padding: "20px" }}>
       <div className="flex flex-col sm:flex-row gap-4">
         {sub.proof_image_url && (
           // eslint-disable-next-line @next/next/no-img-element
@@ -103,9 +103,8 @@ function PendingCard({ sub }: { sub: SubmissionWithRelations }) {
             </div>
           </div>
 
-          {/* Quality stars */}
           <div className="flex items-center gap-1 mt-3">
-            <span className="text-sm text-on-surface-variant mr-1">Chất lượng:</span>
+            <span className="text-sm text-on-surface-variant mr-1">{t("quality")}</span>
             {[1, 2, 3].map((n) => (
               <button
                 key={n}
@@ -117,7 +116,7 @@ function PendingCard({ sub }: { sub: SubmissionWithRelations }) {
               </button>
             ))}
             <span className="text-xs text-on-surface-variant ml-1">
-              {rating === 1 ? "Cần cố gắng" : rating === 3 ? "Xuất sắc" : "Tốt"}
+              {rating === 1 ? t("needsWork") : rating === 3 ? t("excellent") : t("good")}
             </span>
           </div>
 
@@ -127,7 +126,7 @@ function PendingCard({ sub }: { sub: SubmissionWithRelations }) {
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 placeholder="Lý do từ chối (con sẽ thấy)…"
-                className="w-full border border-outline-variant rounded-[14px] px-3 py-2 text-sm text-on-surface"
+                className="gw-input"
                 rows={2}
               />
               <div className="flex gap-2 mt-2">
@@ -138,15 +137,16 @@ function PendingCard({ sub }: { sub: SubmissionWithRelations }) {
                       await rejectSubmission(sub.id, reason.trim() || undefined);
                     })
                   }
-                  className="px-4 py-2 rounded-[14px] bg-error text-on-error text-sm font-bold disabled:opacity-50"
+                  className="gw-btn gw-btn--sm"
+                  style={{ background: "var(--color-error)", color: "var(--color-on-error)" }}
                 >
-                  Xác nhận từ chối
+                  {t("confirmReject")}
                 </button>
                 <button
                   onClick={() => setRejecting(false)}
-                  className="px-4 py-2 rounded-[14px] bg-surface-container text-on-surface-variant text-sm font-semibold"
+                  className="gw-btn gw-btn--ghost gw-btn--sm"
                 >
-                  Huỷ
+                  {t("cancel")}
                 </button>
               </div>
             </div>
@@ -159,13 +159,14 @@ function PendingCard({ sub }: { sub: SubmissionWithRelations }) {
                     await approveSubmission(sub.id, rating);
                   })
                 }
-                className="px-5 py-2 rounded-[14px] bg-tertiary text-on-tertiary text-sm font-bold disabled:opacity-50"
+                className="gw-btn gw-btn--tertiary gw-btn--sm"
               >
                 {pending ? "…" : t("approve")}
               </button>
               <button
                 onClick={() => setRejecting(true)}
-                className="px-5 py-2 rounded-[14px] bg-error/10 text-error text-sm font-bold"
+                className="gw-btn gw-btn--ghost gw-btn--sm"
+                style={{ color: "var(--color-error)" }}
               >
                 {t("reject")}
               </button>
@@ -178,9 +179,10 @@ function PendingCard({ sub }: { sub: SubmissionWithRelations }) {
 }
 
 function AutoApprovedCard({ sub }: { sub: SubmissionWithRelations }) {
+  const { t } = useLang();
   const [pending, start] = useTransition();
   return (
-    <div className="app-card p-5 border border-amber-300/60">
+    <div className="gw-card" style={{ padding: "20px", borderLeft: "3px solid #f59e0b" }}>
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
           <span className="text-2xl">{sub.child?.avatar_emoji ?? "🧒"}</span>
@@ -189,7 +191,7 @@ function AutoApprovedCard({ sub }: { sub: SubmissionWithRelations }) {
               {sub.task?.icon} {sub.task?.title}
             </p>
             <p className="text-xs text-amber-600">
-              Đã tự động duyệt · +{sub.coin_earned ?? 0} xu
+              {t("autoApprovedSection")} · +{sub.coin_earned ?? 0} xu
             </p>
           </div>
         </div>
@@ -200,9 +202,10 @@ function AutoApprovedCard({ sub }: { sub: SubmissionWithRelations }) {
               await retroactiveReject(sub.id);
             })
           }
-          className="px-4 py-2 rounded-[14px] bg-error/10 text-error text-sm font-bold disabled:opacity-50"
+          className="gw-btn gw-btn--ghost gw-btn--sm"
+          style={{ color: "var(--color-error)" }}
         >
-          {pending ? "Đang huỷ…" : "Huỷ duyệt tự động"}
+          {pending ? t("cancelling") : t("cancelAutoApprove")}
         </button>
       </div>
     </div>

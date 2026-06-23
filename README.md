@@ -84,7 +84,7 @@ GrowWise/
 │       ├── services/           # Supabase, Payment, Gemini
 │       ├── theme/              # màu sắc, typography
 │       └── utils/              # validators, helpers
-└── admin/                      # Next.js 15 admin panel
+└── web/                       # Next.js 16 web app (landing + admin + app người dùng)
     ├── app/
     │   ├── admin/              # dashboard, lessons, pricing, users
     │   ├── api/
@@ -234,7 +234,7 @@ flutter build apk --release
 | `mobile/supabase_schema.sql` | Schema hoàn chỉnh với RLS, triggers, indexes |
 | `mobile/supabase_rls_fix.sql` | Fix RLS infinite recursion (families ↔ children) |
 | `mobile/supabase_migration_v2.sql` | Thêm `bonding_message`, `streak_days` |
-| `admin/supabase_admin_schema.sql` | Admin profiles, plans, subscriptions, transactions |
+| `web/supabase_admin_schema.sql` | Admin profiles, plans, subscriptions, transactions |
 
 ---
 

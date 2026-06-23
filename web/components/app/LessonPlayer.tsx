@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Lesson, LessonQuiz } from "@/lib/types";
 import QuizOverlay from "./QuizOverlay";
 import StoryReader from "./StoryReader";
+import { completeLesson } from "@/lib/app/child-actions";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 declare global {
@@ -27,14 +28,14 @@ function loadYouTubeApi(): Promise<void> {
   return apiPromise;
 }
 
-export default function LessonPlayer({ lesson }: { lesson: Lesson }) {
+export default function LessonPlayer({ lesson, childId }: { lesson: Lesson; childId?: string | null }) {
   if (lesson.lesson_type === "story") {
-    return <StoryReader lesson={lesson} />;
+    return <StoryReader lesson={lesson} childId={childId} />;
   }
-  return <VideoLessonPlayer lesson={lesson} />;
+  return <VideoLessonPlayer lesson={lesson} childId={childId} />;
 }
 
-function VideoLessonPlayer({ lesson }: { lesson: Lesson }) {
+function VideoLessonPlayer({ lesson, childId }: { lesson: Lesson; childId?: string | null }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
   const quizzes = (lesson.lesson_quizzes ?? [])
@@ -50,7 +51,7 @@ function VideoLessonPlayer({ lesson }: { lesson: Lesson }) {
     loadYouTubeApi().then(() => {
       if (cancelled || !hostRef.current) return;
       playerRef.current = new window.YT.Player(hostRef.current, {
-        videoId: lesson.youtube_id,
+        videoId: lesson.youtube_id ?? "",
         playerVars: { rel: 0, modestbranding: 1 },
         events: {
           onReady: () => {
@@ -64,6 +65,12 @@ function VideoLessonPlayer({ lesson }: { lesson: Lesson }) {
                 setActiveQuiz(q);
               }
             }, 600);
+          },
+          onStateChange: (e: any) => {
+            // YT.PlayerState.ENDED === 0 → mark the lesson complete.
+            if (e?.data === 0 && childId && lesson.id) {
+              completeLesson(childId, lesson.id);
+            }
           },
         },
       });
@@ -89,11 +96,13 @@ function VideoLessonPlayer({ lesson }: { lesson: Lesson }) {
 
   return (
     <div>
-      <div className="aspect-video rounded-2xl overflow-hidden bg-black">
-        <div ref={hostRef} className="w-full h-full" />
+      <div className="gw-card" style={{ padding: 0, overflow: "hidden" }}>
+        <div style={{ aspectRatio: "16/9", background: "#000" }}>
+          <div ref={hostRef} style={{ width: "100%", height: "100%" }} />
+        </div>
       </div>
-      <h1 className="text-xl font-extrabold text-on-surface mt-4">{lesson.title}</h1>
-      <p className="text-on-surface-variant mt-1">{lesson.description}</p>
+      <h1 style={{ fontSize: "20px", fontWeight: 900, color: "var(--ink)", marginTop: "16px" }}>{lesson.title}</h1>
+      <p style={{ color: "var(--ink-soft)", marginTop: "4px", fontWeight: 600 }}>{lesson.description}</p>
 
       {activeQuiz && <QuizOverlay quiz={activeQuiz} onDone={resumeAfterQuiz} />}
     </div>

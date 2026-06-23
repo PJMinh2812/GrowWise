@@ -4,8 +4,11 @@ import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase";
+import { useLang } from "@/components/app/LangProvider";
+import LanguageToggle from "@/components/app/LanguageToggle";
 
 export function Header() {
+  const { t } = useLang();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
 
@@ -17,7 +20,7 @@ export function Header() {
   }, []);
 
   const appHref = loggedIn ? "/role" : "/login";
-  const appLabel = loggedIn ? "Vào ứng dụng" : "Đăng nhập";
+  const appLabel = loggedIn ? t("lpEnterApp") : t("lpLogin");
 
   return (
     <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200">
@@ -34,21 +37,22 @@ export function Header() {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-8">
             <Link href="#how-it-works" className="text-gray-500 hover:text-gray-900 transition-colors">
-              Cách hoạt động
+              {t("lpNavHow")}
             </Link>
             <Link href="#features" className="text-gray-500 hover:text-gray-900 transition-colors">
-              Tính năng
+              {t("lpNavFeatures")}
             </Link>
             <Link href="#testimonials" className="text-gray-500 hover:text-gray-900 transition-colors">
-              Đánh giá
+              {t("lpNavReviews")}
             </Link>
             <Link href="#pricing" className="text-gray-500 hover:text-gray-900 transition-colors font-medium">
-              Bảng giá
+              {t("lpNavPricing")}
             </Link>
           </nav>
 
           {/* CTA Buttons */}
           <div className="hidden md:flex items-center gap-3">
+            <LanguageToggle />
             <Link
               href={appHref}
               className="text-gray-700 font-medium hover:text-gray-900 transition-colors"
@@ -59,18 +63,21 @@ export function Header() {
               href="#download"
               className="bg-secondary text-white px-5 py-2.5 rounded-full font-medium hover:bg-secondary/90 transition-colors"
             >
-              Tải ứng dụng
+              {t("lpDownload")}
             </Link>
           </div>
 
           {/* Mobile Menu Button */}
-          <button
-            className="md:hidden p-2 text-gray-900"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            aria-label="Toggle menu"
-          >
-            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
+          <div className="md:hidden flex items-center gap-2">
+            <LanguageToggle />
+            <button
+              className="p-2 text-gray-900"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              aria-label="Toggle menu"
+            >
+              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
         </div>
 
         {/* Mobile Navigation */}
@@ -82,28 +89,28 @@ export function Header() {
                 className="text-gray-500 hover:text-gray-900 transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Cách hoạt động
+                {t("lpNavHow")}
               </Link>
               <Link
                 href="#features"
                 className="text-gray-500 hover:text-gray-900 transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Tính năng
+                {t("lpNavFeatures")}
               </Link>
               <Link
                 href="#testimonials"
                 className="text-gray-500 hover:text-gray-900 transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Đánh giá
+                {t("lpNavReviews")}
               </Link>
               <Link
                 href="#pricing"
                 className="text-gray-500 hover:text-gray-900 transition-colors font-medium"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Bảng giá
+                {t("lpNavPricing")}
               </Link>
               <Link
                 href={appHref}
@@ -117,7 +124,7 @@ export function Header() {
                 className="bg-secondary text-white px-5 py-2.5 rounded-full font-medium hover:bg-secondary/90 transition-colors text-center"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Tải ứng dụng
+                {t("lpDownload")}
               </Link>
             </div>
           </nav>

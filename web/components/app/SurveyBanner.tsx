@@ -4,6 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { ActiveSurvey } from "@/lib/app/surveys";
 import { dismissSurvey } from "@/lib/app/survey-actions";
+import { useLang } from "./LangProvider";
 
 export default function SurveyBanner({
   survey,
@@ -13,6 +14,7 @@ export default function SurveyBanner({
   childId?: string | null;
 }) {
   const router = useRouter();
+  const { t } = useLang();
   const [hidden, setHidden] = useState(false);
   const [opened, setOpened] = useState(false);
   const [, start] = useTransition();
@@ -44,37 +46,40 @@ export default function SurveyBanner({
   }
 
   return (
-    <div className="app-card mb-6 p-4 flex items-start gap-3 border-l-4 border-primary bg-primary/5">
-      <span className="text-2xl">📋</span>
-      <div className="flex-1 min-w-0">
-        <p className="font-bold text-on-surface">{survey.title}</p>
-        {survey.description && (
-          <p className="text-sm text-on-surface-variant mt-0.5">{survey.description}</p>
-        )}
+    <div className="gw-survey">
+      <span className="blob" />
+      <span className="ico">
+        <span className="material-symbols-outlined">campaign</span>
+      </span>
+      <div className="flex-1 min-w-0" style={{ zIndex: 1 }}>
+        <h3>{survey.title}</h3>
+        {survey.description && <p>{survey.description}</p>}
         {survey.verified && opened && (
-          <p className="text-xs text-on-surface-variant mt-2">
-            Banner sẽ tự ẩn sau khi bạn nộp khảo sát. Đã nộp xong?{" "}
-            <button onClick={() => router.refresh()} className="text-primary font-semibold underline">
-              Tải lại
+          <p className="mt-1">
+            {t("surveyAutoHide")}{" "}
+            <button onClick={() => router.refresh()} className="underline font-extrabold">
+              {t("surveyReload")}
             </button>
           </p>
         )}
         <div className="flex flex-wrap gap-2 mt-3">
           <button
             onClick={openForm}
-            className="px-4 py-2 rounded-[14px] bg-primary text-on-primary font-bold text-sm"
+            className="gw-btn gw-btn--tertiary gw-btn--sm"
           >
-            {opened ? "Mở lại khảo sát" : "Làm khảo sát"}
+            {opened ? t("surveyReopen") : t("surveyDo")}
           </button>
-          <button
-            onClick={later}
-            className="px-4 py-2 rounded-[14px] bg-surface-container text-on-surface-variant font-semibold text-sm"
-          >
-            Để sau
+          <button onClick={later} className="gw-btn gw-btn--ghost gw-btn--sm">
+            {t("surveyLater")}
           </button>
         </div>
       </div>
-      <button onClick={later} aria-label="Đóng" className="text-on-surface-variant hover:text-on-surface">
+      <button
+        onClick={later}
+        aria-label={t("close")}
+        className="shrink-0"
+        style={{ zIndex: 1, color: "#5B3FC0" }}
+      >
         <span className="material-symbols-outlined">close</span>
       </button>
     </div>

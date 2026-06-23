@@ -33,40 +33,69 @@ class VideoQuiz {
       );
 }
 
+class StoryPage {
+  final String imageUrl;
+  final String caption;
+  const StoryPage({required this.imageUrl, required this.caption});
+
+  factory StoryPage.fromJson(Map<String, dynamic> json) => StoryPage(
+        imageUrl: json['image_url'] as String? ?? '',
+        caption: json['caption'] as String? ?? '',
+      );
+}
+
 class VideoLesson {
   final String id;
   final String title;
   final String description;
-  final String youtubeId;
+  final String? youtubeId; // nullable for story lessons
   final String audience; // 'child' | 'parent'
   final String category;
   final String thumbnailEmoji;
   final int durationSeconds;
   final List<VideoQuiz> quizzes;
+  final String lessonType; // 'video' | 'story'
+  final List<StoryPage> storyPages;
+  final String? thumbnailUrl;
+
   const VideoLesson({
     required this.id,
     required this.title,
     required this.description,
-    required this.youtubeId,
+    this.youtubeId,
     required this.audience,
     required this.category,
     required this.thumbnailEmoji,
     required this.durationSeconds,
     required this.quizzes,
+    this.lessonType = 'video',
+    this.storyPages = const [],
+    this.thumbnailUrl,
   });
 
-  factory VideoLesson.fromJson(Map<String, dynamic> json, List<VideoQuiz> quizzes) =>
-      VideoLesson(
-        id: json['id'] as String,
-        title: json['title'] as String,
-        description: json['description'] as String? ?? '',
-        youtubeId: json['youtube_id'] as String,
-        audience: json['audience'] as String,
-        category: json['category'] as String,
-        thumbnailEmoji: json['thumbnail_emoji'] as String? ?? '📚',
-        durationSeconds: json['duration_seconds'] as int? ?? 0,
-        quizzes: quizzes,
-      );
+  factory VideoLesson.fromJson(Map<String, dynamic> json, List<VideoQuiz> quizzes) {
+    final rawPages = json['story_pages'];
+    final pages = rawPages is List
+        ? rawPages
+            .whereType<Map<String, dynamic>>()
+            .map(StoryPage.fromJson)
+            .toList()
+        : <StoryPage>[];
+    return VideoLesson(
+      id: json['id'] as String,
+      title: json['title'] as String,
+      description: json['description'] as String? ?? '',
+      youtubeId: json['youtube_id'] as String?,
+      audience: json['audience'] as String,
+      category: json['category'] as String,
+      thumbnailEmoji: json['thumbnail_emoji'] as String? ?? '📚',
+      durationSeconds: json['duration_seconds'] as int? ?? 0,
+      quizzes: quizzes,
+      lessonType: json['lesson_type'] as String? ?? 'video',
+      storyPages: pages,
+      thumbnailUrl: json['thumbnail_url'] as String?,
+    );
+  }
 }
 
 // ── Demo lesson data ──────────────────────────────────────────────────────────

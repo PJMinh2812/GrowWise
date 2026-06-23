@@ -8,7 +8,9 @@ import {
 import ApprovalQueue from "@/components/app/ApprovalQueue";
 import EmotionCheckIn from "@/components/app/EmotionCheckIn";
 import SurveyBanner from "@/components/app/SurveyBanner";
+import SubscriptionBanner from "@/components/app/SubscriptionBanner";
 import { getActiveSurveyFor } from "@/lib/app/surveys";
+import { getRenewalState } from "@/lib/app/subscription";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 
@@ -26,27 +28,37 @@ export default async function ParentDashboard() {
       ])
     : [[], [], [], 0];
   const survey = await getActiveSurveyFor("parent");
+  const renewal = await getRenewalState();
 
   return (
-    <div>
-      {survey && <SurveyBanner survey={survey} />}
-      <div className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-extrabold text-on-surface mb-1">
-          {t(lang, "navDashboard")}
-        </h1>
-        <p className="text-on-surface-variant">{t(lang, "manageAndTrack")}</p>
+    <div className="pt-4">
+      <div className="mb-4 rise">
+        <h1 className="text-2xl font-black text-primary mb-0.5">{t(lang, "navDashboard")}</h1>
+        <p className="font-bold text-on-surface-variant">{t(lang, "manageAndTrack")}</p>
       </div>
 
-      <div className="mb-6">
+      {(renewal.state === "expiring" || renewal.state === "expired") && (
+        <div className="mb-4 rise rise-2">
+          <SubscriptionBanner info={renewal} />
+        </div>
+      )}
+
+      {survey && (
+        <div className="mb-4 rise rise-2">
+          <SurveyBanner survey={survey} />
+        </div>
+      )}
+
+      <div className="mb-4 rise rise-2">
         <EmotionCheckIn />
       </div>
 
       {!family && (
-        <div className="app-card p-6 mb-6">
-          <p className="text-on-surface">
-            Bạn chưa có hồ sơ gia đình. Hãy tạo hồ sơ con trong{" "}
-            <Link href="/parent/settings" className="text-primary font-semibold underline">
-              Cài đặt
+        <div className="gw-card mb-4">
+          <p className="text-on-surface font-semibold">
+            {t(lang, "noFamilyMsg")}{" "}
+            <Link href="/parent/settings" className="text-primary font-extrabold underline">
+              {t(lang, "navSettings")}
             </Link>
             .
           </p>
@@ -54,40 +66,50 @@ export default async function ParentDashboard() {
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        <StatCard icon="hourglass_top" label={t(lang, "pendingReview")} value={String(pending.length)} />
-        <StatCard
-          icon="savings"
-          label={t(lang, "weeklyCoins")}
-          value={weeklyCoins.toLocaleString("vi-VN")}
-        />
-        <StatCard icon="group" label={t(lang, "childrenCount")} value={String(children.length)} />
+      <div className="grid grid-cols-2 gap-3 mb-4 rise rise-3">
+        <StatCard icon="hourglass_top" tone="primary" label={t(lang, "pendingReview")} value={String(pending.length)} />
+        <StatCard icon="savings" tone="secondary" label={t(lang, "weeklyCoins")} value={weeklyCoins.toLocaleString("vi-VN")} />
+        <StatCard icon="group" tone="tertiary" label={t(lang, "childrenCount")} value={String(children.length)} />
       </div>
 
       {/* Quick action */}
-      <div className="mb-8">
-        <Link
-          href="/parent/tasks/new"
-          className="inline-flex items-center gap-2 px-5 py-3 rounded-[14px] bg-primary text-on-primary font-bold"
-        >
+      <div className="mb-5 rise rise-3">
+        <Link href="/parent/tasks/new" className="gw-btn gw-btn--primary">
           <span className="material-symbols-outlined">add_task</span>
           {t(lang, "newTask")}
         </Link>
       </div>
 
-      <ApprovalQueue pending={pending} autoApproved={autoApproved} />
+      <div className="rise rise-4">
+        <ApprovalQueue pending={pending} autoApproved={autoApproved} />
+      </div>
     </div>
   );
 }
 
-function StatCard({ icon, label, value }: { icon: string; label: string; value: string }) {
+function StatCard({
+  icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: string;
+  label: string;
+  value: string;
+  tone: "primary" | "secondary" | "tertiary";
+}) {
+  const toneCls = {
+    primary: "bg-primary-fixed text-on-primary-container",
+    secondary: "bg-secondary-container text-secondary",
+    tertiary: "bg-tertiary-fixed text-on-tertiary-container",
+  }[tone];
   return (
-    <div className="app-card p-5">
-      <div className="w-10 h-10 rounded-full bg-primary-container/30 flex items-center justify-center text-primary mb-3">
-        <span className="material-symbols-outlined">{icon}</span>
+    <div className="gw-card gw-card--press">
+      <div className={`w-9 h-9 rounded-full flex items-center justify-center mb-3 ${toneCls}`}>
+        <span className="material-symbols-outlined text-xl">{icon}</span>
       </div>
-      <p className="text-2xl font-extrabold text-on-surface">{value}</p>
-      <p className="text-sm text-on-surface-variant">{label}</p>
+      <p className="text-2xl font-black text-on-surface">{value}</p>
+      <p className="text-sm font-bold text-on-surface-variant">{label}</p>
     </div>
   );
 }

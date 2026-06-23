@@ -12,7 +12,7 @@ export default async function ParentLessonPage({
   const { id } = await params;
   const lesson = await getLesson(id);
   if (!lesson) {
-    return <div className="app-card p-6 text-on-surface">Không tìm thấy bài học.</div>;
+    return <div className="gw-card" style={{ padding: "24px", color: "var(--ink)" }}>Không tìm thấy bài học.</div>;
   }
   return (
     <div className="max-w-3xl mx-auto">

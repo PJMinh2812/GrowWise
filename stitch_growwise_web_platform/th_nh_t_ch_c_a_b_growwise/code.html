@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Thành tích - GrowWise</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-on-surface": "#f6efeb",
+                        "on-surface": "#1d1b18",
+                        "on-secondary": "#ffffff",
+                        "on-primary-fixed": "#2f1500",
+                        "secondary": "#006e1c",
+                        "on-tertiary-fixed": "#20005f",
+                        "surface-variant": "#e8e1dc",
+                        "on-surface-variant": "#564334",
+                        "surface-container": "#f3ede8",
+                        "secondary-fixed-dim": "#7edb7b",
+                        "primary-fixed-dim": "#ffb77d",
+                        "on-primary": "#ffffff",
+                        "primary-fixed": "#ffdcc3",
+                        "on-tertiary": "#ffffff",
+                        "primary-container": "#ff8c00",
+                        "error": "#ba1a1a",
+                        "inverse-surface": "#33302d",
+                        "on-secondary-fixed-variant": "#005313",
+                        "on-primary-fixed-variant": "#6e3900",
+                        "tertiary-fixed-dim": "#cdbdff",
+                        "surface-container-low": "#f9f2ed",
+                        "primary": "#904d00",
+                        "on-tertiary-container": "#4600bb",
+                        "error-container": "#ffdad6",
+                        "on-secondary-container": "#0a7320",
+                        "tertiary": "#6833ea",
+                        "surface": "#fff8f3",
+                        "on-tertiary-fixed-variant": "#4f00d0",
+                        "tertiary-container": "#b29bff",
+                        "on-error": "#ffffff",
+                        "secondary-fixed": "#99f894",
+                        "inverse-primary": "#ffb77d",
+                        "surface-tint": "#904d00",
+                        "surface-container-lowest": "#ffffff",
+                        "outline": "#897362",
+                        "on-background": "#1d1b18",
+                        "surface-container-highest": "#e8e1dc",
+                        "on-primary-container": "#623200",
+                        "surface-container-high": "#eee7e2",
+                        "background": "#fff8f3",
+                        "on-secondary-fixed": "#002204",
+                        "surface-dim": "#dfd9d4",
+                        "tertiary-fixed": "#e8deff",
+                        "secondary-container": "#96f592",
+                        "outline-variant": "#ddc1ae",
+                        "on-error-container": "#93000a",
+                        "surface-bright": "#fff8f3"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "md": "16px",
+                        "3d-offset": "4px",
+                        "xl": "32px",
+                        "sm": "8px",
+                        "lg": "24px",
+                        "xs": "4px",
+                        "unit": "4px"
+                    },
+                    "fontFamily": {
+                        "headline-xl": ["Nunito Sans"],
+                        "label-lg": ["Nunito Sans"],
+                        "body-md": ["Nunito Sans"],
+                        "body-lg": ["Nunito Sans"],
+                        "headline-lg": ["Nunito Sans"],
+                        "label-md": ["Nunito Sans"],
+                        "headline-md": ["Nunito Sans"]
+                    },
+                    "fontSize": {
+                        "headline-xl": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                        "label-lg": ["15px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "800"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                        "body-lg": ["18px", {"lineHeight": "26px", "fontWeight": "600"}],
+                        "headline-lg": ["24px", {"lineHeight": "32px", "fontWeight": "800"}],
+                        "label-md": ["13px", {"lineHeight": "18px", "fontWeight": "700"}],
+                        "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "700"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: theme('colors.background');
+            color: theme('colors.on-background');
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .xp-bar-striped {
+            background-image: linear-gradient(
+                45deg,
+                rgba(255, 255, 255, 0.2) 25%,
+                transparent 25%,
+                transparent 50%,
+                rgba(255, 255, 255, 0.2) 50%,
+                rgba(255, 255, 255, 0.2) 75%,
+                transparent 75%,
+                transparent
+            );
+            background-size: 20px 20px;
+            animation: move-stripes 1s linear infinite;
+        }
+
+        @keyframes move-stripes {
+            0% {
+                background-position: 0 0;
+            }
+            100% {
+                background-position: 20px 0;
+            }
+        }
+
+        .card-3d {
+            border: 2px solid theme('colors.surface-variant');
+            border-bottom-width: 4px;
+            transition: transform 0.1s ease, border-bottom-width 0.1s ease;
+        }
+
+        .card-3d:active {
+            transform: translateY(2px);
+            border-bottom-width: 2px;
+        }
+
+        .badge-unlock-anim {
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .super-ellipse {
+            border-radius: 24px;
+        }
+    </style>
+</head>
+<body class="pb-24">
+<!-- Top App Bar -->
+<header class="flex justify-between items-center px-lg py-md w-full max-w-full z-50 bg-surface w-full top-0 sticky border-b-4 border-surface-variant flat-3d-offset">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-[32px] text-primary" style="font-variation-settings: 'FILL' 1;">account_circle</span>
+<span class="font-headline-lg text-headline-lg font-black text-primary tracking-tight">GrowWise</span>
+</div>
+<div class="flex items-center">
+<span class="font-label-lg text-label-lg text-on-surface-variant mr-xs">1,250</span>
+<span class="text-[20px]">⭐</span>
+</div>
+</header>
+<main class="px-md md:px-lg max-w-4xl mx-auto pt-lg space-y-xl">
+<!-- Header Profile Section -->
+<section class="bg-primary-fixed rounded-[32px] p-lg card-3d border-outline-variant flex flex-col md:flex-row items-center gap-lg">
+<div class="relative">
+<div class="w-24 h-24 bg-surface rounded-full flex items-center justify-center text-[48px] card-3d border-primary">
+                    👦
+                </div>
+<div class="absolute -bottom-2 -right-2 bg-secondary text-on-secondary font-label-lg text-label-lg px-3 py-1 rounded-full card-3d border-[#005313]">
+                    Cấp 5
+                </div>
+</div>
+<div class="flex-1 w-full text-center md:text-left">
+<h1 class="font-headline-xl text-headline-xl text-on-primary-fixed mb-xs">Bé Bi</h1>
+<p class="font-body-md text-body-md text-on-primary-fixed-variant mb-md">Nhà thám hiểm nhí</p>
+<div class="space-y-sm">
+<div class="flex justify-between font-label-md text-label-md text-on-primary-fixed-variant">
+<span>XP Hiện tại</span>
+<span>320 / 500 XP</span>
+</div>
+<div class="h-6 bg-surface-variant rounded-full overflow-hidden card-3d border-outline-variant">
+<div class="h-full bg-primary-container xp-bar-striped rounded-full" style="width: 64%;"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- Quick Stats -->
+<section class="grid grid-cols-3 gap-md">
+<div class="bg-surface-container rounded-lg p-md text-center card-3d border-surface-variant flex flex-col items-center justify-center">
+<span class="text-[32px] mb-xs">🏅</span>
+<span class="font-headline-md text-headline-md text-primary">12</span>
+<span class="font-label-md text-label-md text-on-surface-variant uppercase">Huy hiệu</span>
+</div>
+<div class="bg-surface-container rounded-lg p-md text-center card-3d border-surface-variant flex flex-col items-center justify-center">
+<span class="text-[32px] mb-xs">🔥</span>
+<span class="font-headline-md text-headline-md text-primary-container">5</span>
+<span class="font-label-md text-label-md text-on-surface-variant uppercase">Ngày liên tiếp</span>
+</div>
+<div class="bg-surface-container rounded-lg p-md text-center card-3d border-surface-variant flex flex-col items-center justify-center">
+<span class="text-[32px] mb-xs">💰</span>
+<span class="font-headline-md text-headline-md text-[#d4af37]">800</span>
+<span class="font-label-md text-label-md text-on-surface-variant uppercase">Xu thưởng</span>
+</div>
+</section>
+<!-- Achievements Grid Section -->
+<section class="space-y-lg">
+<h2 class="font-headline-lg text-headline-lg text-on-background flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">military_tech</span>
+                Bộ sưu tập Huy hiệu
+            </h2>
+<!-- Category: Streak -->
+<div class="space-y-md">
+<h3 class="font-body-lg text-body-lg text-on-surface-variant border-b-2 border-surface-variant pb-xs">Chuỗi ngày</h3>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-md">
+<!-- Unlocked Badge -->
+<div class="bg-secondary-container rounded-[24px] p-md flex flex-col items-center text-center card-3d border-secondary-fixed-dim badge-unlock-anim">
+<div class="w-16 h-16 bg-surface rounded-full flex items-center justify-center text-[32px] mb-sm shadow-sm">
+                            🔥
+                        </div>
+<h4 class="font-label-lg text-label-lg text-on-secondary-container mb-xs">Khởi động</h4>
+<p class="font-label-md text-label-md text-on-secondary-container opacity-80">12/05/2023</p>
+</div>
+<!-- Unlocked Badge -->
+<div class="bg-secondary-container rounded-[24px] p-md flex flex-col items-center text-center card-3d border-secondary-fixed-dim">
+<div class="w-16 h-16 bg-surface rounded-full flex items-center justify-center text-[32px] mb-sm shadow-sm">
+                            🔥🔥
+                        </div>
+<h4 class="font-label-lg text-label-lg text-on-secondary-container mb-xs">Nóng máy</h4>
+<p class="font-label-md text-label-md text-on-secondary-container opacity-80">15/05/2023</p>
+</div>
+<!-- Locked Badge -->
+<div class="bg-surface-dim rounded-[24px] p-md flex flex-col items-center text-center card-3d border-outline-variant grayscale opacity-70">
+<div class="w-16 h-16 bg-surface rounded-full flex items-center justify-center text-[24px] mb-sm shadow-sm relative">
+<span class="material-symbols-outlined text-on-surface-variant" style="font-variation-settings: 'FILL' 1;">lock</span>
+</div>
+<h4 class="font-label-lg text-label-lg text-on-surface-variant mb-xs">Bùng cháy</h4>
+<p class="font-label-md text-label-md text-on-surface-variant opacity-60">Chưa mở</p>
+</div>
+<!-- Locked Badge -->
+<div class="bg-surface-dim rounded-[24px] p-md flex flex-col items-center text-center card-3d border-outline-variant grayscale opacity-70">
+<div class="w-16 h-16 bg-surface rounded-full flex items-center justify-center text-[24px] mb-sm shadow-sm relative">
+<span class="material-symbols-outlined text-on-surface-variant" style="font-variation-settings: 'FILL' 1;">lock</span>
+</div>
+<h4 class="font-label-lg text-label-lg text-on-surface-variant mb-xs">Bất diệt</h4>
+<p class="font-label-md text-label-md text-on-surface-variant opacity-60">Chưa mở</p>
+</div>
+</div>
+</div>
+<!-- Category: By Subject -->
+<div class="space-y-md">
+<h3 class="font-body-lg text-body-lg text-on-surface-variant border-b-2 border-surface-variant pb-xs">Theo danh mục</h3>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-md">
+<!-- Unlocked Badge -->
+<div class="bg-tertiary-container rounded-[24px] p-md flex flex-col items-center text-center card-3d border-tertiary-fixed-dim">
+<div class="w-16 h-16 bg-surface rounded-full flex items-center justify-center text-[32px] mb-sm shadow-sm">
+                            📚
+                        </div>
+<h4 class="font-label-lg text-label-lg text-on-tertiary-container mb-xs">Mọt sách nhí</h4>
+<p class="font-label-md text-label-md text-on-tertiary-container opacity-80">10/05/2023</p>
+</div>
+<!-- Unlocked Badge -->
+<div class="bg-[#e8deff] rounded-[24px] p-md flex flex-col items-center text-center card-3d border-[#cdbdff]">
+<div class="w-16 h-16 bg-surface rounded-full flex items-center justify-center text-[32px] mb-sm shadow-sm">
+                            🔢
+                        </div>
+<h4 class="font-label-lg text-label-lg text-[#4f00d0] mb-xs">Thần đồng toán</h4>
+<p class="font-label-md text-label-md text-[#4f00d0] opacity-80">18/05/2023</p>
+</div>
+<!-- Locked Badge -->
+<div class="bg-surface-dim rounded-[24px] p-md flex flex-col items-center text-center card-3d border-outline-variant grayscale opacity-70">
+<div class="w-16 h-16 bg-surface rounded-full flex items-center justify-center text-[24px] mb-sm shadow-sm relative">
+<span class="material-symbols-outlined text-on-surface-variant" style="font-variation-settings: 'FILL' 1;">lock</span>
+</div>
+<h4 class="font-label-lg text-label-lg text-on-surface-variant mb-xs">Nhà khoa học</h4>
+<p class="font-label-md text-label-md text-on-surface-variant opacity-60">Chưa mở</p>
+</div>
+</div>
+</div>
+<!-- Category: Special -->
+<div class="space-y-md">
+<h3 class="font-body-lg text-body-lg text-on-surface-variant border-b-2 border-surface-variant pb-xs">Đặc biệt</h3>
+<!-- Empty State Example (simulated here for demonstration if no badges existed in this category) -->
+<div class="bg-surface-container-low rounded-xl p-lg text-center flex flex-col items-center justify-center border-2 border-dashed border-outline-variant">
+<img alt="" class="w-32 h-32 object-contain mb-md drop-shadow-md" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBVnyKmocIi1GRS_juWAnjrmKVfQrDKIdTaWya3uixobaBwHYE9hsf0g6ogY3ZWq1udfYBtJh6j_68JOQjCR81F5hnF-M193iO507GgCqx57If17k8JBvYd851EqLm_pDm5WY3428K_AnZyRNpuY7MjDLzy7t4cG_UpvQnJ8Iz_v2GVO49XxAtlKTGsGiNjKNPqn0X4JwylERhhyj0Ixq9HVuHxaUFOqrxHDUlqfLAn4VVZ2wq3p3TbiJJjH5alIlWgBMjsgl59qIA"/>
+<p class="font-body-lg text-body-lg text-on-surface-variant mb-sm">Chưa có huy hiệu nào — hãy hoàn thành nhiệm vụ nhé!</p>
+<button class="bg-primary text-on-primary font-label-lg text-label-lg px-xl py-sm rounded-full card-3d border-on-primary-fixed-variant hover:bg-surface-tint">
+                        Làm nhiệm vụ ngay
+                    </button>
+</div>
+</div>
+</section>
+<!-- Bottom padding for nav bar -->
+<div class="h-24"></div>
+</main>
+<!-- Bottom Nav Bar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-md pb-md pt-sm bg-surface-container border-t-4 border-surface-variant z-50 rounded-t-lg">
+<button class="flex flex-col items-center justify-center text-on-surface-variant p-md hover:bg-surface-container-high transition-colors rounded-xl">
+<span class="material-symbols-outlined mb-1 text-[24px]">home</span>
+<span class="font-label-md text-label-md">Trang chủ</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant p-md hover:bg-surface-container-high transition-colors rounded-xl">
+<span class="material-symbols-outlined mb-1 text-[24px]">school</span>
+<span class="font-label-md text-label-md">Học</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant p-md hover:bg-surface-container-high transition-colors rounded-xl">
+<span class="material-symbols-outlined mb-1 text-[24px]">savings</span>
+<span class="font-label-md text-label-md">Tiết kiệm</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-md py-xs border-b-4 border-on-primary-fixed-variant active:translate-y-0.5 active:border-b-2 transition-transform duration-75">
+<span class="material-symbols-outlined mb-1 text-[24px]" style="font-variation-settings: 'FILL' 1;">explore</span>
+<span class="font-label-md text-label-md">Nhiệm vụ</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant p-md hover:bg-surface-container-high transition-colors rounded-xl">
+<span class="material-symbols-outlined mb-1 text-[24px]">shopping_bag</span>
+<span class="font-label-md text-label-md">Cửa hàng</span>
+</button>
+</nav>
+</body></html>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { LessonQuiz } from "@/lib/types";
+import { useLang } from "./LangProvider";
 
 /** Modal câu hỏi trắc nghiệm. Dùng chung cho bài video (LessonPlayer) và truyện (StoryReader). */
 export default function QuizOverlay({
@@ -11,14 +12,15 @@ export default function QuizOverlay({
   quiz: LessonQuiz;
   onDone: () => void;
 }) {
+  const { t } = useLang();
   const [picked, setPicked] = useState<number | null>(null);
   const options = (quiz.quiz_options ?? []).slice().sort((a, b) => a.order_index - b.order_index);
   const correct = picked === quiz.correct_index;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="app-card w-full max-w-lg p-6">
-        <p className="text-sm font-semibold text-primary mb-1">❓ Câu hỏi!</p>
+      <div className="gw-card" style={{ width: "100%", maxWidth: "520px", padding: "24px" }}>
+        <p className="text-sm font-semibold text-primary mb-1">{t("quizQuestion")}</p>
         <h3 className="text-lg font-bold text-on-surface mb-4">{quiz.question}</h3>
         <div className="space-y-2">
           {options.map((o, i) => {
@@ -52,13 +54,14 @@ export default function QuizOverlay({
         {picked !== null && (
           <div className="mt-4">
             <p className={`text-sm ${correct ? "text-green-600" : "text-error"}`}>
-              {correct ? "Chính xác! " : "Chưa đúng. "} {quiz.explanation}
+              {correct ? t("correctAnswer") : t("incorrectAnswer")} {quiz.explanation}
             </p>
             <button
               onClick={onDone}
-              className="mt-3 w-full py-2.5 rounded-[14px] bg-primary text-on-primary font-bold"
+              className="gw-btn gw-btn--primary"
+              style={{ marginTop: "12px", width: "100%" }}
             >
-              Tiếp tục
+              {t("continueBtn")}
             </button>
           </div>
         )}

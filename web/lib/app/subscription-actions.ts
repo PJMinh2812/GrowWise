@@ -9,7 +9,7 @@ type Result = { ok: boolean; error?: string }
 /**
  * Schedule a plan downgrade that takes effect at the end of the current period
  * (e.g. family → premium). Stores `scheduled_plan_name`; the switch is applied
- * lazily by `applyDueScheduledChange` once the period ends.
+ * lazily by `applyDuePeriodEnd` once the period ends.
  */
 export async function scheduleDowngrade(planName: PlanName): Promise<Result> {
   const supabase = await createServerSupabase()

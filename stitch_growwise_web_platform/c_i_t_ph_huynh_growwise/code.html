@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Cài đặt Phụ huynh - GrowWise</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-on-surface": "#f6efeb",
+                        "on-surface": "#1d1b18",
+                        "on-secondary": "#ffffff",
+                        "on-primary-fixed": "#2f1500",
+                        "secondary": "#006e1c",
+                        "on-tertiary-fixed": "#20005f",
+                        "surface-variant": "#e8e1dc",
+                        "on-surface-variant": "#564334",
+                        "surface-container": "#f3ede8",
+                        "secondary-fixed-dim": "#7edb7b",
+                        "primary-fixed-dim": "#ffb77d",
+                        "on-primary": "#ffffff",
+                        "primary-fixed": "#ffdcc3",
+                        "on-tertiary": "#ffffff",
+                        "primary-container": "#ff8c00",
+                        "error": "#ba1a1a",
+                        "inverse-surface": "#33302d",
+                        "on-secondary-fixed-variant": "#005313",
+                        "on-primary-fixed-variant": "#6e3900",
+                        "tertiary-fixed-dim": "#cdbdff",
+                        "surface-container-low": "#f9f2ed",
+                        "primary": "#904d00",
+                        "on-tertiary-container": "#4600bb",
+                        "error-container": "#ffdad6",
+                        "on-secondary-container": "#0a7320",
+                        "tertiary": "#6833ea",
+                        "surface": "#fff8f3",
+                        "on-tertiary-fixed-variant": "#4f00d0",
+                        "tertiary-container": "#b29bff",
+                        "on-error": "#ffffff",
+                        "secondary-fixed": "#99f894",
+                        "inverse-primary": "#ffb77d",
+                        "surface-tint": "#904d00",
+                        "surface-container-lowest": "#ffffff",
+                        "outline": "#897362",
+                        "on-background": "#1d1b18",
+                        "surface-container-highest": "#e8e1dc",
+                        "on-primary-container": "#623200",
+                        "surface-container-high": "#eee7e2",
+                        "background": "#fff8f3",
+                        "on-secondary-fixed": "#002204",
+                        "surface-dim": "#dfd9d4",
+                        "tertiary-fixed": "#e8deff",
+                        "secondary-container": "#96f592",
+                        "outline-variant": "#ddc1ae",
+                        "on-error-container": "#93000a",
+                        "surface-bright": "#fff8f3"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "md": "16px",
+                        "3d-offset": "4px",
+                        "xl": "32px",
+                        "sm": "8px",
+                        "lg": "24px",
+                        "xs": "4px",
+                        "unit": "4px"
+                    },
+                    "fontFamily": {
+                        "headline-xl": ["Nunito Sans"],
+                        "label-lg": ["Nunito Sans"],
+                        "body-md": ["Nunito Sans"],
+                        "body-lg": ["Nunito Sans"],
+                        "headline-lg": ["Nunito Sans"],
+                        "label-md": ["Nunito Sans"],
+                        "headline-md": ["Nunito Sans"]
+                    },
+                    "fontSize": {
+                        "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "label-lg": ["15px", { "lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "800" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "body-lg": ["18px", { "lineHeight": "26px", "fontWeight": "600" }],
+                        "headline-lg": ["24px", { "lineHeight": "32px", "fontWeight": "800" }],
+                        "label-md": ["13px", { "lineHeight": "18px", "fontWeight": "700" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .filled-icon {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        /* 3D Pill Button Base */
+        .btn-3d {
+            transition: all 0.1s ease;
+        }
+        .btn-3d:active {
+            transform: translateY(2px);
+            border-bottom-width: 2px !important;
+            margin-bottom: 2px;
+        }
+
+        /* Toggle Switch */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #006e1c;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #006e1c;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface font-body-md antialiased min-h-screen pb-24 md:pb-0">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-surface-dim w-full top-0 sticky border-b-4 border-surface-variant dark:border-outline-variant flat-3d-offset flex justify-between items-center px-lg py-md max-w-full z-50">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary text-3xl">account_circle</span>
+<h1 class="font-headline-lg text-headline-lg font-black text-primary dark:text-primary-fixed-dim tracking-tight">Cài đặt</h1>
+</div>
+<div class="flex items-center">
+<span class="font-headline-md text-headline-md text-primary dark:text-primary-fixed-dim">1,250 ⭐</span>
+</div>
+</header>
+<main class="max-w-2xl mx-auto px-lg py-lg space-y-lg">
+<!-- THẺ GÓI HIỆN TẠI -->
+<section class="bg-surface-container rounded-DEFAULT border-2 border-surface-variant border-b-[6px] p-lg flex flex-col gap-md">
+<div class="flex justify-between items-center">
+<div class="flex flex-col gap-xs">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Gói hiện tại</span>
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-tertiary filled-icon text-2xl">workspace_premium</span>
+<h2 class="font-headline-md text-headline-md text-tertiary">Premium Family</h2>
+</div>
+</div>
+<div class="text-right">
+<span class="font-label-md text-label-md text-on-surface-variant block">Hết hạn</span>
+<span class="font-body-md text-body-md font-bold text-on-surface">20/12/2024</span>
+</div>
+</div>
+<button class="btn-3d bg-primary-container text-on-primary-container font-label-lg text-label-lg rounded-full py-md px-lg border-b-[4px] border-on-primary-container/30 w-full flex justify-center items-center gap-sm mt-sm">
+<span class="material-symbols-outlined">autorenew</span>
+                Đổi gói / Nâng cấp
+            </button>
+</section>
+<!-- QUẢN LÝ CON -->
+<section class="bg-surface-container rounded-DEFAULT border-2 border-surface-variant border-b-[6px] p-lg flex flex-col gap-md">
+<div class="flex justify-between items-center mb-sm">
+<h3 class="font-headline-md text-headline-md text-on-surface">Quản lý con</h3>
+<span class="material-symbols-outlined text-on-surface-variant">child_care</span>
+</div>
+<div class="flex flex-col gap-sm">
+<!-- Bé Bi -->
+<div class="bg-surface rounded-lg p-md border-2 border-surface-variant flex items-center justify-between">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 bg-surface-container-high rounded-full flex items-center justify-center text-2xl">
+                            👦
+                        </div>
+<div>
+<p class="font-body-lg text-body-lg text-on-surface">Bé Bi</p>
+<p class="font-label-md text-label-md text-on-surface-variant">6 tuổi</p>
+</div>
+</div>
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-outline text-xl mr-sm" title="Đã đặt PIN">lock</span>
+<button class="p-sm rounded-full text-on-surface-variant hover:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined text-xl">edit</span>
+</button>
+<button class="p-sm rounded-full text-error hover:bg-error-container transition-colors">
+<span class="material-symbols-outlined text-xl">delete</span>
+</button>
+</div>
+</div>
+<!-- Bé Bơ -->
+<div class="bg-surface rounded-lg p-md border-2 border-surface-variant flex items-center justify-between">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 bg-surface-container-high rounded-full flex items-center justify-center text-2xl">
+                            👧
+                        </div>
+<div>
+<p class="font-body-lg text-body-lg text-on-surface">Bé Bơ</p>
+<p class="font-label-md text-label-md text-on-surface-variant">4 tuổi</p>
+</div>
+</div>
+<div class="flex items-center gap-xs">
+<button class="p-sm rounded-full text-on-surface-variant hover:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined text-xl">edit</span>
+</button>
+<button class="p-sm rounded-full text-error hover:bg-error-container transition-colors">
+<span class="material-symbols-outlined text-xl">delete</span>
+</button>
+</div>
+</div>
+</div>
+<button class="btn-3d bg-surface text-primary font-label-lg text-label-lg rounded-full py-md px-lg border-2 border-primary border-b-[4px] w-full flex justify-center items-center gap-sm mt-sm">
+<span class="material-symbols-outlined">add</span>
+                Thêm bé
+            </button>
+</section>
+<!-- BẢO MẬT & TÙY CHỌN -->
+<section class="bg-surface-container rounded-DEFAULT border-2 border-surface-variant border-b-[6px] p-lg flex flex-col gap-lg">
+<!-- Bảo mật -->
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-md">Bảo mật</h3>
+<button class="btn-3d bg-inverse-surface text-inverse-on-surface font-label-lg text-label-lg rounded-full py-md px-lg border-b-[4px] border-black/30 w-full flex justify-center items-center gap-sm">
+<span class="material-symbols-outlined">password</span>
+                    Đặt / Đổi PIN phụ huynh
+                </button>
+</div>
+<hr class="border-surface-variant"/>
+<!-- Lời nhắn -->
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-sm flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary">favorite</span>
+                    Lời nhắn gắn kết
+                </h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-md">Lời nhắn sẽ hiện lên khi con hoàn thành nhiệm vụ xuất sắc.</p>
+<div class="flex flex-col gap-sm">
+<textarea class="w-full bg-surface border-2 border-surface-variant rounded-lg p-md font-body-md text-on-surface focus:border-primary focus:ring-0 resize-none h-24 placeholder-on-surface-variant/50" placeholder="Nhập lời nhắn..."></textarea>
+<button class="btn-3d bg-secondary text-on-secondary font-label-lg text-label-lg rounded-full py-sm px-lg border-b-[4px] border-on-secondary-fixed-variant w-fit self-end flex items-center gap-sm">
+<span class="material-symbols-outlined text-sm">save</span>
+                        Lưu
+                    </button>
+</div>
+</div>
+<hr class="border-surface-variant"/>
+<!-- Tùy chọn -->
+<div class="flex flex-col gap-md">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-xs">Tùy chọn</h3>
+<!-- Toggle Báo cáo -->
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-outline">insights</span>
+<span class="font-body-lg text-body-lg text-on-surface">Báo cáo AI hàng tuần</span>
+</div>
+<div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+<input checked="" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer" id="toggle-report" name="toggle" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-6 rounded-full bg-surface-variant cursor-pointer" for="toggle-report"></label>
+</div>
+</div>
+<!-- Toggle Thông báo -->
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-outline">notifications</span>
+<span class="font-body-lg text-body-lg text-on-surface">Thông báo</span>
+</div>
+<div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+<input checked="" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer" id="toggle-notif" name="toggle" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-6 rounded-full bg-surface-variant cursor-pointer" for="toggle-notif"></label>
+</div>
+</div>
+<!-- Ngôn ngữ Pill Switcher -->
+<div class="flex justify-between items-center mt-sm">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-outline">language</span>
+<span class="font-body-lg text-body-lg text-on-surface">Ngôn ngữ</span>
+</div>
+<div class="bg-surface border-2 border-surface-variant rounded-full flex p-xs">
+<button class="bg-primary text-on-primary font-label-md text-label-md rounded-full px-lg py-xs">VI</button>
+<button class="text-on-surface-variant font-label-md text-label-md rounded-full px-lg py-xs hover:bg-surface-variant transition-colors">EN</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Đăng xuất -->
+<button class="btn-3d bg-error-container text-on-error-container font-label-lg text-label-lg rounded-full py-md px-lg border-b-[4px] border-error/20 w-full flex justify-center items-center gap-sm mt-xl mb-xl">
+<span class="material-symbols-outlined">logout</span>
+            Đăng xuất
+        </button>
+</main>
+<!-- BottomNavBar (Hidden on MD/Desktop, Visible on Mobile) -->
+<!-- Assuming Settings is not a top-level tab in BottomNavBar based on the standard 5, but we render the shell inactive as requested if it's considered part of the main flow. If it's a sub-page, it should be hidden, but we'll include it for the instruction's sake, with none active. -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full flex justify-around items-center px-md pb-md pt-sm bg-surface-container dark:bg-surface-container-lowest border-t-4 border-surface-variant z-50 rounded-t-lg shadow-lg">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline p-md hover:bg-surface-container-high dark:hover:bg-surface-container transition-colors active:translate-y-0.5 active:border-b-2 transition-transform duration-75" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-lg text-label-lg mt-xs text-[11px]">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline p-md hover:bg-surface-container-high dark:hover:bg-surface-container transition-colors active:translate-y-0.5 active:border-b-2 transition-transform duration-75" href="#">
+<span class="material-symbols-outlined">school</span>
+<span class="font-label-lg text-label-lg mt-xs text-[11px]">Learn</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline p-md hover:bg-surface-container-high dark:hover:bg-surface-container transition-colors active:translate-y-0.5 active:border-b-2 transition-transform duration-75" href="#">
+<span class="material-symbols-outlined">savings</span>
+<span class="font-label-lg text-label-lg mt-xs text-[11px]">Save</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline p-md hover:bg-surface-container-high dark:hover:bg-surface-container transition-colors active:translate-y-0.5 active:border-b-2 transition-transform duration-75" href="#">
+<span class="material-symbols-outlined">explore</span>
+<span class="font-label-lg text-label-lg mt-xs text-[11px]">Quests</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline p-md hover:bg-surface-container-high dark:hover:bg-surface-container transition-colors active:translate-y-0.5 active:border-b-2 transition-transform duration-75" href="#">
+<span class="material-symbols-outlined">shopping_bag</span>
+<span class="font-label-lg text-label-lg mt-xs text-[11px]">Shop</span>
+</a>
+</nav>
+</body></html>

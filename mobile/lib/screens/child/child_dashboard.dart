@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -16,6 +17,7 @@ import 'family_achievement_board.dart';
 import '../login_screen.dart';
 import '../ai_chat_screen.dart';
 import '../../utils/age_group.dart';
+import '../../widgets/survey_banner.dart';
 
 class ChildDashboard extends StatefulWidget {
   const ChildDashboard({super.key});
@@ -128,12 +130,14 @@ class _ChildDashboardState extends State<ChildDashboard> {
   }
 
   void _showLogoutSheet(BuildContext context) {
-    final app = context.read<AppState>();
-    final s = app.strings;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) {
+          final app = context.watch<AppState>();
+          final s = app.strings;
+          return Container(
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
         decoration: const BoxDecoration(
           color: Colors.white,
@@ -175,11 +179,39 @@ class _ChildDashboardState extends State<ChildDashboard> {
                         color: AppTheme.vibrantPrimary, size: 22),
                     const SizedBox(width: 10),
                     Text(
-                      'Đổi vai trò',
+                      s.switchRole,
                       style: GoogleFonts.plusJakartaSans(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
                           color: AppTheme.vibrantPrimary),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            GestureDetector(
+              onTap: () {
+                final next = app.locale == 'vi' ? 'en' : 'vi';
+                app.setLocale(next);
+                setSheetState(() {});
+              },
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryFixed,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppTheme.primaryFixedDim, width: 2),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(app.locale == 'vi' ? '🇺🇸' : '🇻🇳', style: const TextStyle(fontSize: 20)),
+                    const SizedBox(width: 10),
+                    Text(
+                      s.switchToEnglish,
+                      style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w700, color: AppTheme.vibrantPrimary),
                     ),
                   ],
                 ),
@@ -219,6 +251,8 @@ class _ChildDashboardState extends State<ChildDashboard> {
             ),
           ],
         ),
+      );
+        },
       ),
     );
   }
@@ -342,6 +376,11 @@ class _HomeTab extends StatelessWidget {
             .animate()
             .fadeIn(duration: 500.ms)
             .slideY(begin: -0.05, curve: Curves.easeOutCubic),
+        const SizedBox(height: 14),
+        SurveyBanner(audience: 'child', childId: app.childId, childAge: app.childAge)
+            .animate(delay: 80.ms)
+            .fadeIn()
+            .slideY(begin: 0.05),
         const SizedBox(height: 14),
         _QuickStats(app: app, pendingCount: pending.length, s: s)
             .animate(delay: 100.ms)
@@ -563,10 +602,20 @@ class _HeroCard extends StatelessWidget {
                     border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 2),
                   ),
                   child: Center(
-                    child: Text(
-                      app.childAvatarEmoji.isNotEmpty ? app.childAvatarEmoji : '👦',
-                      style: TextStyle(fontSize: emojiSize),
-                    ),
+                    child: app.childAvatarUrl != null
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(24),
+                            child: CachedNetworkImage(
+                              imageUrl: app.childAvatarUrl!,
+                              width: emojiSize * 1.6,
+                              height: emojiSize * 1.6,
+                              fit: BoxFit.cover,
+                            ),
+                          )
+                        : Text(
+                            app.childAvatarEmoji.isNotEmpty ? app.childAvatarEmoji : '👦',
+                            style: TextStyle(fontSize: emojiSize),
+                          ),
                   ),
                 );
               }),

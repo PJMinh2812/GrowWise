@@ -373,7 +373,7 @@ class _ActionButtons extends StatelessWidget {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
               icon: const Icon(Icons.star_rounded, color: Colors.white),
-              label: Text('Đánh giá & Duyệt', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: Colors.white)),
+              label: Text(s.reviewAndApprove, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: Colors.white)),
             ),
           ),
         ),
@@ -470,6 +470,7 @@ class _QualityRatingSheetState extends State<_QualityRatingSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.watch<AppState>().strings;
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -484,10 +485,10 @@ class _QualityRatingSheetState extends State<_QualityRatingSheet> {
             child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppTheme.border, borderRadius: BorderRadius.circular(2))),
           ),
           const SizedBox(height: 20),
-          Text('Đánh giá chất lượng hoàn thành',
+          Text(s.qualityRating,
             style: GoogleFonts.plusJakartaSans(fontSize: 17, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
           const SizedBox(height: 4),
-          Text('Chọn mức độ để tính xu thưởng',
+          Text(s.qualityRatingSub,
             style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppTheme.textSecondary)),
           const SizedBox(height: 16),
           Row(
@@ -545,7 +546,7 @@ class _QualityRatingSheetState extends State<_QualityRatingSheet> {
                 ),
                 child: _loading
                     ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : Text('Duyệt & Gửi 🪙 $_earnedCoins xu',
+                    : Text(s.approveWithCoins(_earnedCoins),
                         style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: Colors.white, fontSize: 15)),
               ),
             ),
@@ -626,7 +627,7 @@ class _RetroactiveRejectButtonState extends State<_RetroactiveRejectButton> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Huỷ duyệt tự động?',
+        title: Text(context.read<AppState>().strings.cancelAutoTitle,
             style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
         content: Text(
           'Xu đã trao sẽ bị thu hồi và con phải nộp lại bằng chứng đúng. Tiến độ auto-approve cũng giảm 1.',
@@ -635,13 +636,14 @@ class _RetroactiveRejectButtonState extends State<_RetroactiveRejectButton> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Thôi', style: GoogleFonts.plusJakartaSans(color: AppTheme.textSecondary)),
+            child: Text(context.read<AppState>().strings.nah, style: GoogleFonts.plusJakartaSans(color: AppTheme.textSecondary)),
           ),
           FilledButton(
             onPressed: () async {
               Navigator.pop(ctx);
               setState(() => _loading = true);
               final appState = context.read<AppState>();
+              final cancelledMsg = appState.strings.cancelledAutoMsg;
               final nav = Navigator.of(context);
               final messenger = ScaffoldMessenger.of(context);
               await appState.retroactiveRejectTask(widget.task.id,
@@ -649,13 +651,13 @@ class _RetroactiveRejectButtonState extends State<_RetroactiveRejectButton> {
               if (!mounted) return;
               setState(() => _loading = false);
               nav.pop();
-              messenger.showSnackBar(const SnackBar(
-                content: Text('Đã huỷ duyệt — con cần nộp lại đúng cách'),
-                backgroundColor: Color(0xFFEF4444),
+              messenger.showSnackBar(SnackBar(
+                content: Text(cancelledMsg),
+                backgroundColor: const Color(0xFFEF4444),
               ));
             },
             style: FilledButton.styleFrom(backgroundColor: const Color(0xFFEF4444)),
-            child: Text('Huỷ duyệt', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+            child: Text(context.read<AppState>().strings.cancelAutoBtn, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -672,7 +674,7 @@ class _RetroactiveRejectButtonState extends State<_RetroactiveRejectButton> {
             ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
             : const Icon(Icons.undo_rounded, size: 18),
         label: Text(
-          _loading ? 'Đang xử lý...' : 'Huỷ duyệt tự động',
+          _loading ? '…' : context.watch<AppState>().strings.cancelAutoBtn,
           style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
         ),
         style: OutlinedButton.styleFrom(
@@ -788,7 +790,7 @@ class _DeactivateButton extends StatelessWidget {
         TextButton.icon(
           onPressed: () => _confirmDeactivate(context),
           icon: const Icon(Icons.pause_circle_outline, size: 18, color: AppTheme.outline),
-          label: Text('Tạm dừng',
+          label: Text(context.watch<AppState>().strings.pauseTaskLabel,
               style: GoogleFonts.plusJakartaSans(
                   fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.outline)),
         ),
@@ -796,7 +798,7 @@ class _DeactivateButton extends StatelessWidget {
         TextButton.icon(
           onPressed: () => _confirmDelete(context),
           icon: const Icon(Icons.delete_outline, size: 18, color: Color(0xFFEF4444)),
-          label: Text('Xóa hẳn',
+          label: Text(context.watch<AppState>().strings.deleteTaskLabel,
               style: GoogleFonts.plusJakartaSans(
                   fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFFEF4444))),
         ),
@@ -809,7 +811,7 @@ class _DeactivateButton extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Tạm dừng nhiệm vụ?',
+        title: Text(context.read<AppState>().strings.pauseTaskTitle,
             style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
         content: Text(
           'Nhiệm vụ sẽ bị ẩn khỏi danh sách của con. Lịch sử hoàn thành vẫn được giữ lại.',
@@ -818,7 +820,7 @@ class _DeactivateButton extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Huỷ', style: GoogleFonts.plusJakartaSans(color: AppTheme.textSecondary)),
+            child: Text(context.read<AppState>().strings.cancel, style: GoogleFonts.plusJakartaSans(color: AppTheme.textSecondary)),
           ),
           FilledButton(
             onPressed: () {
@@ -827,7 +829,7 @@ class _DeactivateButton extends StatelessWidget {
               Navigator.of(context).popUntil((route) => route.isFirst);
             },
             style: FilledButton.styleFrom(backgroundColor: AppTheme.outline),
-            child: Text('Tạm dừng', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+            child: Text(context.read<AppState>().strings.pauseTaskLabel, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -839,7 +841,7 @@ class _DeactivateButton extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Xóa nhiệm vụ?',
+        title: Text(context.read<AppState>().strings.deleteTaskTitle,
             style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
         content: Text(
           'Toàn bộ lịch sử hoàn thành sẽ bị xóa vĩnh viễn. Không thể khôi phục.',
@@ -848,7 +850,7 @@ class _DeactivateButton extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Huỷ', style: GoogleFonts.plusJakartaSans(color: AppTheme.textSecondary)),
+            child: Text(context.read<AppState>().strings.cancel, style: GoogleFonts.plusJakartaSans(color: AppTheme.textSecondary)),
           ),
           FilledButton(
             onPressed: () async {
@@ -859,7 +861,7 @@ class _DeactivateButton extends StatelessWidget {
               }
             },
             style: FilledButton.styleFrom(backgroundColor: const Color(0xFFEF4444)),
-            child: Text('Xóa hẳn', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+            child: Text(context.read<AppState>().strings.deleteTaskLabel, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
           ),
         ],
       ),

@@ -3,21 +3,25 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { updateChildAction } from "@/lib/app/parent-actions";
+import { calcAge } from "@/lib/types";
 import { useLang } from "./LangProvider";
 
 const AVATARS = ["👦", "👧", "🧒", "👶", "🐱", "🐶", "🦊", "🐼", "🦄", "🐯"];
+
+const TODAY = new Date().toISOString().split("T")[0];
+const MIN_DOB = new Date(Date.now() - 17 * 365.25 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
 export default function EditChildDialog({
   child,
   onClose,
 }: {
-  child: { id: string; name: string; age: number; emoji: string };
+  child: { id: string; name: string; dateOfBirth: string; emoji: string };
   onClose: () => void;
 }) {
   const router = useRouter();
   const { t } = useLang();
   const [name, setName] = useState(child.name);
-  const [age, setAge] = useState(child.age || 8);
+  const [dob, setDob] = useState(child.dateOfBirth || "");
   const [emoji, setEmoji] = useState(child.emoji || AVATARS[0]);
   const [error, setError] = useState("");
   const [pending, start] = useTransition();
@@ -29,21 +33,25 @@ export default function EditChildDialog({
       setError(t("nameRequired"));
       return;
     }
+    if (!dob) {
+      setError(t("selectDob"));
+      return;
+    }
     start(async () => {
-      const res = await updateChildAction({ childId: child.id, name: name.trim(), age, avatarEmoji: emoji });
+      const res = await updateChildAction({ childId: child.id, name: name.trim(), dateOfBirth: dob, avatarEmoji: emoji });
       if (res.ok) {
         onClose();
         router.refresh();
       } else {
-        setError(res.error ?? "Lỗi");
+        setError(res.error ?? t("genericError"));
       }
     });
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <form onSubmit={submit} className="app-card w-full max-w-sm p-6">
-        <h3 className="text-lg font-bold text-on-surface mb-4">Sửa thông tin con</h3>
+      <form onSubmit={submit} className="gw-card" style={{ width: "100%", maxWidth: "384px", padding: "24px" }}>
+        <h3 className="text-lg font-bold text-on-surface mb-4">{t("editChildTitle")}</h3>
 
         <div className="flex flex-wrap gap-2 mb-4">
           {AVATARS.map((a) => (
@@ -64,19 +72,22 @@ export default function EditChildDialog({
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Tên con"
+          placeholder={t("childName")}
           className="w-full border border-outline-variant rounded-[14px] px-3 py-2.5 text-on-surface mb-3"
         />
 
-        <label className="block text-sm font-semibold text-on-surface mb-1">{t("childAge")}</label>
+        <label className="block text-sm font-semibold text-on-surface mb-1">{t("dobLabel")}</label>
         <input
-          type="number"
-          min={1}
-          max={17}
-          value={age}
-          onChange={(e) => setAge(Number(e.target.value))}
-          className="w-full border border-outline-variant rounded-[14px] px-3 py-2.5 text-on-surface mb-3"
+          type="date"
+          value={dob}
+          onChange={(e) => setDob(e.target.value)}
+          max={TODAY}
+          min={MIN_DOB}
+          className="w-full border border-outline-variant rounded-[14px] px-3 py-2.5 text-on-surface mb-1"
         />
+        {dob && (
+          <p className="text-xs text-on-surface-variant mb-3">{calcAge(dob)} {t("yearsOld")}</p>
+        )}
 
         {error && <p className="text-sm text-error mb-3">{error}</p>}
 

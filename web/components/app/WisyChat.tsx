@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useLang } from "./LangProvider";
 
 interface Msg {
   role: "user" | "assistant";
@@ -11,6 +12,7 @@ interface Msg {
 const SUGGESTIONS = ["Tiết kiệm là gì?", "Làm sao có nhiều xu?", "3 hũ tiền để làm gì?"];
 
 export default function WisyChat({ childId, childName }: { childId: string; childName: string }) {
+  const { t } = useLang();
   const [messages, setMessages] = useState<Msg[]>([
     { role: "assistant", content: `Chào ${childName}! Tớ là Wisy 🦉. Hỏi tớ bất cứ điều gì nhé!` },
   ]);
@@ -26,18 +28,12 @@ export default function WisyChat({ childId, childName }: { childId: string; chil
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
-  // Load saved TTS preference (default on); cache available voices; cleanup
   useEffect(() => {
     if (localStorage.getItem("wisy_tts") === "off") setSpeakOn(false);
     const loadVoices = () => {
-      try {
-        voicesRef.current = window.speechSynthesis.getVoices();
-      } catch {
-        /* noop */
-      }
+      try { voicesRef.current = window.speechSynthesis.getVoices(); } catch { /* noop */ }
     };
     loadVoices();
-    // Voices load asynchronously in most browsers
     window.speechSynthesis.addEventListener?.("voiceschanged", loadVoices);
     return () => {
       window.speechSynthesis.removeEventListener?.("voiceschanged", loadVoices);
@@ -47,15 +43,9 @@ export default function WisyChat({ childId, childName }: { childId: string; chil
 
   function stopSpeak() {
     try {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.src = "";
-        audioRef.current = null;
-      }
+      if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = ""; audioRef.current = null; }
       window.speechSynthesis.cancel();
-    } catch {
-      /* noop */
-    }
+    } catch { /* noop */ }
   }
 
   function toggleSpeak() {
@@ -67,8 +57,6 @@ export default function WisyChat({ childId, childName }: { childId: string; chil
     });
   }
 
-  // Read a reply aloud: prefer server-side Vietnamese TTS (real vi voice),
-  // fall back to the browser's Web Speech API if the route isn't configured.
   async function speak(text: string) {
     const clean = text.replace(/[^\p{L}\p{N}\s.,!?]/gu, "");
     if (!clean) return;
@@ -87,32 +75,21 @@ export default function WisyChat({ childId, childName }: { childId: string; chil
         await audio.play();
         return;
       }
-    } catch {
-      /* fall through to browser speech */
-    }
+    } catch { /* fall through */ }
     speakBrowser(clean);
   }
 
   function speakBrowser(clean: string) {
     try {
-      // Detect language: Vietnamese diacritics → vi, else fall back to en.
-      const hasVietnamese =
-        /[ăâđêôơưàáạảãằắặẳẵầấậẩẫèéẹẻẽềếệểễìíịỉĩòóọỏõồốộổỗờớợởỡùúụủũừứựửữỳýỵỷỹ]/i.test(clean);
-      const langPrefix = hasVietnamese ? "vi" : "en";
+      const hasVi = /[ăâđêôơưàáạảãằắặẳẵầấậẩẫèéẹẻẽềếệểễìíịỉĩòóọỏõồốộổỗờớợởỡùúụủũừứựửữỳýỵỷỹ]/i.test(clean);
       const u = new SpeechSynthesisUtterance(clean);
-      u.lang = hasVietnamese ? "vi-VN" : "en-US";
-
-      const voices = voicesRef.current.length
-        ? voicesRef.current
-        : window.speechSynthesis.getVoices();
-      const match = voices.find((v) => v.lang?.toLowerCase().startsWith(langPrefix));
+      u.lang = hasVi ? "vi-VN" : "en-US";
+      const voices = voicesRef.current.length ? voicesRef.current : window.speechSynthesis.getVoices();
+      const match = voices.find((v) => v.lang?.toLowerCase().startsWith(hasVi ? "vi" : "en"));
       if (match) u.voice = match;
-
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(u);
-    } catch {
-      /* TTS not supported */
-    }
+    } catch { /* not supported */ }
   }
 
   async function send(text: string) {
@@ -131,111 +108,113 @@ export default function WisyChat({ childId, childName }: { childId: string; chil
       const data = await res.json();
       if (res.status === 429) {
         setLimited(true);
-        setMessages((m) => [
-          ...m,
-          { role: "assistant", content: data.message ?? "Hết lượt chat hôm nay 😅" },
-        ]);
+        setMessages((m) => [...m, { role: "assistant", content: data.message ?? "Hết lượt chat hôm nay 😅" }]);
         return;
       }
-      const reply = data.reply ?? data.error ?? "Wisy đang bận chút xíu 😅";
+      const reply = data.reply ?? data.error ?? t("wisyThinking");
       setMessages((m) => [...m, { role: "assistant", content: reply }]);
       if (speakOn) speak(reply);
     } catch {
-      setMessages((m) => [...m, { role: "assistant", content: "Lỗi kết nối, thử lại nhé 😅" }]);
+      setMessages((m) => [...m, { role: "assistant", content: t("genericError") }]);
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-10rem)] max-w-2xl mx-auto">
-      <div className="flex items-center gap-2 mb-3">
-        <span className="text-3xl">🦉</span>
-        <div className="flex-1">
-          <p className="font-extrabold text-on-surface">Wisy</p>
-          <p className="text-xs text-on-surface-variant">Trợ lý tài chính của bạn</p>
+    <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 10rem)", maxWidth: "430px", margin: "0 auto" }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
+        <span style={{ fontSize: "32px" }}>🦉</span>
+        <div style={{ flex: 1 }}>
+          <p style={{ fontWeight: 900, color: "var(--ink)" }}>Wisy</p>
+          <p style={{ fontSize: "12px", color: "var(--ink-soft)" }}>{t("wisyRole")}</p>
         </div>
         <button
           onClick={toggleSpeak}
-          aria-label={speakOn ? "Tắt giọng nói" : "Bật giọng nói"}
-          title={speakOn ? "Tắt giọng nói" : "Bật giọng nói"}
-          className={`w-10 h-10 rounded-full flex items-center justify-center transition ${
-            speakOn ? "bg-primary/10 text-primary" : "bg-surface-container text-on-surface-variant"
-          }`}
+          aria-label={speakOn ? t("muteVoice") : t("unmuteVoice")}
+          className={`gw-btn gw-btn--sm ${speakOn ? "gw-btn--secondary" : "gw-btn--ghost"}`}
+          style={{ width: "42px", padding: 0, borderRadius: "50%" }}
         >
-          <span className="material-symbols-outlined">{speakOn ? "volume_up" : "volume_off"}</span>
+          <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>{speakOn ? "volume_up" : "volume_off"}</span>
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+      {/* Messages */}
+      <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "10px", paddingRight: "4px" }}>
         {messages.map((m, i) => (
-          <div
-            key={i}
-            className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
-          >
+          <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start" }}>
             <div
-              className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm ${
-                m.role === "user"
-                  ? "bg-primary text-on-primary rounded-br-sm"
-                  : "app-card text-on-surface rounded-bl-sm"
-              }`}
+              style={{
+                maxWidth: "80%",
+                padding: "10px 16px",
+                borderRadius: m.role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
+                fontSize: "14px",
+                fontWeight: 600,
+                background: m.role === "user" ? "var(--primary-c)" : "var(--white)",
+                color: m.role === "user" ? "var(--on-primary-c)" : "var(--ink)",
+                border: m.role === "user" ? "none" : "1.5px solid #F0E6D8",
+                boxShadow: m.role === "user" ? "none" : "var(--soft)",
+              }}
             >
               {m.content}
             </div>
           </div>
         ))}
         {loading && (
-          <div className="flex justify-start">
-            <div className="app-card px-4 py-3 rounded-2xl text-on-surface-variant text-sm">
-              Wisy đang nghĩ…
+          <div style={{ display: "flex", justifyContent: "flex-start" }}>
+            <div style={{ padding: "10px 16px", borderRadius: "18px 18px 18px 4px", fontSize: "14px", color: "var(--ink-soft)", background: "var(--white)", border: "1.5px solid #F0E6D8", boxShadow: "var(--soft)" }}>
+              {t("wisyThinking")}
             </div>
           </div>
         )}
         <div ref={endRef} />
       </div>
 
-      <div className="flex flex-wrap gap-2 my-2">
+      {/* Suggestion chips */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", margin: "10px 0" }}>
         {SUGGESTIONS.map((s) => (
           <button
             key={s}
             onClick={() => send(s)}
             disabled={loading}
-            className="text-xs px-3 py-1.5 rounded-full bg-surface-container text-on-surface-variant"
+            className="gw-chip chip-game"
+            style={{ cursor: "pointer", border: "none" }}
           >
             {s}
           </button>
         ))}
       </div>
 
+      {/* Limit banner */}
       {limited && (
-        <div className="mb-2 p-3 rounded-[14px] bg-amber-50 border border-amber-200 text-sm text-amber-800 flex items-center justify-between gap-2">
-          <span>Hết lượt hôm nay. Nâng cấp để chat không giới hạn!</span>
-          <Link
-            href="/parent/settings"
-            className="px-3 py-1.5 rounded-full bg-primary text-on-primary font-semibold whitespace-nowrap"
-          >
-            Nâng cấp
+        <div className="gw-card" style={{ marginBottom: "10px", padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", background: "var(--primary-fixed)" }}>
+          <span style={{ fontSize: "13px", color: "var(--on-primary-c)", fontWeight: 700 }}>{t("chatLimit")}</span>
+          <Link href="/parent/settings">
+            <button className="gw-btn gw-btn--primary gw-btn--sm" style={{ whiteSpace: "nowrap" }}>{t("upgrade")}</button>
           </Link>
         </div>
       )}
 
+      {/* Input */}
       <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          send(input);
-        }}
-        className="flex items-center gap-2"
+        onSubmit={(e) => { e.preventDefault(); send(input); }}
+        style={{ display: "flex", alignItems: "center", gap: "8px" }}
       >
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Hỏi Wisy…"
-          className="flex-1 border border-outline-variant rounded-[14px] px-4 py-2.5 text-on-surface"
-        />
+        <div className="gw-field" style={{ flex: 1 }}>
+          <span className="material-symbols-outlined">chat</span>
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Hỏi Wisy…"
+            className="gw-input"
+          />
+        </div>
         <button
           type="submit"
           disabled={loading}
-          className="w-11 h-11 rounded-full bg-primary text-on-primary flex items-center justify-center disabled:opacity-50"
+          className="gw-btn gw-btn--primary gw-btn--sm"
+          style={{ width: "48px", padding: 0, borderRadius: "50%", flexShrink: 0 }}
           aria-label="Gửi"
         >
           <span className="material-symbols-outlined">send</span>

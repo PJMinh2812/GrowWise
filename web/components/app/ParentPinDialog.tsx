@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLang } from "./LangProvider";
 
 type Mode = "verify" | "create";
 
@@ -13,16 +14,16 @@ export default function ParentPinDialog({
   onClose: () => void;
   forceCreate?: boolean;
 }) {
-  const [mode, setMode] = useState<Mode | null>(null); // null = loading
+  const { t } = useLang();
+  const [mode, setMode] = useState<Mode | null>(null);
   const [pin, setPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
-  const [stage, setStage] = useState<"enter" | "confirm">("enter"); // for create
+  const [stage, setStage] = useState<"enter" | "confirm">("enter");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [attemptsLeft, setAttemptsLeft] = useState(3);
   const [lockedUntil, setLockedUntil] = useState(0);
 
-  // Decide create vs verify based on whether a PIN already exists.
   useEffect(() => {
     if (forceCreate) {
       setMode("create");
@@ -58,9 +59,8 @@ export default function ParentPinDialog({
         setStage("confirm");
         return;
       }
-      // confirm stage
       if (value !== pin) {
-        setError("PIN xác nhận không khớp. Thử lại.");
+        setError(t("pinConfirmMismatch"));
         setPin("");
         setConfirmPin("");
         setStage("enter");
@@ -76,7 +76,7 @@ export default function ParentPinDialog({
       if (res.ok) {
         onSuccess();
       } else {
-        setError("Không lưu được PIN. Thử lại.");
+        setError(t("savePinFailed"));
         setPin("");
         setConfirmPin("");
         setStage("enter");
@@ -84,7 +84,6 @@ export default function ParentPinDialog({
       return;
     }
 
-    // verify
     setBusy(true);
     const res = await fetch("/api/parent-pin", {
       method: "PUT",
@@ -101,14 +100,14 @@ export default function ParentPinDialog({
       setPin("");
       if (left <= 0) {
         setLockedUntil(Date.now() + 30_000);
-        setError("Sai PIN nhiều lần. Khoá 30 giây.");
+        setError(t("wrongPinLocked"));
         setTimeout(() => {
           setAttemptsLeft(3);
           setLockedUntil(0);
           setError("");
         }, 30_000);
       } else {
-        setError(`Sai PIN, còn ${left} lần thử.`);
+        setError(t("wrongPinLeft").replace("{n}", String(left)));
       }
     }
   }
@@ -116,20 +115,20 @@ export default function ParentPinDialog({
   const title =
     mode === "create"
       ? stage === "enter"
-        ? "Tạo mã PIN 4 số"
-        : "Xác nhận mã PIN"
-      : "Nhập mã PIN phụ huynh";
+        ? t("createPin4")
+        : t("confirmPinTitle")
+      : t("enterParentPin");
   const subtitle =
-    mode === "create" ? "Đặt mã để bảo vệ chế độ Cha mẹ" : "Để con không tự ý vào";
+    mode === "create" ? t("setPinSub") : t("enterPinSub");
 
   const keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="theme-parent app-card w-full max-w-sm p-8 relative">
+      <div className="theme-parent gw-card" style={{ width: "100%", maxWidth: "384px", padding: "32px", position: "relative" }}>
         <button
           onClick={onClose}
-          aria-label="Đóng"
+          aria-label={t("close")}
           className="absolute top-4 right-4 text-on-surface-variant hover:text-on-surface"
         >
           <span className="material-symbols-outlined">close</span>
@@ -141,7 +140,6 @@ export default function ParentPinDialog({
           <p className="text-sm text-on-surface-variant mt-1">{subtitle}</p>
         </div>
 
-        {/* PIN boxes */}
         <div className="flex justify-center gap-3 my-6">
           {[0, 1, 2, 3].map((i) => {
             const filled = i < active.length;
@@ -162,10 +160,9 @@ export default function ParentPinDialog({
 
         {error && <p className="text-sm text-error text-center mb-3">{error}</p>}
         {mode === null && (
-          <p className="text-sm text-on-surface-variant text-center mb-3">Đang tải…</p>
+          <p className="text-sm text-on-surface-variant text-center mb-3">{t("loading")}</p>
         )}
 
-        {/* Keypad */}
         <div className="grid grid-cols-3 gap-3">
           {keys.map((k) => (
             <button
@@ -189,7 +186,7 @@ export default function ParentPinDialog({
             onClick={backspace}
             disabled={busy}
             className="h-14 rounded-[14px] flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition"
-            aria-label="Xoá"
+            aria-label={t("back")}
           >
             <span className="material-symbols-outlined">backspace</span>
           </button>
@@ -200,7 +197,7 @@ export default function ParentPinDialog({
             onClick={onClose}
             className="block mx-auto mt-5 text-sm font-semibold text-primary hover:underline"
           >
-            Quên PIN?
+            {t("forgotPin")}
           </button>
         )}
       </div>

@@ -1,43 +1,30 @@
-import { ClipboardList, CheckCircle2, Coins, ArrowRight } from "lucide-react";
+"use client";
 
-const steps = [
-  {
-    icon: ClipboardList,
-    title: "Phụ huynh giao nhiệm vụ",
-    description: "Tạo nhiệm vụ phù hợp với độ tuổi và khả năng của con",
-    color: "bg-secondary/20",
-    iconColor: "text-secondary",
-  },
-  {
-    icon: CheckCircle2,
-    title: "Trẻ hoàn thành",
-    description: "Con thực hiện và đánh dấu hoàn thành nhiệm vụ",
-    color: "bg-secondary/20",
-    iconColor: "text-secondary",
-  },
-  {
-    icon: Coins,
-    title: "Nhận xu thưởng",
-    description: "Con được thưởng xu để phân bổ vào 3 hũ tài chính",
-    color: "bg-amber-100",
-    iconColor: "text-amber-700",
-  },
+import { ClipboardList, CheckCircle2, Coins, ArrowRight } from "lucide-react";
+import { useLang } from "@/components/app/LangProvider";
+import type { TKey } from "@/lib/i18n";
+
+const steps: { icon: typeof ClipboardList; titleKey: TKey; descKey: TKey; color: string; iconColor: string }[] = [
+  { icon: ClipboardList, titleKey: "lpStep1Title", descKey: "lpStep1Desc", color: "bg-secondary/20", iconColor: "text-secondary" },
+  { icon: CheckCircle2, titleKey: "lpStep2Title", descKey: "lpStep2Desc", color: "bg-secondary/20", iconColor: "text-secondary" },
+  { icon: Coins, titleKey: "lpStep3Title", descKey: "lpStep3Desc", color: "bg-amber-100", iconColor: "text-amber-700" },
 ];
 
 export function HowItWorks() {
+  const { t } = useLang();
   return (
     <section id="how-it-works" className="py-16 sm:py-24 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-12 sm:mb-16">
           <span className="inline-block bg-secondary/10 text-secondary px-4 py-1.5 rounded-full text-sm font-medium mb-4">
-            Đơn giản & Hiệu quả
+            {t("lpHowEyebrow")}
           </span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 text-balance">
-            Cách GrowWise hoạt động
+            {t("lpHowTitle")}
           </h2>
           <p className="mt-4 text-lg text-gray-500 max-w-2xl mx-auto">
-            Chỉ 3 bước đơn giản để con bạn bắt đầu hành trình tài chính thông minh
+            {t("lpHowSub")}
           </p>
         </div>
 
@@ -58,10 +45,10 @@ export function HowItWorks() {
 
                 {/* Content */}
                 <h3 className="text-xl font-bold text-gray-900 mb-3">
-                  {step.title}
+                  {t(step.titleKey)}
                 </h3>
                 <p className="text-gray-500 leading-relaxed">
-                  {step.description}
+                  {t(step.descKey)}
                 </p>
               </div>
 

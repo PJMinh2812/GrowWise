@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
-import { activateSubscriptionForOrder } from '@/lib/payment/momo-verify';
+import { activateSubscriptionForOrder } from '@/lib/payment/subscription';
 
 export const metadata = {
   title: 'Kết quả thanh toán – GrowWise',
@@ -41,8 +41,6 @@ export default async function PaymentResultPage({ searchParams }: Props) {
 
   if (orderId) {
     if (success) {
-      // Activate server-side (service role) — doesn't rely on the IPN or the
-      // user's session, so the plan is correct even if they re-login later.
       await activateSubscriptionForOrder(orderId);
     } else {
       await cancelTransactionIfNeeded(orderId);
@@ -50,44 +48,47 @@ export default async function PaymentResultPage({ searchParams }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-[#FFF8F3] flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-xl border border-[#EEDDCC]">
-        <div className="text-7xl mb-4">{success ? '🎉' : '❌'}</div>
+    <div style={{ minHeight: '100vh', background: 'var(--cream)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+      <div className={`gw-card ${success ? 'gw-card--glow' : ''}`} style={{ maxWidth: '384px', width: '100%', textAlign: 'center' }}>
+        <div style={{ fontSize: '72px', marginBottom: '16px' }}>{success ? '🎉' : '❌'}</div>
 
-        <h1 className="text-2xl font-extrabold text-[#211B10] mb-2">
+        <h1 style={{ fontSize: '24px', fontWeight: 900, color: 'var(--ink)', marginBottom: '8px' }}>
           {success ? 'Thanh toán thành công!' : 'Giao dịch thất bại'}
         </h1>
 
-        <p className="text-[#564334] text-sm mb-6 leading-relaxed">
+        <p style={{ color: 'var(--ink-soft)', fontSize: '14px', marginBottom: '24px', lineHeight: 1.6 }}>
           {success
             ? 'Gói của bạn đã được kích hoạt. Bạn có thể xem chi tiết trong phần cài đặt.'
             : (message ?? 'Giao dịch bị huỷ hoặc thất bại. Vui lòng thử lại.')}
         </p>
 
         {orderId && (
-          <div className="bg-[#FFF8F3] rounded-xl px-4 py-2 mb-6 text-xs text-[#897362]">
-            Mã đơn: <span className="font-mono font-semibold">{orderId}</span>
+          <div style={{ background: 'var(--primary-fixed)', borderRadius: '12px', padding: '8px 16px', marginBottom: '24px', fontSize: '12px', color: 'var(--ink-soft)' }}>
+            Mã đơn: <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{orderId}</span>
           </div>
         )}
 
         {success ? (
           <Link
             href="/parent/settings"
-            className="block w-full py-3 rounded-2xl bg-[#630ED4] text-white font-extrabold text-base hover:opacity-90 transition-opacity"
+            className="gw-btn gw-btn--primary"
+            style={{ display: 'block', width: '100%' }}
           >
             Về Dashboard →
           </Link>
         ) : (
-          <div className="space-y-3">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <Link
               href="/parent/pricing"
-              className="block w-full py-3 rounded-2xl bg-[#630ED4] text-white font-extrabold text-base hover:opacity-90 transition-opacity"
+              className="gw-btn gw-btn--primary"
+              style={{ display: 'block', width: '100%' }}
             >
               Thử lại
             </Link>
             <Link
               href="/parent"
-              className="block w-full py-3 rounded-2xl bg-[#FFF8F3] text-[#564334] font-semibold text-sm border border-[#EEDDCC] hover:bg-[#FFF0E0] transition-colors"
+              className="gw-btn gw-btn--ghost"
+              style={{ display: 'block', width: '100%' }}
             >
               Về Dashboard
             </Link>

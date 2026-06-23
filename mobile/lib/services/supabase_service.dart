@@ -414,6 +414,35 @@ class SupabaseService {
     }
   }
 
+  /// Uploads an avatar image to the 'avatars' bucket.
+  /// [pathPrefix] should be 'children' or 'parents'.
+  /// Returns the public URL on success, or null on failure.
+  static Future<String?> uploadAvatarImage({
+    required String pathPrefix,
+    required String entityId,
+    required Uint8List imageBytes,
+  }) async {
+    try {
+      await auth.refreshSession();
+    } catch (_) {}
+    final session = auth.currentSession;
+    if (session == null) return null;
+
+    try {
+      final ts = DateTime.now().millisecondsSinceEpoch;
+      final storagePath = '$pathPrefix/$entityId-$ts.jpg';
+      await client.storage.from('avatars').uploadBinary(
+        storagePath,
+        imageBytes,
+        fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: true),
+      );
+      return client.storage.from('avatars').getPublicUrl(storagePath);
+    } catch (e) {
+      debugPrint('[SupabaseStorage] uploadAvatarImage failed: $e');
+      return null;
+    }
+  }
+
   // ── Badges ────────────────────────────────────────────────────────────────
 
   static Future<List<Map<String, dynamic>>> getBadges(String childId) async {

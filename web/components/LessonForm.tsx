@@ -353,7 +353,7 @@ export default function LessonForm({ initial, lessonId }: Props) {
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">YouTube Video ID *</label>
                 <input
-                  value={form.youtube_id}
+                  value={form.youtube_id ?? ""}
                   onChange={e => set("youtube_id", e.target.value.trim())}
                   placeholder="VD: WRcgRimBac8 (từ youtube.com/watch?v=...)"
                   className="w-full bg-surface border border-outline-variant rounded-lg px-4 py-2.5 text-sm text-on-surface outline-none focus:border-primary"

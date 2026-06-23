@@ -1,26 +1,28 @@
 import Link from "next/link";
 import { getLessons } from "@/lib/app/lessons";
+import { getLang } from "@/lib/i18n-server";
+import { t } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
 export default async function ParentLessonsPage() {
-  const lessons = await getLessons("parent");
+  const [lang, lessons] = await Promise.all([getLang(), getLessons("parent")]);
   return (
     <div>
       <h1 className="text-2xl md:text-3xl font-extrabold text-on-surface mb-6">
-        Bài học cho ba mẹ
+        {t(lang, "lessonsParentTitle")}
       </h1>
       {lessons.length === 0 ? (
-        <div className="app-card p-8 text-center text-on-surface-variant">
-          Chưa có bài học nào.
+        <div className="gw-card" style={{ padding: "32px", textAlign: "center", color: "var(--ink-soft)" }}>
+          {t(lang, "lessonsEmpty")}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="gw-grid">
           {lessons.map((l) => (
             <Link
               key={l.id}
               href={`/parent/lessons/${l.id}`}
-              className="app-card overflow-hidden hover:-translate-y-0.5 transition-transform"
+              className="gw-tile gw-card--press"
             >
               <div className="h-24 bg-primary-container/30 flex items-center justify-center text-5xl overflow-hidden relative">
                 {l.thumbnail_url ? (
@@ -36,7 +38,7 @@ export default async function ParentLessonsPage() {
                   {l.description}
                 </p>
                 <p className="text-xs text-on-surface-variant mt-2">
-                  ⏱ {Math.round(l.duration_seconds / 60)} phút
+                  ⏱ {Math.round(l.duration_seconds / 60)} {t(lang, "minutesShort")}
                 </p>
               </div>
             </Link>

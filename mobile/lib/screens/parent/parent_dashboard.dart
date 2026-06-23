@@ -19,6 +19,7 @@ import 'parent_memory_lane.dart';
 import 'parent_settings.dart';
 import 'parent_learn_screen.dart';
 import '../pricing_screen.dart';
+import '../../widgets/survey_banner.dart';
 
 class ParentDashboard extends StatefulWidget {
   const ParentDashboard({super.key});
@@ -243,6 +244,13 @@ class _HomeTab extends StatelessWidget {
           ),
         ),
 
+        // Survey banner (parent audience)
+        const SurveyBanner(audience: 'parent')
+            .animate()
+            .fadeIn()
+            .slideY(begin: 0.1),
+        const SizedBox(height: 16),
+
         // Bonding message bubble
         _WelcomeMessage(message: app.bondingMessage).animate().fadeIn().slideY(begin: 0.1),
         const SizedBox(height: 16),
@@ -372,8 +380,8 @@ class _EmotionCheckInCardState extends State<_EmotionCheckInCard> {
 
       if (result == null) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Không nhận diện được khuôn mặt — thử lại với ánh sáng tốt hơn nhé 💡'),
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(context.read<AppState>().strings.faceNotDetected),
           ));
         }
         setState(() => _loading = false);
@@ -402,7 +410,7 @@ class _EmotionCheckInCardState extends State<_EmotionCheckInCard> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi: $e')),
+          SnackBar(content: Text('${context.read<AppState>().strings.errorPrefix}$e')),
         );
       }
     } finally {
@@ -435,9 +443,9 @@ class _EmotionCheckInCardState extends State<_EmotionCheckInCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Tâm trạng hôm nay',
+                  Text(context.read<AppState>().strings.moodToday,
                       style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
-                  Text('AI phân tích cảm xúc qua ảnh selfie',
+                  Text(context.read<AppState>().strings.aiSelfieAnalysis,
                       style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppTheme.textSecondary)),
                 ],
               ),
@@ -459,7 +467,7 @@ class _EmotionCheckInCardState extends State<_EmotionCheckInCard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Vì sao nên dùng? 💡',
+                    Text(context.read<AppState>().strings.whyUseThis,
                         style: GoogleFonts.plusJakartaSans(
                             fontSize: 12.5, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
                     const SizedBox(height: 6),
@@ -524,7 +532,7 @@ class _EmotionCheckInCardState extends State<_EmotionCheckInCard> {
             children: [
               Row(
                 children: [
-                  Text('Tâm trạng hôm nay: ',
+                  Text(context.read<AppState>().strings.moodTodayPrefix,
                       style: GoogleFonts.plusJakartaSans(fontSize: 13, color: AppTheme.textSecondary)),
                   Text(r.label,
                       style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
@@ -937,7 +945,7 @@ class _ReviewNowSection extends StatelessWidget {
           children: [
             const Icon(Icons.stars, color: AppTheme.secondaryContainer, size: 26),
             const SizedBox(width: 8),
-            Text('Duyệt ngay', style: GoogleFonts.plusJakartaSans(fontSize: 22, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
+            Text(context.watch<AppState>().strings.reviewNow, style: GoogleFonts.plusJakartaSans(fontSize: 22, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
           ],
         ),
         const SizedBox(height: 12),
@@ -993,7 +1001,7 @@ class _ReviewTaskCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
                 border: const Border(bottom: BorderSide(color: AppTheme.onPrimaryFixedVariant, width: 3)),
               ),
-              child: Text('Duyệt', style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white)),
+              child: Text(context.watch<AppState>().strings.reviewBtn, style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white)),
             ),
           ),
         ],
@@ -1012,7 +1020,7 @@ class _AllTasksSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Tất cả nhiệm vụ', style: GoogleFonts.plusJakartaSans(fontSize: 22, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
+        Text(app.strings.allTasksSection, style: GoogleFonts.plusJakartaSans(fontSize: 22, fontWeight: FontWeight.w700, color: AppTheme.textPrimary)),
         const SizedBox(height: 12),
         if (tasks.isEmpty)
           Container(
@@ -1027,9 +1035,9 @@ class _AllTasksSection extends StatelessWidget {
                 children: [
                   const Text('📋', style: TextStyle(fontSize: 40)),
                   const SizedBox(height: 8),
-                  Text('Chưa có nhiệm vụ nào', style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.outline)),
+                  Text(app.strings.noTasksTitle, style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.outline)),
                   const SizedBox(height: 4),
-                  Text('Nhấn "Giao việc" để bắt đầu', style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppTheme.textHint)),
+                  Text(app.strings.noTasksSuggestion, style: GoogleFonts.plusJakartaSans(fontSize: 12, color: AppTheme.textHint)),
                 ],
               ),
             ),
@@ -1203,7 +1211,7 @@ class _DreamRequestCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: const Color(0xFFFFB8B8), width: 2),
               ),
-              child: Text('Từ chối', style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFFEF4444))),
+              child: Text(app.strings.reject, style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFFEF4444))),
             ),
           ),
           const SizedBox(width: 8),
@@ -1217,7 +1225,7 @@ class _DreamRequestCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
                 border: const Border(bottom: BorderSide(color: AppTheme.onPrimaryFixedVariant, width: 3)),
               ),
-              child: Text('Duyệt', style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white)),
+              child: Text(app.strings.approve, style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white)),
             ),
           ),
         ],
@@ -1315,7 +1323,7 @@ class _AiWeeklyReportCardState extends State<_AiWeeklyReportCard> {
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
                 child: GestureDetector(
                   onTap: _fetchReport,
-                  child: Text('↺ Làm mới',
+                  child: Text(context.read<AppState>().strings.refresh,
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 12, fontWeight: FontWeight.w700,
                         color: AppTheme.vibrantTertiary,
