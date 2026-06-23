@@ -6,6 +6,9 @@ import { createClient } from "@/lib/supabase";
 import { submitTask } from "@/lib/app/child-actions";
 import type { Task, TaskStatus } from "@/lib/types";
 import { useLang } from "./LangProvider";
+import { useToast } from "./ToastProvider";
+import { celebrate } from "@/lib/app/feedback";
+import Confetti from "./Confetti";
 
 export interface ChildTaskItem {
   task: Task;
@@ -59,9 +62,11 @@ function TaskCard({
 }) {
   const router = useRouter();
   const { t } = useLang();
+  const { toast } = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const [celebrateCoins, setCelebrateCoins] = useState<number | null>(null);
   const [pending, start] = useTransition();
   const { task } = item;
   const cameraOnly =
@@ -86,11 +91,26 @@ function TaskCard({
       const url = supabase.storage.from("task-proofs").getPublicUrl(path).data.publicUrl;
       start(async () => {
         const res = await submitTask({ taskId: task.id, childId, proofUrl: url });
-        if (!res.ok) setError(res.error ?? "Không gửi được");
-        else router.refresh();
+        if (!res.ok) {
+          setError(res.error ?? t("toastError"));
+          toast(res.error ?? t("toastError"), "error");
+          return;
+        }
+        if (res.autoApproved) {
+          celebrate();
+          setCelebrateCoins(res.coinsEarned ?? 0);
+          toast(t("toastCoinsEarned").replace("{n}", String(res.coinsEarned ?? 0)), "success");
+          if (res.leveledUp) toast(t("toastLevelUp"), "success");
+          setTimeout(() => setCelebrateCoins(null), 1600);
+        } else {
+          toast(t("toastTaskSubmitted"), "info");
+        }
+        router.refresh();
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Tải ảnh thất bại");
+      const msg = err instanceof Error ? err.message : t("toastError");
+      setError(msg);
+      toast(msg, "error");
     } finally {
       setUploading(false);
     }
@@ -105,7 +125,18 @@ function TaskCard({
   const actionable = variant === "todo" || variant === "rejected";
 
   return (
-    <div className={`gw-card ${variant !== "done" ? "gw-card--press" : ""} mb-3 ${border}`}>
+    <div className={`gw-card ${variant !== "done" ? "gw-card--press" : ""} mb-3 ${border}`} style={{ position: "relative" }}>
+      {celebrateCoins != null && (
+        <>
+          <Confetti count={28} />
+          <span
+            className="gw-coinpop"
+            style={{ left: "50%", top: "10%", transform: "translateX(-50%)" }}
+          >
+            +{celebrateCoins} 🪙
+          </span>
+        </>
+      )}
       <div className="flex items-center gap-3">
         <span className="grid place-items-center w-12 h-12 rounded-2xl bg-surface-container-high text-2xl shrink-0">
           {task.icon}

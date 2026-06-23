@@ -1,5 +1,6 @@
 import Link from "next/link";
 import AppShell, { type NavItem } from "@/components/app/AppShell";
+import DashboardSky from "@/components/app/DashboardSky";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 import { getActivePlan } from "@/lib/app/subscription";
@@ -44,6 +45,8 @@ export default async function ParentLayout({ children }: { children: React.React
         brandSub={t(lang, "brandParent")}
         nav={nav}
         topRight={settingsBtn}
+        heroBgPath="/parent"
+        heroBg={<DashboardSky />}
         avatar={{
           url: profile?.avatar_url ?? undefined,
           emoji: "👨‍👩‍👧",

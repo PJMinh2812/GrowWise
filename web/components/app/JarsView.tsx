@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { transferJar } from "@/lib/app/child-actions";
 import { useLang } from "./LangProvider";
+import { useToast } from "./ToastProvider";
 
 export default function JarsView({
   childId,
@@ -18,6 +19,7 @@ export default function JarsView({
 }) {
   const router = useRouter();
   const { t } = useLang();
+  const { toast } = useToast();
   const total = spend + save + share;
   const [open, setOpen] = useState(false);
   const [to, setTo] = useState<"save" | "share">("save");
@@ -35,9 +37,11 @@ export default function JarsView({
       const res = await transferJar({ childId, to, amount });
       if (res.ok) {
         setOpen(false);
+        toast(t("toastTransferOk"), "success");
         router.refresh();
       } else {
         setError(res.error ?? t("transferFailed"));
+        toast(res.error ?? t("transferFailed"), "error");
       }
     });
   }

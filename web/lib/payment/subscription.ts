@@ -7,17 +7,22 @@ function adminClient() {
   );
 }
 
+export interface ActivateResult {
+  ok: boolean;
+  error?: string;
+}
+
 /**
  * Activate the subscription for a paid order — idempotent and session-free.
  * Reads the transaction (user_id, plan_name, billing_interval), looks up the
  * plan, upserts user_subscriptions, and marks the transaction completed.
  * Safe to call multiple times (from webhook, status poll, or result page).
- * Returns true if the subscription is active afterwards.
+ * Returns { ok, error } so callers can surface the failure reason.
  */
 export async function activateSubscriptionForOrder(
   orderId: string,
   paymentMethod: string = 'sepay',
-): Promise<boolean> {
+): Promise<ActivateResult> {
   const supabase = adminClient();
 
   const { data: tx, error: txErr } = await supabase
@@ -27,17 +32,17 @@ export async function activateSubscriptionForOrder(
     .single();
   if (txErr || !tx) {
     console.error('[activateSubscription] transaction not found:', orderId, txErr);
-    return false;
+    return { ok: false, error: `transaction not found: ${txErr?.message ?? orderId}` };
   }
 
-  const { data: plan } = await supabase
+  const { data: plan, error: planErr } = await supabase
     .from('plans')
     .select('id')
     .eq('name', tx.plan_name)
     .single();
-  if (!plan) {
-    console.error('[activateSubscription] plan not found:', tx.plan_name);
-    return false;
+  if (planErr || !plan) {
+    console.error('[activateSubscription] plan not found:', tx.plan_name, planErr);
+    return { ok: false, error: `plan not found: ${tx.plan_name} (${planErr?.message ?? ''})` };
   }
 
   const now = new Date();
@@ -77,7 +82,7 @@ export async function activateSubscriptionForOrder(
   );
   if (subErr) {
     console.error('[activateSubscription] upsert failed:', subErr);
-    return false;
+    return { ok: false, error: `subscription upsert failed: ${subErr.message}` };
   }
 
   // A paid upgrade cancels any pending scheduled downgrade (best-effort; the
@@ -92,5 +97,5 @@ export async function activateSubscriptionForOrder(
     .update({ status: 'completed', updated_at: new Date().toISOString() })
     .eq('order_id', orderId);
 
-  return true;
+  return { ok: true };
 }

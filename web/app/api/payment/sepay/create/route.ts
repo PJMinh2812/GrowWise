@@ -53,7 +53,7 @@ export async function POST(request: Request) {
       `&amount=${amount}` +
       `&des=${encodeURIComponent(description)}`;
 
-    await supabase.from('payment_transactions').insert({
+    const { error: insErr } = await supabase.from('payment_transactions').insert({
       order_id:                orderId,
       user_id:                 userId,
       plan_name:               planName,
@@ -63,6 +63,13 @@ export async function POST(request: Request) {
       provider:                'sepay',
       provider_transaction_id: description,
     });
+    if (insErr) {
+      // Most likely the DB CHECK constraint hasn't been migrated to allow
+      // provider='sepay' (run supabase_sepay.sql). Surface it instead of
+      // returning a QR for an order the webhook can never find.
+      console.error('[SePay Create] insert failed', insErr);
+      return NextResponse.json({ error: 'Không tạo được đơn (DB): ' + insErr.message }, { status: 500 });
+    }
 
     return NextResponse.json({
       orderId,

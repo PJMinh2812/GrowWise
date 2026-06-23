@@ -85,9 +85,13 @@ export async function submitTask(input: {
   const canAuto =
     t.auto_approve_after != null && t.approval_count >= t.auto_approve_after
 
+  let coinsEarned = 0
+  let leveledUp = false
+
   if (canAuto) {
     // Auto-approve: award coins immediately
     const earned = t.coin_reward
+    coinsEarned = earned
     const { data: childRow } = await supabase
       .from('children')
       .select('*')
@@ -96,6 +100,7 @@ export async function submitTask(input: {
     const child = childRow as Child
     const { toSave, toShare, toSpend } = splitJars(earned)
     const xp = applyXp(child, 15)
+    leveledUp = xp.level > child.level
 
     await supabase
       .from('task_submissions')
@@ -133,7 +138,7 @@ export async function submitTask(input: {
   }
 
   revalidatePath('/child')
-  return { ok: true, autoApproved: canAuto }
+  return { ok: true, autoApproved: canAuto, coinsEarned, leveledUp }
 }
 
 /** Add a dream/wishlist item for the child. */

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { addDream, redeemDream, deleteDream, updateDream } from "@/lib/app/child-actions";
 import type { DreamItem } from "@/lib/types";
 import { useLang } from "./LangProvider";
+import { useToast } from "./ToastProvider";
 
 const ICONS = ["🎁", "🎮", "🚲", "📱", "🧸", "👟", "🎨", "📚", "⚽", "🎧"];
 
@@ -19,6 +20,7 @@ export default function DreamsView({
 }) {
   const router = useRouter();
   const { t } = useLang();
+  const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [price, setPrice] = useState(100);
@@ -32,6 +34,7 @@ export default function DreamsView({
       setOpen(false);
       setName("");
       setPrice(100);
+      toast(t("toastDreamAdded"), "success");
       router.refresh();
     });
   }
@@ -98,6 +101,7 @@ export default function DreamsView({
 function DreamCard({ dream, childId, totalCoins }: { dream: DreamItem; childId: string; totalCoins: number }) {
   const router = useRouter();
   const { t } = useLang();
+  const { toast } = useToast();
   const [pending, start] = useTransition();
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(dream.name);
@@ -126,7 +130,7 @@ function DreamCard({ dream, childId, totalCoins }: { dream: DreamItem; childId: 
           </button>
         )}
         <button
-          onClick={() => start(async () => { await deleteDream({ dreamId: dream.id }); router.refresh(); })}
+          onClick={() => start(async () => { await deleteDream({ dreamId: dream.id }); toast(t("toastDreamDeleted"), "info"); router.refresh(); })}
           disabled={pending}
           style={{ padding: "4px", borderRadius: "50%", border: "none", background: "none", cursor: "pointer", color: "var(--ink-soft)" }}
           title={t("deletePinTitle")}
@@ -150,7 +154,7 @@ function DreamCard({ dream, childId, totalCoins }: { dream: DreamItem; childId: 
           </div>
           <button
             disabled={!funded || pending}
-            onClick={() => start(async () => { await redeemDream({ childId, dreamId: dream.id, price: dream.price }); router.refresh(); })}
+            onClick={() => start(async () => { await redeemDream({ childId, dreamId: dream.id, price: dream.price }); toast(t("toastDreamRedeemed"), "success"); router.refresh(); })}
             className="gw-btn gw-btn--primary gw-btn--sm"
             style={{ marginTop: "10px", width: "100%" }}
           >
@@ -194,6 +198,7 @@ function DreamCard({ dream, childId, totalCoins }: { dream: DreamItem; childId: 
                 onClick={() => start(async () => {
                   await updateDream({ dreamId: dream.id, name: editName.trim(), price: editPrice, icon: editIcon });
                   setEditing(false);
+                  toast(t("toastSaved"), "success");
                   router.refresh();
                 })}
                 className="gw-btn gw-btn--primary gw-btn--sm"
