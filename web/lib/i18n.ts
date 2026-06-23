@@ -122,6 +122,23 @@ export const dict: Dict = {
   coinUnit: { vi: 'xu', en: 'coins' },
   childNoProfile: { vi: 'Chưa có hồ sơ con. Nhờ ba mẹ tạo hồ sơ giúp nhé!', en: 'No child profile yet. Ask a parent to create one!' },
   childNoProfileShort: { vi: 'Chưa có hồ sơ con.', en: 'No child profile yet.' },
+  viewAchievements: { vi: 'Thành tích', en: 'Achievements' },
+  streakLabel: { vi: 'ngày chuỗi', en: 'day streak' },
+
+  // toasts / celebrations
+  toastError: { vi: 'Có lỗi xảy ra, thử lại nhé', en: 'Something went wrong, please try again' },
+  toastTaskSubmitted: { vi: 'Đã gửi! Chờ ba mẹ duyệt nhé 📤', en: 'Sent! Waiting for parent approval 📤' },
+  toastCoinsEarned: { vi: 'Tuyệt vời! +{n} xu 🎉', en: 'Awesome! +{n} coins 🎉' },
+  toastTransferOk: { vi: 'Chuyển xu thành công 💸', en: 'Coins transferred 💸' },
+  toastDreamAdded: { vi: 'Đã thêm ước mơ ⭐', en: 'Dream added ⭐' },
+  toastDreamRedeemed: { vi: 'Đổi quà thành công 🎁', en: 'Reward redeemed 🎁' },
+  toastDreamDeleted: { vi: 'Đã xoá ước mơ', en: 'Dream removed' },
+  toastSaved: { vi: 'Đã lưu', en: 'Saved' },
+  toastLevelUp: { vi: 'Lên cấp rồi! 🎉', en: 'Level up! 🎉' },
+  streakNone: { vi: 'Làm nhiệm vụ để bắt đầu chuỗi!', en: 'Do a task to start a streak!' },
+  achievementsTitle: { vi: 'Thành tích 🏆', en: 'Achievements 🏆' },
+  badgesEarned: { vi: 'huy hiệu đã đạt', en: 'badges earned' },
+  noBadges: { vi: 'Chưa có huy hiệu nào. Hoàn thành nhiệm vụ để mở khoá nhé! 🏅', en: 'No badges yet. Complete tasks to unlock them! 🏅' },
   backToRole: { vi: '← Quay lại chọn vai trò', en: '← Back to role selection' },
 
   // task market + categories
@@ -157,6 +174,8 @@ export const dict: Dict = {
   learnBannerSub: { vi: 'Bắt đầu hành trình quản lý tiền của bạn.', en: 'Start your money journey.' },
   lessonStart: { vi: 'BẮT ĐẦU', en: 'START' },
   lessonLocked: { vi: 'Mở khóa với gói Nâng Cao', en: 'Unlock with Advanced plan' },
+  learnAllDoneTitle: { vi: 'Hoàn thành tất cả bài học!', en: 'All lessons complete!' },
+  learnAllDoneSub: { vi: 'Bé giỏi lắm! Chờ bài học mới nhé 🌟', en: 'Great job! Check back for new lessons 🌟' },
   allLessonsBtn: { vi: 'Tất cả bài học', en: 'All lessons' },
   lessonNotFound: { vi: 'Không tìm thấy bài học.', en: 'Lesson not found.' },
 

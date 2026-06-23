@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Lesson } from "@/lib/types";
 import { useLang } from "./LangProvider";
+import Confetti from "./Confetti";
 
 interface Props {
   lessons: Lesson[];
@@ -64,6 +65,19 @@ export default function LearnContent({ lessons, premium, freeLimit, completedIds
 
   const doneCount = filtered.filter((_, i) => isCompleted(i)).length;
   const overallPct = filtered.length ? doneCount / filtered.length : 0;
+  const allDone = filtered.length > 0 && doneCount === filtered.length;
+
+  // Fire confetti once per tab (per browser session) when everything is done.
+  const [showConfetti, setShowConfetti] = useState(false);
+  useEffect(() => {
+    if (!allDone) return;
+    const key = `gw_learn_done_${tab}`;
+    if (typeof window !== "undefined" && sessionStorage.getItem(key)) return;
+    setShowConfetti(true);
+    try { sessionStorage.setItem(key, "1"); } catch { /* ignore */ }
+    const id = setTimeout(() => setShowConfetti(false), 4000);
+    return () => clearTimeout(id);
+  }, [allDone, tab]);
 
   // Node geometry: gentle zig-zag down a single column, plus a trophy at the end.
   const points = filtered.map((_, i) => ({
@@ -169,6 +183,42 @@ export default function LearnContent({ lessons, premium, freeLimit, completedIds
       ) : (
         <div style={{ position: "relative" }}>
           <svg viewBox={`0 0 390 ${height}`} width="100%" style={{ display: "block", overflow: "visible" }}>
+            {/* ── Sky background: gradient + clouds + sparkles (behind the road) ── */}
+            <defs>
+              <linearGradient id="gwSky" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#EAF4FF" />
+                <stop offset="55%" stopColor="#FBF1FF" />
+                <stop offset="100%" stopColor="#FFF6EA" />
+              </linearGradient>
+            </defs>
+            <rect x={-20} y={0} width={430} height={height} fill="url(#gwSky)" rx={20} />
+            {/* stars / sparkles */}
+            {[
+              [40, 70], [340, 120], [60, 300], [330, 360], [50, 520], [350, 560], [200, 40], [300, 640],
+            ].map(([sx, sy], i) => (
+              <path
+                key={`star-${i}`}
+                transform={`translate(${sx},${(sy as number) % Math.max(1, height)})`}
+                d="M0,-7 1.8,-1.8 7,0 1.8,1.8 0,7 -1.8,1.8 -7,0 -1.8,-1.8 Z"
+                fill="#FFD66B"
+                opacity={0.55}
+              />
+            ))}
+            {/* clouds */}
+            {[
+              [70, 110, 1], [320, 230, 0.85], [80, 430, 0.95], [330, 500, 0.8],
+            ].map(([cx, cy, s], i) => (
+              // Outer <g> positions via attribute; inner <g> animates drift so the
+              // CSS transform doesn't override the position.
+              <g key={`cloud-${i}`} transform={`translate(${cx},${(cy as number) % Math.max(1, height)}) scale(${s})`} opacity={0.85}>
+                <g style={{ animation: `gw-cloud-drift ${6 + i}s ease-in-out ${i * 0.5}s infinite` }}>
+                  <ellipse cx={0} cy={0} rx={26} ry={16} fill="#fff" />
+                  <ellipse cx={-18} cy={6} rx={16} ry={11} fill="#fff" />
+                  <ellipse cx={18} cy={6} rx={18} ry={12} fill="#fff" />
+                </g>
+              </g>
+            ))}
+
             {/* road */}
             <path d={roadD} fill="none" stroke="#E3DACB" strokeWidth={26} strokeLinecap="round" />
             <path d={roadD} fill="none" stroke="#CDC3B1" strokeWidth={4} strokeLinecap="round" strokeDasharray="1 20" />
@@ -241,6 +291,15 @@ export default function LearnContent({ lessons, premium, freeLimit, completedIds
 
             {/* trophy goal at the end */}
             <g transform={`translate(${trophy.x},${trophy.y})`}>
+              {allDone && (
+                <circle
+                  r={48}
+                  fill="none"
+                  stroke="#F2C94C"
+                  strokeWidth={6}
+                  style={{ transformBox: "fill-box", transformOrigin: "center", animation: "gw-trophy-glow 1.4s ease-in-out infinite" }}
+                />
+              )}
               <circle cy={8} r={34} fill="#CBA14B" />
               <circle r={34} fill="#F2C94C" />
               <path d="M-13,-13 h26 v6 a13,8 0 0 1 -26,0 z" fill="#fff" />
@@ -298,6 +357,32 @@ export default function LearnContent({ lessons, premium, freeLimit, completedIds
               </button>
             </div>
           )}
+
+          {/* All-done celebration banner */}
+          {allDone && !sel && (
+            <div
+              className="gw-card gw-card--glow"
+              style={{
+                position: "absolute",
+                left: "6%",
+                right: "6%",
+                bottom: "8px",
+                textAlign: "center",
+                padding: "16px",
+                zIndex: 4,
+              }}
+            >
+              <div style={{ fontSize: "40px", lineHeight: 1 }}>🎉</div>
+              <h3 style={{ fontSize: "17px", fontWeight: 900, color: "var(--ink)", marginTop: "6px" }}>
+                {t("learnAllDoneTitle")}
+              </h3>
+              <p style={{ fontSize: "13px", color: "var(--ink-soft)", marginTop: "2px" }}>
+                {t("learnAllDoneSub")}
+              </p>
+            </div>
+          )}
+
+          {showConfetti && <Confetti />}
         </div>
       )}
     </div>

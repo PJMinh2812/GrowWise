@@ -18,6 +18,8 @@ export default function AppShell({
   nav,
   topRight,
   avatar,
+  heroBg,
+  heroBgPath,
   children,
 }: {
   brand: string;
@@ -25,9 +27,13 @@ export default function AppShell({
   nav: NavItem[];
   topRight?: React.ReactNode;
   avatar?: AvatarInfo;
+  /** Decorative backdrop shown only on `heroBgPath` (e.g. the dashboard). */
+  heroBg?: React.ReactNode;
+  heroBgPath?: string;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const showHeroBg = Boolean(heroBg) && pathname === heroBgPath;
   const isActive = (href: string) =>
     pathname === href || (href !== "/parent" && href !== "/child" && pathname.startsWith(href));
 
@@ -35,6 +41,7 @@ export default function AppShell({
 
   return (
     <div className="gw-screen text-on-surface">
+      {showHeroBg && <div className="gw-herobg">{heroBg}</div>}
       <header className="gw-top">
         <div className="brand min-w-0">
           {avatar ? (
@@ -78,7 +85,9 @@ export default function AppShell({
         </div>
       </header>
 
-      <main className="gw-scroll">{children}</main>
+      <main className="gw-scroll">
+        <div key={pathname} className="gw-page">{children}</div>
+      </main>
 
       <nav className="gw-nav">
         {navItems.map((item) => {

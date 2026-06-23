@@ -1,5 +1,6 @@
 import Link from "next/link";
 import AppShell, { type NavItem } from "@/components/app/AppShell";
+import DashboardSky from "@/components/app/DashboardSky";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 import { getSelectedChild } from "@/lib/app/children";
@@ -36,6 +37,8 @@ export default async function ChildLayout({ children }: { children: React.ReactN
         brandSub={t(lang, "brandKids")}
         nav={nav}
         topRight={chatBtn}
+        heroBgPath="/child"
+        heroBg={<DashboardSky />}
         avatar={child ? { url: child.avatar_url ?? undefined, emoji: child.avatar_emoji, name: child.name } : undefined}
       >
         {children}
