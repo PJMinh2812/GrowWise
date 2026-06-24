@@ -1,12 +1,9 @@
 import Link from "next/link";
-import { getSelectedChild, getFamilyForUser } from "@/lib/app/children";
-import { getTaskTemplates } from "@/lib/app/tasks";
+import { getSelectedChild } from "@/lib/app/children";
 import { getChildSubmissions } from "@/lib/app/submissions";
 import { getBadges } from "@/lib/app/dreams";
-import ChildTaskList, { type ChildTaskItem } from "@/components/app/ChildTaskList";
 import SurveyBanner from "@/components/app/SurveyBanner";
 import { getActiveSurveyFor } from "@/lib/app/surveys";
-import type { TaskStatus } from "@/lib/types";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 
@@ -27,15 +24,12 @@ export default async function ChildHome() {
     );
   }
 
-  const family = await getFamilyForUser();
-  const [templates, submissions, badges] = await Promise.all([
-    family ? getTaskTemplates(family.id, child.id) : Promise.resolve([]),
+  const [submissions, badges] = await Promise.all([
     getChildSubmissions(child.id),
     getBadges(child.id),
   ]);
 
-  // Streak = number of consecutive days (ending today or yesterday) with at
-  // least one approved task. Lets a day-in-progress not reset the streak.
+  // Streak = consecutive days (ending today/yesterday) with an approved task.
   const dayKey = (iso: string) => new Date(iso).toISOString().slice(0, 10);
   const doneDays = new Set(
     submissions
@@ -52,14 +46,10 @@ export default async function ChildHome() {
     }
   }
 
-  // Merge each template with its latest submission to derive a status.
-  const items: ChildTaskItem[] = templates.map((task) => {
-    const latest = submissions.find((s) => s.task_id === task.id);
-    if (!latest) return { task, status: "todo" as const };
-    const st = latest.status as TaskStatus;
-    if (st === "pending") return { task, status: "todo" as const };
-    return { task, status: st, parentNote: latest.parent_note };
-  });
+  // Coins waiting to be collected into a jar.
+  const pendingCoins = submissions
+    .filter((s) => s.status === "approved" && !s.collected)
+    .reduce((sum, s) => sum + (s.coin_earned ?? 0), 0);
 
   const xpPct = Math.min(100, Math.round((child.xp / Math.max(1, child.xp_to_next_level)) * 100));
   const survey = await getActiveSurveyFor("child", { id: child.id, age: child.age });
@@ -98,9 +88,10 @@ export default async function ChildHome() {
             </div>
           </div>
         </div>
-        <div
+        <Link
+          href="/child/jars"
           className="gw-card gw-card--press rise rise-2"
-          style={{ minHeight: 128, background: "linear-gradient(150deg,#3A2F22,#241D12)", color: "#fff", border: "none" }}
+          style={{ minHeight: 128, background: "linear-gradient(150deg,#3A2F22,#241D12)", color: "#fff", border: "none", display: "block" }}
         >
           <div className="flex items-start justify-between">
             <span className="font-extrabold opacity-85 text-sm">{t(lang, "childCoins")}</span>
@@ -116,32 +107,40 @@ export default async function ChildHome() {
               {t(lang, "coinUnit")}
             </span>
           </div>
-        </div>
+        </Link>
       </section>
 
-      {/* Achievements + streak — tap to open the achievements page */}
+      {/* Go to tasks (+ coins waiting to collect) */}
+      <Link
+        href="/child/tasks"
+        className="gw-card gw-card--press rise rise-2"
+        style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "16px" }}
+      >
+        <span className="grid place-items-center shrink-0" style={{ width: 48, height: 48, borderRadius: 16, background: "var(--color-primary-fixed)", fontSize: 26 }}>📋</span>
+        <div className="flex-1 min-w-0">
+          <p className="font-extrabold text-on-surface">{t(lang, "navTasks")}</p>
+          {pendingCoins > 0 ? (
+            <p className="text-xs font-extrabold text-primary">🪙 {pendingCoins} {t(lang, "coinsPending")}</p>
+          ) : (
+            <p className="text-xs text-on-surface-variant">{t(lang, "hiDoTasks")}</p>
+          )}
+        </div>
+        <span className="material-symbols-outlined text-on-surface-variant">chevron_right</span>
+      </Link>
+
+      {/* Achievements + streak */}
       <Link
         href="/child/achievements"
         className="gw-card gw-card--press rise rise-3"
         style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "16px" }}
       >
-        <span
-          className="grid place-items-center shrink-0"
-          style={{ width: 48, height: 48, borderRadius: 16, background: "var(--color-secondary-container)", fontSize: 26 }}
-        >
-          🏆
-        </span>
+        <span className="grid place-items-center shrink-0" style={{ width: 48, height: 48, borderRadius: 16, background: "var(--color-secondary-container)", fontSize: 26 }}>🏆</span>
         <div className="flex-1 min-w-0">
           <p className="font-extrabold text-on-surface">{t(lang, "viewAchievements")}</p>
-          <p className="text-xs text-on-surface-variant">
-            {badges.length} {t(lang, "badgesEarned")}
-          </p>
+          <p className="text-xs text-on-surface-variant">{badges.length} {t(lang, "badgesEarned")}</p>
         </div>
         {streak > 0 ? (
-          <span
-            className="flex items-center gap-1 font-black"
-            style={{ color: "#E0701A", background: "#FFE9D2", borderRadius: 999, padding: "6px 12px" }}
-          >
+          <span className="flex items-center gap-1 font-black" style={{ color: "#E0701A", background: "#FFE9D2", borderRadius: 999, padding: "6px 12px" }}>
             <span style={{ fontSize: 18 }}>🔥</span>
             <span style={{ fontSize: 18 }}>{streak}</span>
             <span className="text-[11px] font-extrabold">{t(lang, "streakLabel")}</span>
@@ -159,15 +158,6 @@ export default async function ChildHome() {
           <SurveyBanner survey={survey} childId={child.id} />
         </div>
       )}
-
-      {/* Tasks */}
-      <section className="mt-4 rise rise-3">
-        <div className="gw-h">
-          <h2>{t(lang, "myTasks")}</h2>
-          <Link href="/child/market">{t(lang, "market")} →</Link>
-        </div>
-        <ChildTaskList childId={child.id} items={items} />
-      </section>
     </div>
   );
 }

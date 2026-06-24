@@ -124,6 +124,63 @@ export async function updateChildAction(input: {
   return { ok: true }
 }
 
+/**
+ * Parent deducts coins from a child for an unplanned expense (chi phát sinh).
+ * Subtracts from jars Tiêu → Tiết kiệm → Sẻ chia, lowers total_coins, and logs
+ * an expense in child_transactions.
+ */
+export async function deductCoins(input: { childId: string; amount: number; note: string }) {
+  const supabase = await createServerSupabase()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: 'unauthorized' }
+  const amount = Math.round(input.amount)
+  if (!amount || amount <= 0) return { ok: false, error: 'Số xu không hợp lệ' }
+
+  const { data: family } = await supabase
+    .from('families')
+    .select('id')
+    .eq('parent_id', user.id)
+    .maybeSingle()
+  if (!family) return { ok: false, error: 'Chưa có hồ sơ gia đình' }
+
+  const { data: childRow } = await supabase
+    .from('children')
+    .select('*')
+    .eq('id', input.childId)
+    .eq('family_id', family.id)
+    .maybeSingle()
+  if (!childRow) return { ok: false, error: 'unauthorized' }
+  const child = childRow as Child
+  if (child.total_coins < amount) return { ok: false, error: 'Con không đủ xu' }
+
+  const fromSpend = Math.min(amount, child.spend_jar)
+  const fromSave = Math.min(amount - fromSpend, child.save_jar)
+  const fromShare = Math.min(amount - fromSpend - fromSave, child.share_jar)
+
+  await supabase
+    .from('children')
+    .update({
+      total_coins: Math.max(0, child.total_coins - amount),
+      spend_jar: child.spend_jar - fromSpend,
+      save_jar: child.save_jar - fromSave,
+      share_jar: child.share_jar - fromShare,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', child.id)
+
+  await supabase.from('child_transactions').insert({
+    child_id: child.id,
+    type: 'expense',
+    amount,
+    note: input.note?.trim() || 'Chi phát sinh',
+    created_by: user.id,
+  })
+
+  revalidatePath('/parent/settings')
+  revalidatePath('/child/thu-chi')
+  return { ok: true }
+}
+
 /** Update the logged-in parent's display name and avatar URL. */
 export async function updateParentProfileAction(input: {
   fullName: string
@@ -215,9 +272,10 @@ export async function approveSubmission(submissionId: string, rating: number) {
   if (!row || !row.task || !row.child) return { ok: false, error: 'Không tìm thấy bài nộp' }
 
   const earned = Math.round(row.task.coin_reward * qualityMultiplier(rating))
-  const { toSave, toShare, toSpend } = splitJars(earned)
   const xp = applyXp(row.child, 15)
 
+  // Coins are granted only when the child "collects" them into a jar
+  // (collected=false). Approval gives XP + records the earned amount.
   await supabase
     .from('task_submissions')
     .update({
@@ -225,6 +283,7 @@ export async function approveSubmission(submissionId: string, rating: number) {
       reviewed_at: new Date().toISOString(),
       quality_rating: rating,
       coin_earned: earned,
+      collected: false,
     })
     .eq('id', submissionId)
 
@@ -232,14 +291,7 @@ export async function approveSubmission(submissionId: string, rating: number) {
 
   await supabase
     .from('children')
-    .update({
-      total_coins: row.child.total_coins + earned,
-      save_jar: row.child.save_jar + toSave,
-      share_jar: row.child.share_jar + toShare,
-      spend_jar: row.child.spend_jar + toSpend,
-      ...xp,
-      updated_at: new Date().toISOString(),
-    })
+    .update({ ...xp, updated_at: new Date().toISOString() })
     .eq('id', row.child.id)
 
   await supabase.from('memories').insert({

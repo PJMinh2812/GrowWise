@@ -165,6 +165,8 @@ export interface TaskSubmission {
   submitted_at: string | null
   reviewed_at: string | null
   auto_approved: boolean
+  /** Xu đã duyệt nhưng chưa "collect" vào hũ (true sau khi bé chọn hũ). */
+  collected?: boolean
   created_at: string
 }
 
