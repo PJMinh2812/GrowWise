@@ -12,7 +12,7 @@ export default function SwitchRoleButton() {
       className="flex items-center gap-1 text-sm font-semibold text-on-surface-variant hover:text-primary transition"
     >
       <Icon name="swap_horiz" className="text-xl" />
-      <span className="hidden sm:inline">{t("switchRole")}</span>
+      <span>{t("switchRole")}</span>
     </Link>
   );
 }

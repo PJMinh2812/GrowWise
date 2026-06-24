@@ -19,7 +19,7 @@ export default function LogoutButton() {
       className="flex items-center gap-1 text-sm font-semibold text-on-surface-variant hover:text-error transition"
     >
       <Icon name="logout" className="text-xl" />
-      <span className="hidden sm:inline">{t("logout")}</span>
+      <span>{t("logout")}</span>
     </button>
   );
 }

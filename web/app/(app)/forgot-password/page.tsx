@@ -22,11 +22,13 @@ export default function ForgotPasswordPage() {
     // Recovery link lands on /auth/callback, which exchanges the code for a
     // (recovery) session and forwards to /reset-password to set a new password.
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin;
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
       redirectTo: `${siteUrl}/auth/callback?next=/reset-password`,
     });
     if (error) {
-      setError(t("forgotError"));
+      // eslint-disable-next-line no-console
+      console.error("[resetPasswordForEmail]", error);
+      setError(`${t("forgotError")} (${error.message})`);
       setLoading(false);
       return;
     }
