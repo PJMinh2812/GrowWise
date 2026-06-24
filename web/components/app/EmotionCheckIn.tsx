@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { useLang } from "./LangProvider";
+import Icon from "@/components/Icon";
 
 interface Result {
   emoji: string;
@@ -101,7 +102,7 @@ export default function EmotionCheckIn() {
           className="gw-btn gw-btn--primary gw-btn--sm"
           style={{ flexShrink: 0 }}
         >
-          <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>photo_camera</span>
+          <Icon name="photo_camera" style={{ fontSize: "20px" }} />
           <span className="hidden sm:inline">{t("checkMood")}</span>
         </button>
       </div>
@@ -112,7 +113,7 @@ export default function EmotionCheckIn() {
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-lg font-bold text-on-surface">{t("moodToday")}</h3>
               <button onClick={close} aria-label={t("close")} className="text-on-surface-variant">
-                <span className="material-symbols-outlined">close</span>
+                <Icon name="close" />
               </button>
             </div>
 
@@ -171,7 +172,7 @@ export default function EmotionCheckIn() {
                     className="gw-btn gw-btn--primary"
                     style={{ marginTop: "16px", display: "inline-flex" }}
                   >
-                    <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>workspace_premium</span>
+                    <Icon name="workspace_premium" style={{ fontSize: "18px" }} />
                     {t("upgrade")}
                   </Link>
                 ) : (

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createTaskAction } from "@/lib/app/parent-actions";
 import type { Child } from "@/lib/types";
 import { useLang } from "./LangProvider";
+import Emoji from "@/components/Emoji";
 
 const CATEGORIES = [
   { key: "Việc nhà", emoji: "🧹" },
@@ -133,7 +134,7 @@ export default function CreateTaskForm({ children }: { children: Child[] }) {
           <button type="button" onClick={() => setCoinReward((v) => Math.max(0, v - 10))} className="gw-btn gw-btn--ghost gw-btn--sm" style={{ width: "40px", padding: 0 }}>
             −
           </button>
-          <span style={{ fontSize: "18px", fontWeight: 700, color: "var(--ink)", width: "64px", textAlign: "center" }}>🪙 {coinReward}</span>
+          <span style={{ fontSize: "18px", fontWeight: 700, color: "var(--ink)", width: "64px", textAlign: "center", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "6px" }}><Emoji name="coin" size={18} /> {coinReward}</span>
           <button type="button" onClick={() => setCoinReward((v) => v + 10)} className="gw-btn gw-btn--ghost gw-btn--sm" style={{ width: "40px", padding: 0 }}>
             +
           </button>

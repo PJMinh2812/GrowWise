@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import LanguageToggle from "./LanguageToggle";
+import Icon from "@/components/Icon";
 
 export type NavItem = { href: string; label: string; icon: string };
 
@@ -81,7 +81,6 @@ export default function AppShell({
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {topRight}
-          <LanguageToggle />
         </div>
       </header>
 
@@ -96,10 +95,10 @@ export default function AppShell({
             <Link key={item.href} href={item.href} className={active ? "active" : undefined}>
               {active ? (
                 <span className="bubble">
-                  <span className="material-symbols-outlined">{item.icon}</span>
+                  <Icon name={item.icon} weight="fill" />
                 </span>
               ) : (
-                <span className="material-symbols-outlined">{item.icon}</span>
+                <Icon name={item.icon} weight="duotone" />
               )}
               <span>{item.label}</span>
             </Link>

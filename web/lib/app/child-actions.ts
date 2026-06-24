@@ -197,6 +197,7 @@ export async function addDream(input: {
   name: string
   price: number
   icon?: string
+  term?: 'short' | 'long'
 }) {
   const supabase = await createServerSupabase()
   const { error } = await supabase.from('dream_items').insert({
@@ -204,6 +205,7 @@ export async function addDream(input: {
     name: input.name,
     price: input.price,
     icon: input.icon ?? '🎁',
+    term: input.term ?? 'short',
   })
   if (error) return { ok: false, error: error.message }
   revalidatePath('/child/dreams')

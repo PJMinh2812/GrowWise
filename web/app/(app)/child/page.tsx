@@ -6,6 +6,8 @@ import SurveyBanner from "@/components/app/SurveyBanner";
 import { getActiveSurveyFor } from "@/lib/app/surveys";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
+import Icon from "@/components/Icon";
+import Emoji from "@/components/Emoji";
 
 export const dynamic = "force-dynamic";
 
@@ -73,7 +75,7 @@ export default async function ChildHome() {
           <div className="flex items-start justify-between">
             <span className="font-extrabold text-on-surface-variant text-sm">{t(lang, "childLevel")}</span>
             <span className="grid place-items-center w-9 h-9 rounded-full bg-secondary-container text-secondary">
-              <span className="material-symbols-outlined text-xl">star</span>
+              <Icon name="star" className="text-xl" />
             </span>
           </div>
           <div className="mt-4">
@@ -89,14 +91,14 @@ export default async function ChildHome() {
           </div>
         </div>
         <Link
-          href="/child/jars"
+          href="/child/thu-chi"
           className="gw-card gw-card--press rise rise-2"
           style={{ minHeight: 128, background: "linear-gradient(150deg,#3A2F22,#241D12)", color: "#fff", border: "none", display: "block" }}
         >
           <div className="flex items-start justify-between">
             <span className="font-extrabold opacity-85 text-sm">{t(lang, "childCoins")}</span>
             <span className="grid place-items-center w-9 h-9 rounded-full bg-primary-container text-on-primary-container">
-              <span className="material-symbols-outlined text-xl">savings</span>
+              <Icon name="savings" className="text-xl" />
             </span>
           </div>
           <div className="flex items-end gap-2 mt-4">
@@ -116,16 +118,16 @@ export default async function ChildHome() {
         className="gw-card gw-card--press rise rise-2"
         style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "16px" }}
       >
-        <span className="grid place-items-center shrink-0" style={{ width: 48, height: 48, borderRadius: 16, background: "var(--color-primary-fixed)", fontSize: 26 }}>📋</span>
+        <span className="grid place-items-center shrink-0" style={{ width: 48, height: 48, borderRadius: 16, background: "var(--color-primary-fixed)" }}><Emoji name="clipboard" size={26} /></span>
         <div className="flex-1 min-w-0">
           <p className="font-extrabold text-on-surface">{t(lang, "navTasks")}</p>
           {pendingCoins > 0 ? (
-            <p className="text-xs font-extrabold text-primary">🪙 {pendingCoins} {t(lang, "coinsPending")}</p>
+            <p className="text-xs font-extrabold text-primary"><Emoji name="coin" size={14} /> {pendingCoins} {t(lang, "coinsPending")}</p>
           ) : (
             <p className="text-xs text-on-surface-variant">{t(lang, "hiDoTasks")}</p>
           )}
         </div>
-        <span className="material-symbols-outlined text-on-surface-variant">chevron_right</span>
+        <Icon name="chevron_right" className="text-on-surface-variant" />
       </Link>
 
       {/* Achievements + streak */}
@@ -134,14 +136,14 @@ export default async function ChildHome() {
         className="gw-card gw-card--press rise rise-3"
         style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "16px" }}
       >
-        <span className="grid place-items-center shrink-0" style={{ width: 48, height: 48, borderRadius: 16, background: "var(--color-secondary-container)", fontSize: 26 }}>🏆</span>
+        <span className="grid place-items-center shrink-0" style={{ width: 48, height: 48, borderRadius: 16, background: "var(--color-secondary-container)" }}><Emoji name="trophy" size={26} /></span>
         <div className="flex-1 min-w-0">
           <p className="font-extrabold text-on-surface">{t(lang, "viewAchievements")}</p>
           <p className="text-xs text-on-surface-variant">{badges.length} {t(lang, "badgesEarned")}</p>
         </div>
         {streak > 0 ? (
           <span className="flex items-center gap-1 font-black" style={{ color: "#E0701A", background: "#FFE9D2", borderRadius: 999, padding: "6px 12px" }}>
-            <span style={{ fontSize: 18 }}>🔥</span>
+            <Emoji name="fire" size={18} />
             <span style={{ fontSize: 18 }}>{streak}</span>
             <span className="text-[11px] font-extrabold">{t(lang, "streakLabel")}</span>
           </span>
@@ -150,7 +152,7 @@ export default async function ChildHome() {
             {t(lang, "streakNone")}
           </span>
         )}
-        <span className="material-symbols-outlined text-on-surface-variant">chevron_right</span>
+        <Icon name="chevron_right" className="text-on-surface-variant" />
       </Link>
 
       {survey && (

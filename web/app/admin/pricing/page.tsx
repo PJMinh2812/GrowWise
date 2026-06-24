@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Plan, UserSubscription } from "@/lib/types";
 import { effectiveYearly, YEARLY_DISCOUNT } from "@/lib/app/pricing-utils";
+import Emoji, { type EmojiName } from "@/components/Emoji";
 
 interface PlanWithCount extends Plan {
   subscriber_count: number;
@@ -35,7 +36,7 @@ const STATUS_CLASS: Record<string, string> = {
   expired:  "bg-surface-container-high text-on-surface-variant",
 };
 
-const PLAN_EMOJI: Record<string, string> = { free: "🌱", premium: "🚀", family: "👨‍👩‍👧‍👦" };
+const PLAN_EMOJI: Record<string, EmojiName> = { free: "seedling", premium: "rocket", family: "family" };
 
 function StatusBadge({ status }: { status: string }) {
   return (
@@ -126,7 +127,7 @@ export default function PricingAdminPage() {
       {/* Header */}
       <div className="flex items-end justify-between">
         <div>
-          <h2 className="text-3xl font-bold text-on-surface">💰 Định giá</h2>
+          <h2 className="text-3xl font-bold text-on-surface flex items-center gap-2"><Emoji name="moneybag" size={26} /> Định giá</h2>
           <p className="text-sm text-on-surface-variant mt-1">
             Doanh thu tháng này:{" "}
             <span className="font-bold text-secondary">{formatVND(monthlyRevenue)}</span>
@@ -142,7 +143,7 @@ export default function PricingAdminPage() {
             <div key={plan.id} className="bg-surface-container-lowest rounded-xl border border-outline-variant p-5 hover:-translate-y-0.5 hover:shadow-md transition-all">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <div className="text-3xl mb-1">{PLAN_EMOJI[plan.name] ?? "📦"}</div>
+                  <div className="mb-1"><Emoji name={PLAN_EMOJI[plan.name] ?? "box"} size={30} /></div>
                   <h4 className="font-bold text-on-surface">{plan.display_name}</h4>
                   <p className="text-xs text-on-surface-variant capitalize">{plan.name}</p>
                 </div>
@@ -256,7 +257,7 @@ export default function PricingAdminPage() {
                     <td className="px-5 py-3 font-medium text-on-surface">{sub.email}</td>
                     <td className="px-5 py-3">
                       <span className="flex items-center gap-1.5 text-on-surface">
-                        {PLAN_EMOJI[(sub.plan as Plan | undefined)?.name ?? "free"]}
+                        <Emoji name={PLAN_EMOJI[(sub.plan as Plan | undefined)?.name ?? "free"] ?? "box"} size={16} />
                         {(sub.plan as Plan | undefined)?.display_name ?? "—"}
                       </span>
                     </td>

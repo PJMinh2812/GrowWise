@@ -6,13 +6,14 @@ import {
   getWeeklyCoins,
 } from "@/lib/app/submissions";
 import ApprovalQueue from "@/components/app/ApprovalQueue";
-import EmotionCheckIn from "@/components/app/EmotionCheckIn";
+import ParentFinanceCard from "@/components/app/ParentFinanceCard";
 import SurveyBanner from "@/components/app/SurveyBanner";
 import SubscriptionBanner from "@/components/app/SubscriptionBanner";
 import { getActiveSurveyFor } from "@/lib/app/surveys";
 import { getRenewalState } from "@/lib/app/subscription";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
+import Icon from "@/components/Icon";
 
 export const dynamic = "force-dynamic";
 
@@ -49,10 +50,6 @@ export default async function ParentDashboard() {
         </div>
       )}
 
-      <div className="mb-4 rise rise-2">
-        <EmotionCheckIn />
-      </div>
-
       {!family && (
         <div className="gw-card mb-4">
           <p className="text-on-surface font-semibold">
@@ -72,11 +69,26 @@ export default async function ParentDashboard() {
         <StatCard icon="group" tone="tertiary" label={t(lang, "childrenCount")} value={String(children.length)} />
       </div>
 
-      {/* Quick action */}
+      {/* Child finances (jars + deduct) */}
+      <div className="rise rise-3">
+        <ParentFinanceCard
+          children={children.map((c) => ({
+            id: c.id,
+            name: c.name,
+            emoji: c.avatar_emoji,
+            total: c.total_coins,
+            spend: c.spend_jar,
+            save: c.save_jar,
+            share: c.share_jar,
+          }))}
+        />
+      </div>
+
+      {/* Quick action → roadmap (create tasks) */}
       <div className="mb-5 rise rise-3">
-        <Link href="/parent/tasks/new" className="gw-btn gw-btn--primary">
-          <span className="material-symbols-outlined">add_task</span>
-          {t(lang, "newTask")}
+        <Link href="/parent/roadmap" className="gw-btn gw-btn--primary">
+          <Icon name="route" />
+          {t(lang, "navRoadmap")}
         </Link>
       </div>
 
@@ -106,7 +118,7 @@ function StatCard({
   return (
     <div className="gw-card gw-card--press">
       <div className={`w-9 h-9 rounded-full flex items-center justify-center mb-3 ${toneCls}`}>
-        <span className="material-symbols-outlined text-xl">{icon}</span>
+        <Icon name={icon} className="text-xl" />
       </div>
       <p className="text-2xl font-black text-on-surface">{value}</p>
       <p className="text-sm font-bold text-on-surface-variant">{label}</p>

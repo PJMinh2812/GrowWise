@@ -7,6 +7,7 @@ import { scheduleDowngrade } from "@/lib/app/subscription-actions";
 import { useLang } from "./LangProvider";
 import type { TKey } from "@/lib/i18n";
 import type { PlanPrice } from "@/lib/app/plan-prices";
+import Emoji, { type EmojiName } from "@/components/Emoji";
 
 type PlanKey = "free" | "premium" | "family";
 type Billing = "monthly" | "yearly";
@@ -16,7 +17,7 @@ const RANK: Record<PlanKey, number> = { free: 0, premium: 1, family: 2 };
 interface PlanMeta {
   key: PlanKey;
   nameKey: TKey;
-  emoji: string;
+  emoji: EmojiName;
   featureKeys: TKey[];
   highlight?: boolean;
 }
@@ -27,13 +28,13 @@ const PLAN_META: PlanMeta[] = [
   {
     key: "free",
     nameKey: "planFreeName",
-    emoji: "🌱",
+    emoji: "seedling",
     featureKeys: ["featLessons3", "featJars3", "featTasks3", "featChat5", "featProfile1"],
   },
   {
     key: "premium",
     nameKey: "planPremiumName",
-    emoji: "🚀",
+    emoji: "rocket",
     highlight: true,
     featureKeys: [
       "featAllLessons",
@@ -47,7 +48,7 @@ const PLAN_META: PlanMeta[] = [
   {
     key: "family",
     nameKey: "planFamilyName",
-    emoji: "👨‍👩‍👧‍👦",
+    emoji: "family",
     featureKeys: ["featAllPremium", "featProfiles3", "featParentDashboard", "featCompareKids"],
   },
 ];
@@ -167,7 +168,7 @@ export default function PricingPlans({
                   {t("saveLabel")} {fmt(saving)}
                 </span>
               )}
-              <h3 className="text-xl font-extrabold text-on-surface">{t(p.nameKey)} {p.emoji}</h3>
+              <h3 className="text-xl font-extrabold text-on-surface" style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>{t(p.nameKey)} <Emoji name={p.emoji} size={20} /></h3>
               <div className="mt-2">
                 <span className="text-2xl font-extrabold text-primary">{priceLabel(p.key)}</span>
                 <span className="text-sm text-on-surface-variant"> {priceSub(p.key)}</span>

@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { transferJar } from "@/lib/app/child-actions";
 import { useLang } from "./LangProvider";
 import { useToast } from "./ToastProvider";
+import Icon from "@/components/Icon";
+import Emoji, { type EmojiName } from "@/components/Emoji";
 
 export default function JarsView({
   childId,
@@ -49,18 +51,18 @@ export default function JarsView({
   return (
     <div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Jar emoji="🛒" name={t("jarSpend")} amount={spend} total={total} color="#FF6B6B" />
-        <Jar emoji="🏦" name={t("jarSave")} amount={save} total={total} color="#00b251" />
-        <Jar emoji="❤️" name={t("jarShare")} amount={share} total={total} color="#f59e0b" />
+        <Jar icon="cart" name={t("jarSpend")} amount={spend} total={total} color="#FF6B6B" />
+        <Jar icon="bank" name={t("jarSave")} amount={save} total={total} color="#00b251" />
+        <Jar icon="gift" name={t("jarShare")} amount={share} total={total} color="#f59e0b" />
       </div>
 
       <div className="gw-card" style={{ marginTop: "16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div>
           <p style={{ fontSize: "13px", color: "var(--ink-soft)", fontWeight: 700 }}>{t("totalCoins")}</p>
-          <p style={{ fontSize: "24px", fontWeight: 900, color: "var(--ink)" }}>🪙 {total.toLocaleString("vi-VN")}</p>
+          <p style={{ fontSize: "24px", fontWeight: 900, color: "var(--ink)", display: "flex", alignItems: "center", gap: "6px" }}><Emoji name="coin" size={24} /> {total.toLocaleString("vi-VN")}</p>
         </div>
         <button onClick={() => setOpen(true)} className="gw-btn gw-btn--primary gw-btn--sm">
-          <span className="material-symbols-outlined">swap_horiz</span>
+          <Icon name="swap_horiz" />
           {t("transfer")}
         </button>
       </div>
@@ -82,7 +84,7 @@ export default function JarsView({
               ))}
             </div>
             <div className="gw-field" style={{ marginBottom: "8px" }}>
-              <span className="material-symbols-outlined">toll</span>
+              <Icon name="toll" />
               <input
                 type="number"
                 min={1}
@@ -109,16 +111,16 @@ export default function JarsView({
   );
 }
 
-function Jar({ emoji, name, amount, total, color }: {
-  emoji: string; name: string; amount: number; total: number; color: string;
+function Jar({ icon, name, amount, total, color }: {
+  icon: EmojiName; name: string; amount: number; total: number; color: string;
 }) {
   const pct = total > 0 ? Math.round((amount / total) * 100) : 0;
   return (
     <div className="gw-card" style={{ textAlign: "center" }}>
-      <div style={{ fontSize: "40px", marginBottom: "8px" }}>{emoji}</div>
+      <div style={{ marginBottom: "8px" }}><Emoji name={icon} size={40} /></div>
       <p style={{ fontWeight: 800, color: "var(--ink)" }}>{name}</p>
-      <p style={{ fontSize: "22px", fontWeight: 900, marginTop: "4px", color }}>
-        🪙 {amount.toLocaleString("vi-VN")}
+      <p style={{ fontSize: "22px", fontWeight: 900, marginTop: "4px", color, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+        <Emoji name="coin" size={22} /> {amount.toLocaleString("vi-VN")}
       </p>
       <div style={{ height: "10px", borderRadius: "999px", background: "rgba(0,0,0,.07)", marginTop: "12px", overflow: "hidden" }}>
         <div style={{ height: "100%", borderRadius: "999px", width: `${pct}%`, background: color, transition: "width .4s" }} />

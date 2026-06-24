@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { createClient } from "@/lib/supabase";
 import { useLang } from "./LangProvider";
+import Icon from "@/components/Icon";
 
 export default function AvatarUpload({
   currentUrl,
@@ -69,7 +70,7 @@ export default function AvatarUpload({
           disabled={uploading}
           className="gw-btn gw-btn--ghost gw-btn--sm"
         >
-          <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>upload</span>
+          <Icon name="upload" style={{ fontSize: "16px" }} />
           {uploading ? "…" : t("uploadPhoto")}
         </button>
         {currentUrl && onRemoved && (

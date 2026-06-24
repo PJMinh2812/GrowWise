@@ -6,6 +6,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { useLang } from "@/components/app/LangProvider";
 import LanguageToggle from "@/components/app/LanguageToggle";
+import Icon from "@/components/Icon";
+import Emoji from "@/components/Emoji";
 
 function LoginForm() {
   const router = useRouter();
@@ -98,7 +100,7 @@ function LoginForm() {
 
         <form onSubmit={handleLogin} className="space-y-3">
           <div className="gw-field">
-            <span className="material-symbols-outlined">mail</span>
+            <Icon name="mail" />
             <input
               type="email"
               value={email}
@@ -109,7 +111,7 @@ function LoginForm() {
             />
           </div>
           <div className="gw-field">
-            <span className="material-symbols-outlined">lock</span>
+            <Icon name="lock" />
             <input
               type={showPw ? "text" : "password"}
               value={password}
@@ -124,10 +126,14 @@ function LoginForm() {
               className="gw-eye"
               aria-label="Hiện mật khẩu"
             >
-              <span className="material-symbols-outlined text-xl">
-                {showPw ? "visibility_off" : "visibility"}
-              </span>
+              <Icon name={showPw ? "visibility_off" : "visibility"} className="text-xl" />
             </button>
+          </div>
+
+          <div className="text-right">
+            <Link href="/forgot-password" className="text-sm font-bold text-primary hover:underline">
+              {t("forgotPassword")}
+            </Link>
           </div>
 
           {error && <p className="text-sm text-error font-semibold">{error}</p>}
@@ -150,7 +156,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">🌱</div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Emoji name="seedling" size={32} /></div>}>
       <LoginForm />
     </Suspense>
   );

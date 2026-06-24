@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { ActiveSurvey } from "@/lib/app/surveys";
 import { dismissSurvey } from "@/lib/app/survey-actions";
 import { useLang } from "./LangProvider";
+import Icon from "@/components/Icon";
 
 export default function SurveyBanner({
   survey,
@@ -49,7 +50,7 @@ export default function SurveyBanner({
     <div className="gw-survey">
       <span className="blob" />
       <span className="ico">
-        <span className="material-symbols-outlined">campaign</span>
+        <Icon name="campaign" />
       </span>
       <div className="flex-1 min-w-0" style={{ zIndex: 1 }}>
         <h3>{survey.title}</h3>
@@ -80,7 +81,7 @@ export default function SurveyBanner({
         className="shrink-0"
         style={{ zIndex: 1, color: "#5B3FC0" }}
       >
-        <span className="material-symbols-outlined">close</span>
+        <Icon name="close" />
       </button>
     </div>
   );

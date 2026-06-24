@@ -4,14 +4,14 @@ import DashboardSky from "@/components/app/DashboardSky";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 import { getSelectedChild } from "@/lib/app/children";
+import Icon from "@/components/Icon";
 
 export default async function ChildLayout({ children }: { children: React.ReactNode }) {
   const [lang, child] = await Promise.all([getLang(), getSelectedChild()]);
   const nav: NavItem[] = [
     { href: "/child", label: t(lang, "navHome"), icon: "home" },
     { href: "/child/tasks", label: t(lang, "navTasks"), icon: "assignment" },
-    { href: "/child/jars", label: t(lang, "navJars"), icon: "account_balance_wallet" },
-    { href: "/child/thu-chi", label: t(lang, "navThuChi"), icon: "receipt_long" },
+    { href: "/child/thu-chi", label: t(lang, "navMoney"), icon: "account_balance_wallet" },
     { href: "/child/learn", label: t(lang, "navLearn"), icon: "school" },
   ];
 
@@ -26,7 +26,7 @@ export default async function ChildLayout({ children }: { children: React.ReactN
         flexShrink: 0,
       }}
     >
-      <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>{icon}</span>
+      <Icon name={icon} style={{ fontSize: "20px" }} />
     </Link>
   );
 

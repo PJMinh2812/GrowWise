@@ -6,6 +6,7 @@ import type { Child } from "@/lib/types";
 import ParentPinDialog from "./ParentPinDialog";
 import LanguageToggle from "./LanguageToggle";
 import { useLang } from "./LangProvider";
+import Icon from "@/components/Icon";
 
 export default function RolePicker({ children }: { children: Child[] }) {
   const router = useRouter();
@@ -54,7 +55,7 @@ export default function RolePicker({ children }: { children: Child[] }) {
           className="gw-card gw-card--press flex items-center gap-4 text-left relative"
         >
           <span className="absolute top-3 right-3 flex items-center gap-1 text-xs font-extrabold bg-surface-container-high px-2 py-1 rounded-full text-on-surface-variant">
-            <span className="material-symbols-outlined text-sm">lock</span> {t("security")}
+            <Icon name="lock" className="text-sm" /> {t("security")}
           </span>
           <div className="w-16 h-16 rounded-full bg-tertiary-fixed flex items-center justify-center text-3xl shrink-0">
             👨‍👩‍👧
@@ -94,7 +95,7 @@ export default function RolePicker({ children }: { children: Child[] }) {
               <span className="text-2xl">{c.avatar_emoji}</span>
               <span className="font-extrabold text-on-surface">{c.name}</span>
               {c.child_pin_hash && (
-                <span className="material-symbols-outlined text-sm text-on-surface-variant">lock</span>
+                <Icon name="lock" className="text-sm text-on-surface-variant" />
               )}
             </button>
           ))}

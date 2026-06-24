@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { useLang } from "./LangProvider";
+import Icon from "@/components/Icon";
+import Emoji from "@/components/Emoji";
 
 type Billing = "monthly" | "yearly";
 
@@ -117,7 +119,7 @@ export default function PaymentQrModal({
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-bold text-on-surface">{t("payTitle")} {t(planName === "premium" ? "planPremiumName" : "planFamilyName")}</h3>
           <button onClick={onClose} aria-label={t("close")} className="text-on-surface-variant">
-            <span className="material-symbols-outlined">close</span>
+            <Icon name="close" />
           </button>
         </div>
 
@@ -167,7 +169,7 @@ export default function PaymentQrModal({
 
         {status === "paid" && (
           <div className="py-8">
-            <div className="text-6xl mb-2">🎉</div>
+            <div className="mb-2"><Emoji name="party" size={60} /></div>
             <p className="text-xl font-extrabold text-on-surface">{t("paymentSuccess")}</p>
             <p className="text-sm text-on-surface-variant mt-1">{t("planActivated")}</p>
             <button

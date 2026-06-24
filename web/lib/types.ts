@@ -191,6 +191,8 @@ export interface DreamItem {
   price: number
   icon: string
   is_purchased: boolean
+  /** 'short' = mục tiêu ngắn hạn (sắp mua), 'long' = mục tiêu lớn (dài hạn). */
+  term?: 'short' | 'long'
   created_at: string
 }
 

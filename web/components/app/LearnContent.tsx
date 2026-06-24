@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { Lesson } from "@/lib/types";
 import { useLang } from "./LangProvider";
 import Confetti from "./Confetti";
+import Emoji from "@/components/Emoji";
 
 interface Props {
   lessons: Lesson[];
@@ -372,7 +373,7 @@ export default function LearnContent({ lessons, premium, freeLimit, completedIds
                 zIndex: 4,
               }}
             >
-              <div style={{ fontSize: "40px", lineHeight: 1 }}>🎉</div>
+              <div style={{ lineHeight: 1 }}><Emoji name="party" size={40} /></div>
               <h3 style={{ fontSize: "17px", fontWeight: 900, color: "var(--ink)", marginTop: "6px" }}>
                 {t("learnAllDoneTitle")}
               </h3>

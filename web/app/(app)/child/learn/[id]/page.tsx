@@ -4,6 +4,7 @@ import { getSelectedChild } from "@/lib/app/children";
 import LessonPlayer from "@/components/app/LessonPlayer";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
+import Icon from "@/components/Icon";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +26,7 @@ export default async function ChildLessonPage({
     <div style={{ maxWidth: "430px", margin: "0 auto" }}>
       <Link href="/child/learn">
         <button type="button" className="gw-btn gw-btn--ghost gw-btn--sm" style={{ marginBottom: "16px" }}>
-          <span className="material-symbols-outlined">arrow_back</span>
+          <Icon name="arrow_back" />
           {t(lang, "allLessonsBtn")}
         </button>
       </Link>

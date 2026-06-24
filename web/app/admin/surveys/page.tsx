@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Emoji from "@/components/Emoji";
 
 interface Survey {
   id: string;
@@ -135,7 +136,7 @@ export default function AdminSurveysPage() {
   return (
     <div className="p-6 max-w-[1100px] mx-auto space-y-6">
       <div>
-        <h2 className="text-3xl font-bold text-on-surface flex items-center gap-2">📋 Khảo sát</h2>
+        <h2 className="text-3xl font-bold text-on-surface flex items-center gap-2"><Emoji name="clipboard" size={26} /> Khảo sát</h2>
         <p className="text-sm text-on-surface-variant mt-1">
           Tạo khảo sát (link Google Form) hiển thị dạng banner ở dashboard người dùng.
           {!canPublish && " Bạn tạo được bản nháp; cần Quản lý/Admin duyệt (Publish)."}
@@ -190,7 +191,7 @@ export default function AdminSurveysPage() {
         )}
 
         <p className="text-xs text-on-surface-variant">
-          💡 Để xác minh người dùng đã nộp form: trong link, đặt câu &quot;Mã xác nhận&quot; với giá trị
+          <Emoji name="bulb" size={14} /> Để xác minh người dùng đã nộp form: trong link, đặt câu &quot;Mã xác nhận&quot; với giá trị
           <code className="mx-1 px-1 rounded bg-surface-container">__TOKEN__</code>
           (xem hướng dẫn Apps Script). Không có thì banner ẩn ngay khi bấm.
         </p>

@@ -4,6 +4,7 @@ import { getTaskTemplates } from "@/lib/app/tasks";
 import type { Task } from "@/lib/types";
 import { getLang } from "@/lib/i18n-server";
 import { t, taskCategoryLabel } from "@/lib/i18n";
+import Emoji from "@/components/Emoji";
 
 export const dynamic = "force-dynamic";
 
@@ -38,7 +39,7 @@ export default async function MarketPage() {
                   <div key={task.id} className="gw-card">
                     <div style={{ fontSize: "30px", marginBottom: "8px" }}>{task.icon}</div>
                     <p style={{ fontWeight: 800, color: "var(--ink)", fontSize: "14px" }}>{task.title}</p>
-                    <p style={{ fontSize: "13px", color: "var(--secondary)", fontWeight: 700, margin: "4px 0 12px" }}>🪙 +{task.coin_reward}</p>
+                    <p style={{ fontSize: "13px", color: "var(--secondary)", fontWeight: 700, margin: "4px 0 12px", display: "flex", alignItems: "center", gap: "4px" }}><Emoji name="coin" size={14} /> +{task.coin_reward}</p>
                     <Link href="/child">
                       <button className="gw-btn gw-btn--secondary gw-btn--sm" style={{ width: "100%" }}>{t(lang, "doNow")}</button>
                     </Link>

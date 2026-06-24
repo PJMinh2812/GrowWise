@@ -5,11 +5,12 @@ import { Check, Lock, Zap } from "lucide-react";
 import type { PlanKey, PlanPrice } from "@/lib/app/plan-prices";
 import { useLang } from "@/components/app/LangProvider";
 import type { TKey } from "@/lib/i18n";
+import Emoji, { type EmojiName } from "@/components/Emoji";
 
 const PLANS: {
   id: PlanKey;
   nameKey: TKey;
-  emoji: string;
+  emoji: EmojiName;
   monthlyPrice: number;
   yearlyPrice: number;
   subtitleKey: TKey;
@@ -24,7 +25,7 @@ const PLANS: {
   {
     id: "free",
     nameKey: "planFreeName",
-    emoji: "🌱",
+    emoji: "seedling",
     monthlyPrice: 0,
     yearlyPrice: 0,
     subtitleKey: "lpForever",
@@ -39,7 +40,7 @@ const PLANS: {
   {
     id: "premium",
     nameKey: "planPremiumName",
-    emoji: "🚀",
+    emoji: "rocket",
     monthlyPrice: 79000,
     yearlyPrice: 758000,
     subtitleKey: "lpPremiumSubtitle",
@@ -54,7 +55,7 @@ const PLANS: {
   {
     id: "family",
     nameKey: "planFamilyName",
-    emoji: "👨‍👩‍👧‍👦",
+    emoji: "family",
     monthlyPrice: 149000,
     yearlyPrice: 1430000,
     subtitleKey: "lpFamilySubtitle",
@@ -157,7 +158,7 @@ export function Pricing({ prices }: { prices?: Record<PlanKey, PlanPrice> }) {
 
                 {/* Plan header */}
                 <div className="mb-5">
-                  <div className="text-3xl mb-2">{plan.emoji}</div>
+                  <div className="mb-2"><Emoji name={plan.emoji} size={30} /></div>
                   <h3 className="text-xl font-bold text-gray-900">{t(plan.nameKey)}</h3>
 
                   <div className="mt-3">
@@ -219,13 +220,13 @@ export function Pricing({ prices }: { prices?: Record<PlanKey, PlanPrice> }) {
         {/* Trust badges */}
         <div className="flex flex-wrap justify-center gap-6 mb-12 text-sm text-gray-500">
           <span className="flex items-center gap-1.5">
-            <span className="text-base">🔒</span> {t("lpTrustSecure")}
+            <Emoji name="locked" size={16} /> {t("lpTrustSecure")}
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="text-base">✅</span> {t("lpTrustCancel")}
+            <Emoji name="check" size={16} /> {t("lpTrustCancel")}
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="text-base">🎁</span> {t("lpTrust7day")}
+            <Emoji name="gift" size={16} /> {t("lpTrust7day")}
           </span>
           <span className="flex items-center gap-1.5">
             <Zap className="w-4 h-4 text-yellow-500" /> {t("lpTrustMethods")}

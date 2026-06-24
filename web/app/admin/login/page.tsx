@@ -3,6 +3,8 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase";
+import Icon from "@/components/Icon";
+import Emoji from "@/components/Emoji";
 
 function LoginForm() {
   const router = useRouter();
@@ -66,7 +68,7 @@ function LoginForm() {
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 w-full max-w-sm">
       <div className="text-center mb-8">
-        <div className="text-4xl mb-3">🌱</div>
+        <div className="mb-3"><Emoji name="seedling" size={36} /></div>
         <h1 className="text-2xl font-bold text-gray-900">GrowWise Admin</h1>
         <p className="text-sm text-gray-500 mt-1">
           Đăng nhập để quản lý nội dung
@@ -134,9 +136,7 @@ function LoginForm() {
               aria-label={showPw ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
               className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
             >
-              <span className="material-symbols-outlined text-xl">
-                {showPw ? "visibility_off" : "visibility"}
-              </span>
+              <Icon name={showPw ? "visibility_off" : "visibility"} className="text-xl" />
             </button>
           </div>
         </div>
@@ -161,7 +161,7 @@ export default function LoginPage() {
       <Suspense fallback={
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 w-full max-w-sm">
           <div className="text-center">
-            <div className="text-4xl mb-3">🌱</div>
+            <div className="mb-3"><Emoji name="seedling" size={36} /></div>
             <p className="text-sm text-gray-400">Đang tải...</p>
           </div>
         </div>

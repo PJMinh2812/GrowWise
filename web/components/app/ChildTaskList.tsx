@@ -9,6 +9,8 @@ import { useLang } from "./LangProvider";
 import { useToast } from "./ToastProvider";
 import { celebrate } from "@/lib/app/feedback";
 import Confetti from "./Confetti";
+import Icon from "@/components/Icon";
+import Emoji, { type EmojiName } from "@/components/Emoji";
 
 export interface ChildTaskItem {
   task: Task;
@@ -156,7 +158,7 @@ function TaskCard({
             className="gw-coinpop"
             style={{ left: "50%", top: "10%", transform: "translateX(-50%)" }}
           >
-            +{celebrateCoins} 🪙
+            +{celebrateCoins} <Emoji name="coin" size={16} />
           </span>
         </>
       )}
@@ -167,7 +169,7 @@ function TaskCard({
         <div className="flex-1 min-w-0">
           <p className="font-extrabold text-on-surface truncate">{task.title}</p>
           <span className="inline-flex items-center gap-1 text-sm font-extrabold text-primary mt-0.5">
-            <span className="material-symbols-outlined text-base">toll</span>+{task.coin_reward} {t("coinUnit")}
+            <Emoji name="coin" size={16} />+{task.coin_reward} {t("coinUnit")}
           </span>
         </div>
         {actionable ? (
@@ -184,7 +186,7 @@ function TaskCard({
             onClick={() => setShowJar(true)}
             className="gw-btn gw-btn--secondary gw-btn--sm"
           >
-            🪙 {t("collectBtn")}
+            <Emoji name="coin" size={16} /> {t("collectBtn")}
           </button>
         ) : (
           <StatusChip variant={variant} label={statusLabel(variant, t)} />
@@ -198,12 +200,12 @@ function TaskCard({
             <h3 className="font-extrabold text-on-surface" style={{ fontSize: 17 }}>
               {t("collectChooseJar")}
             </h3>
-            <p className="text-sm text-on-surface-variant mt-1">🪙 +{item.coinEarned ?? 0}</p>
+            <p className="text-sm text-on-surface-variant mt-1" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Emoji name="coin" size={16} /> +{item.coinEarned ?? 0}</p>
             <div className="grid grid-cols-3 gap-2 mt-4">
               {([
-                { jar: "spend" as const, emoji: "🛒", label: t("jarSpend") },
-                { jar: "save" as const, emoji: "🏦", label: t("jarSave") },
-                { jar: "share" as const, emoji: "❤️", label: t("jarShare") },
+                { jar: "spend" as const, icon: "cart" as EmojiName, label: t("jarSpend") },
+                { jar: "save" as const, icon: "bank" as EmojiName, label: t("jarSave") },
+                { jar: "share" as const, icon: "gift" as EmojiName, label: t("jarShare") },
               ]).map((j) => (
                 <button
                   key={j.jar}
@@ -212,7 +214,7 @@ function TaskCard({
                   className="gw-card gw-card--press"
                   style={{ padding: "14px 6px", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}
                 >
-                  <span style={{ fontSize: 26 }}>{j.emoji}</span>
+                  <Emoji name={j.icon} size={26} />
                   <span className="text-xs font-extrabold text-on-surface">{j.label}</span>
                 </button>
               ))}
