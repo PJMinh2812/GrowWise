@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase";
+import { createBrowserClient } from "@supabase/ssr";
 import { useLang } from "@/components/app/LangProvider";
 import LanguageToggle from "@/components/app/LanguageToggle";
 import Icon from "@/components/Icon";
@@ -18,9 +18,15 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
-    const supabase = createClient();
-    // Recovery link lands on /auth/callback, which exchanges the code for a
-    // (recovery) session and forwards to /reset-password to set a new password.
+    // Use the IMPLICIT flow (not PKCE) so the emailed token_hash can be verified
+    // server-side in /auth/callback from any device/browser — PKCE tokens
+    // (pkce_…) need a verifier stored in the originating browser, which breaks
+    // when the link is opened in a phone's mail in-app browser.
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { auth: { flowType: "implicit" } },
+    );
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin;
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
       redirectTo: `${siteUrl}/auth/callback?next=/reset-password`,
