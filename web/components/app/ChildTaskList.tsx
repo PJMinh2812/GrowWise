@@ -3,7 +3,7 @@
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
-import { submitTask } from "@/lib/app/child-actions";
+import { submitTask, collectReward } from "@/lib/app/child-actions";
 import type { Task, TaskStatus } from "@/lib/types";
 import { useLang } from "./LangProvider";
 import { useToast } from "./ToastProvider";
@@ -14,6 +14,9 @@ export interface ChildTaskItem {
   task: Task;
   status: TaskStatus | "todo";
   parentNote?: string | null;
+  submissionId?: string;
+  coinEarned?: number;
+  collected?: boolean;
 }
 
 export default function ChildTaskList({
@@ -23,6 +26,7 @@ export default function ChildTaskList({
   childId: string;
   items: ChildTaskItem[];
 }) {
+  const { t } = useLang();
   const rejected = items.filter((i) => i.status === "rejected");
   const todo = items.filter((i) => i.status === "todo");
   const submitted = items.filter((i) => i.status === "submitted");
@@ -44,7 +48,7 @@ export default function ChildTaskList({
       ))}
       {items.length === 0 && (
         <div className="gw-card text-center text-on-surface-variant font-semibold py-8">
-          Chưa có nhiệm vụ nào. Ghé <b>Chợ nhiệm vụ</b> để nhận thêm nhé!
+          {t("taskEmpty")}
         </div>
       )}
     </div>
@@ -67,8 +71,27 @@ function TaskCard({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [celebrateCoins, setCelebrateCoins] = useState<number | null>(null);
+  const [showJar, setShowJar] = useState(false);
   const [pending, start] = useTransition();
   const { task } = item;
+  const canCollect = variant === "done" && !item.collected && Boolean(item.submissionId);
+
+  function doCollect(jar: "spend" | "save" | "share") {
+    if (!item.submissionId) return;
+    start(async () => {
+      const res = await collectReward(item.submissionId!, jar);
+      setShowJar(false);
+      if (!res.ok) {
+        toast(res.error ?? t("toastError"), "error");
+        return;
+      }
+      celebrate();
+      setCelebrateCoins(res.amount ?? item.coinEarned ?? 0);
+      toast(t("collectedToast"), "success");
+      setTimeout(() => setCelebrateCoins(null), 1600);
+      router.refresh();
+    });
+  }
   const cameraOnly =
     task.auto_approve_after != null && task.approval_count >= task.auto_approve_after;
 
@@ -82,7 +105,7 @@ function TaskCard({
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) throw new Error("Phiên đăng nhập hết hạn");
+      if (!user) throw new Error(t("sessionExpired"));
       const path = `${user.id}/${task.id}-${Date.now()}.jpg`;
       const { error: upErr } = await supabase.storage
         .from("task-proofs")
@@ -144,7 +167,7 @@ function TaskCard({
         <div className="flex-1 min-w-0">
           <p className="font-extrabold text-on-surface truncate">{task.title}</p>
           <span className="inline-flex items-center gap-1 text-sm font-extrabold text-primary mt-0.5">
-            <span className="material-symbols-outlined text-base">toll</span>+{task.coin_reward} xu
+            <span className="material-symbols-outlined text-base">toll</span>+{task.coin_reward} {t("coinUnit")}
           </span>
         </div>
         {actionable ? (
@@ -155,21 +178,57 @@ function TaskCard({
           >
             {uploading || pending ? "…" : variant === "rejected" ? t("resubmit") : t("submit")}
           </button>
+        ) : canCollect ? (
+          <button
+            disabled={pending}
+            onClick={() => setShowJar(true)}
+            className="gw-btn gw-btn--secondary gw-btn--sm"
+          >
+            🪙 {t("collectBtn")}
+          </button>
         ) : (
-          <StatusChip variant={variant} />
+          <StatusChip variant={variant} label={statusLabel(variant, t)} />
         )}
       </div>
 
+      {/* Collect → choose a jar */}
+      {showJar && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowJar(false)}>
+          <div className="gw-card" style={{ width: "100%", maxWidth: 360, textAlign: "center" }} onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-extrabold text-on-surface" style={{ fontSize: 17 }}>
+              {t("collectChooseJar")}
+            </h3>
+            <p className="text-sm text-on-surface-variant mt-1">🪙 +{item.coinEarned ?? 0}</p>
+            <div className="grid grid-cols-3 gap-2 mt-4">
+              {([
+                { jar: "spend" as const, emoji: "🛒", label: t("jarSpend") },
+                { jar: "save" as const, emoji: "🏦", label: t("jarSave") },
+                { jar: "share" as const, emoji: "❤️", label: t("jarShare") },
+              ]).map((j) => (
+                <button
+                  key={j.jar}
+                  disabled={pending}
+                  onClick={() => doCollect(j.jar)}
+                  className="gw-card gw-card--press"
+                  style={{ padding: "14px 6px", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}
+                >
+                  <span style={{ fontSize: 26 }}>{j.emoji}</span>
+                  <span className="text-xs font-extrabold text-on-surface">{j.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {variant === "rejected" && item.parentNote && (
-        <p className="mt-2 text-sm text-error font-semibold">Ba/mẹ nhắn: {item.parentNote}</p>
+        <p className="mt-2 text-sm text-error font-semibold">{t("parentSaid")} {item.parentNote}</p>
       )}
 
       {actionable && (
         <div className="mt-2">
           {cameraOnly && (
-            <p className="text-xs text-amber-600 mb-2">
-              ⚠️ Nhiệm vụ tự động duyệt — chỉ chụp ảnh trực tiếp.
-            </p>
+            <p className="text-xs text-amber-600 mb-2">{t("autoApproveNote")}</p>
           )}
           <input
             ref={fileRef}
@@ -186,15 +245,25 @@ function TaskCard({
   );
 }
 
-function StatusChip({ variant }: { variant: string }) {
-  const map: Record<string, { label: string; cls: string }> = {
-    rejected: { label: "Bị từ chối", cls: "bg-error/10 text-error" },
-    todo: { label: "Chờ làm", cls: "bg-surface-container text-on-surface-variant" },
-    submitted: { label: "Đang chờ duyệt", cls: "bg-amber-100 text-amber-700" },
-    done: { label: "Hoàn thành", cls: "bg-tertiary-container/40 text-tertiary" },
+type TFn = ReturnType<typeof useLang>["t"];
+
+function statusLabel(variant: string, t: TFn): string {
+  switch (variant) {
+    case "rejected": return t("statusRejected");
+    case "todo": return t("statusTodo");
+    case "submitted": return t("statusSubmitted");
+    default: return t("statusDone");
+  }
+}
+
+function StatusChip({ variant, label }: { variant: string; label: string }) {
+  const cls: Record<string, string> = {
+    rejected: "bg-error/10 text-error",
+    todo: "bg-surface-container text-on-surface-variant",
+    submitted: "bg-amber-100 text-amber-700",
+    done: "bg-tertiary-container/40 text-tertiary",
   };
-  const c = map[variant];
   return (
-    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${c.cls}`}>{c.label}</span>
+    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${cls[variant] ?? cls.done}`}>{label}</span>
   );
 }

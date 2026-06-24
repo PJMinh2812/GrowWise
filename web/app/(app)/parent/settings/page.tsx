@@ -2,6 +2,7 @@ import { getFamilyForUser, getChildren } from "@/lib/app/children";
 import { getSubscriptionDetails } from "@/lib/app/subscription";
 import { getAppProfile } from "@/lib/app/auth";
 import SettingsView from "@/components/app/SettingsView";
+import ParentChildTools from "@/components/app/ParentChildTools";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 
@@ -43,6 +44,7 @@ export default async function SettingsPage() {
           hasPin: Boolean(c.child_pin_hash),
         }))}
       />
+      <ParentChildTools children={children.map((c) => ({ id: c.id, name: c.name, emoji: c.avatar_emoji }))} />
     </div>
   );
 }

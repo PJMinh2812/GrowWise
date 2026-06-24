@@ -23,11 +23,6 @@ export async function completeLesson(childId: string, lessonId: string) {
   return { ok: true }
 }
 
-function splitJars(amount: number) {
-  const toSave = Math.round(amount * 0.4)
-  const toShare = Math.round(amount * 0.2)
-  return { toSave, toShare, toSpend: amount - toSave - toShare }
-}
 function applyXp(child: Child, gain: number) {
   let xp = child.xp + gain
   let level = child.level
@@ -98,10 +93,11 @@ export async function submitTask(input: {
       .eq('id', input.childId)
       .maybeSingle()
     const child = childRow as Child
-    const { toSave, toShare, toSpend } = splitJars(earned)
     const xp = applyXp(child, 15)
     leveledUp = xp.level > child.level
 
+    // Coins are NOT added to jars here — the child "collects" them into a jar of
+    // their choice afterwards (collected=false). Only XP is granted now.
     await supabase
       .from('task_submissions')
       .update({
@@ -111,19 +107,13 @@ export async function submitTask(input: {
         proof_image_url: input.proofUrl,
         coin_earned: earned,
         auto_approved: true,
+        collected: false,
       })
       .eq('id', submissionId)
     await supabase.rpc('increment_task_approval_count', { p_task_id: t.id })
     await supabase
       .from('children')
-      .update({
-        total_coins: child.total_coins + earned,
-        save_jar: child.save_jar + toSave,
-        share_jar: child.share_jar + toShare,
-        spend_jar: child.spend_jar + toSpend,
-        ...xp,
-        updated_at: new Date().toISOString(),
-      })
+      .update({ ...xp, updated_at: new Date().toISOString() })
       .eq('id', child.id)
   } else {
     await supabase
@@ -138,7 +128,67 @@ export async function submitTask(input: {
   }
 
   revalidatePath('/child')
+  revalidatePath('/child/tasks')
   return { ok: true, autoApproved: canAuto, coinsEarned, leveledUp }
+}
+
+/**
+ * Child "collects" the coins of an approved task into a chosen jar.
+ * Adds coin_earned to the jar + total_coins, marks the submission collected,
+ * and records an income row in child_transactions. Idempotent.
+ */
+export async function collectReward(
+  submissionId: string,
+  jar: 'spend' | 'save' | 'share',
+) {
+  const supabase = await createServerSupabase()
+  const { data: sub } = await supabase
+    .from('task_submissions')
+    .select('id, child_id, coin_earned, status, collected, task_id')
+    .eq('id', submissionId)
+    .maybeSingle()
+  if (!sub) return { ok: false, error: 'Không tìm thấy bài nộp' }
+  if (sub.status !== 'approved') return { ok: false, error: 'Nhiệm vụ chưa được duyệt' }
+  if (sub.collected) return { ok: true, amount: 0 } // already collected
+  const amount = (sub.coin_earned as number) ?? 0
+
+  const { data: childRow } = await supabase
+    .from('children')
+    .select('*')
+    .eq('id', sub.child_id)
+    .maybeSingle()
+  if (!childRow) return { ok: false, error: 'Không tìm thấy hồ sơ con' }
+  const child = childRow as Child
+  const jarCol = jar === 'save' ? 'save_jar' : jar === 'share' ? 'share_jar' : 'spend_jar'
+
+  await supabase
+    .from('children')
+    .update({
+      total_coins: child.total_coins + amount,
+      [jarCol]: (child[jarCol as 'spend_jar' | 'save_jar' | 'share_jar'] as number) + amount,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', child.id)
+
+  await supabase.from('task_submissions').update({ collected: true }).eq('id', submissionId)
+
+  // best-effort ledger entry
+  let title = 'Nhiệm vụ'
+  const { data: task } = await supabase.from('tasks').select('title').eq('id', sub.task_id).maybeSingle()
+  if (task?.title) title = task.title as string
+  await supabase.from('child_transactions').insert({
+    child_id: child.id,
+    type: 'income',
+    amount,
+    note: title,
+    jar,
+  })
+
+  revalidatePath('/child')
+  revalidatePath('/child/tasks')
+  revalidatePath('/child/jars')
+  revalidatePath('/child/thu-chi')
+  return { ok: true, amount }
 }
 
 /** Add a dream/wishlist item for the child. */
@@ -191,7 +241,21 @@ export async function redeemDream(input: { childId: string; dreamId: string; pri
     .eq('id', child.id)
 
   await supabase.from('dream_items').update({ is_purchased: true }).eq('id', input.dreamId)
+
+  const { data: dream } = await supabase
+    .from('dream_items')
+    .select('name')
+    .eq('id', input.dreamId)
+    .maybeSingle()
+  await supabase.from('child_transactions').insert({
+    child_id: child.id,
+    type: 'expense',
+    amount: input.price,
+    note: dream?.name ? `Đổi quà: ${dream.name}` : 'Đổi quà',
+  })
+
   revalidatePath('/child/dreams')
+  revalidatePath('/child/thu-chi')
   return { ok: true }
 }
 
