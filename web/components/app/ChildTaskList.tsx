@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { submitTask, collectReward } from "@/lib/app/child-actions";
@@ -9,6 +9,7 @@ import { useLang } from "./LangProvider";
 import { useToast } from "./ToastProvider";
 import { celebrate } from "@/lib/app/feedback";
 import Confetti from "./Confetti";
+import CameraCapture from "./CameraCapture";
 import Icon from "@/components/Icon";
 import Emoji, { type EmojiName } from "@/components/Emoji";
 
@@ -33,6 +34,7 @@ export default function ChildTaskList({
   const todo = items.filter((i) => i.status === "todo");
   const submitted = items.filter((i) => i.status === "submitted");
   const done = items.filter((i) => i.status === "approved");
+  const missed = items.filter((i) => i.status === "missed");
 
   return (
     <div className="space-y-3">
@@ -47,6 +49,9 @@ export default function ChildTaskList({
       ))}
       {done.map((i) => (
         <TaskCard key={i.task.id} item={i} childId={childId} variant="done" />
+      ))}
+      {missed.map((i) => (
+        <TaskCard key={i.task.id} item={i} childId={childId} variant="missed" />
       ))}
       {items.length === 0 && (
         <div className="gw-card text-center text-on-surface-variant font-semibold py-8">
@@ -64,13 +69,13 @@ function TaskCard({
 }: {
   item: ChildTaskItem;
   childId: string;
-  variant: "rejected" | "todo" | "submitted" | "done";
+  variant: "rejected" | "todo" | "submitted" | "done" | "missed";
 }) {
   const router = useRouter();
   const { t } = useLang();
   const { toast } = useToast();
-  const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
   const [error, setError] = useState("");
   const [celebrateCoins, setCelebrateCoins] = useState<number | null>(null);
   const [showJar, setShowJar] = useState(false);
@@ -94,12 +99,8 @@ function TaskCard({
       router.refresh();
     });
   }
-  const cameraOnly =
-    task.auto_approve_after != null && task.approval_count >= task.auto_approve_after;
-
-  async function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  async function handleFile(file: File) {
+    setShowCamera(false);
     setError("");
     setUploading(true);
     try {
@@ -121,15 +122,10 @@ function TaskCard({
           toast(res.error ?? t("toastError"), "error");
           return;
         }
-        if (res.autoApproved) {
-          celebrate();
-          setCelebrateCoins(res.coinsEarned ?? 0);
-          toast(t("toastCoinsEarned").replace("{n}", String(res.coinsEarned ?? 0)), "success");
-          if (res.leveledUp) toast(t("toastLevelUp"), "success");
-          setTimeout(() => setCelebrateCoins(null), 1600);
-        } else {
-          toast(t("toastTaskSubmitted"), "info");
-        }
+        // Coins are no longer granted instantly — they're credited at day-end
+        // (auto tasks) or after a parent approves.
+        celebrate();
+        toast(t("submitWaitDayEnd"), "success");
         router.refresh();
       });
     } catch (err) {
@@ -175,7 +171,7 @@ function TaskCard({
         {actionable ? (
           <button
             disabled={uploading || pending}
-            onClick={() => fileRef.current?.click()}
+            onClick={() => setShowCamera(true)}
             className="gw-btn gw-btn--primary gw-btn--sm"
           >
             {uploading || pending ? "…" : variant === "rejected" ? t("resubmit") : t("submit")}
@@ -227,21 +223,10 @@ function TaskCard({
         <p className="mt-2 text-sm text-error font-semibold">{t("parentSaid")} {item.parentNote}</p>
       )}
 
-      {actionable && (
-        <div className="mt-2">
-          {cameraOnly && (
-            <p className="text-xs text-amber-600 mb-2">{t("autoApproveNote")}</p>
-          )}
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            capture={cameraOnly ? "environment" : undefined}
-            onChange={onPickFile}
-            className="hidden"
-          />
-          {error && <p className="text-sm text-error mt-1">{error}</p>}
-        </div>
+      {actionable && error && <p className="text-sm text-error mt-1">{error}</p>}
+
+      {showCamera && (
+        <CameraCapture onCapture={handleFile} onClose={() => setShowCamera(false)} />
       )}
     </div>
   );
@@ -253,7 +238,8 @@ function statusLabel(variant: string, t: TFn): string {
   switch (variant) {
     case "rejected": return t("statusRejected");
     case "todo": return t("statusTodo");
-    case "submitted": return t("statusSubmitted");
+    case "submitted": return t("submitWaitDayEnd");
+    case "missed": return t("statusMissed");
     default: return t("statusDone");
   }
 }
@@ -264,6 +250,7 @@ function StatusChip({ variant, label }: { variant: string; label: string }) {
     todo: "bg-surface-container text-on-surface-variant",
     submitted: "bg-amber-100 text-amber-700",
     done: "bg-tertiary-container/40 text-tertiary",
+    missed: "bg-error/10 text-error",
   };
   return (
     <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${cls[variant] ?? cls.done}`}>{label}</span>

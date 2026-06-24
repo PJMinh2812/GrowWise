@@ -59,7 +59,7 @@ export default function Emoji({
       height={size}
       aria-hidden={alt === "" ? true : undefined}
       className={className}
-      style={{ display: "inline-block", verticalAlign: "-0.18em", objectFit: "contain", ...style }}
+      style={{ display: "inline-block", verticalAlign: "middle", objectFit: "contain", ...style }}
       draggable={false}
     />
   );

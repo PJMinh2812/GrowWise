@@ -134,8 +134,10 @@ body {
 
 /* phone shell */
 .gw-screen{max-width:430px;margin:0 auto;min-height:100vh;background:var(--surface);
-  display:flex;flex-direction:column;position:relative;box-shadow:var(--soft-lg)}
-.gw-scroll{flex:1;overflow-y:auto;padding:0 20px 110px;position:relative;z-index:1}
+  display:flex;flex-direction:column;position:relative;box-shadow:var(--soft-lg);overflow-x:hidden;width:100%}
+/* Icons (Phosphor SVG) sit on the text baseline by default → align them to text. */
+.gw-screen svg{vertical-align:middle}
+.gw-scroll{flex:1;overflow-y:auto;overflow-x:hidden;padding:0 20px 110px;position:relative;z-index:1}
 /* Decorative dashboard backdrop behind the header + content (Techcombank-style) */
 .gw-herobg{position:absolute;top:0;left:0;right:0;height:480px;z-index:0;pointer-events:none;overflow:hidden}
 
@@ -143,8 +145,9 @@ body {
 .gw-top{position:sticky;top:0;z-index:30;display:flex;align-items:center;justify-content:space-between;
   gap:10px;padding:14px 20px;background:rgba(255,248,242,.85);backdrop-filter:blur(10px);
   border-bottom:1px solid var(--outline-v)}
-.gw-top .brand{display:flex;align-items:center;gap:10px}
-.gw-top .brand b{font-size:21px;font-weight:900;color:var(--primary);letter-spacing:.2px}
+.gw-top .brand{display:flex;align-items:center;gap:10px;min-width:0}
+.gw-top .brand b{font-size:21px;font-weight:900;color:var(--primary);letter-spacing:.2px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .gw-avatar{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-size:22px;
   background:var(--primary-fixed);border:2px solid var(--primary-c);overflow:hidden}
 .gw-coin{display:inline-flex;align-items:center;gap:6px;background:var(--white);
@@ -196,6 +199,11 @@ body {
 .chip-story{background:var(--tertiary-fixed);color:var(--on-tertiary-c)}
 .chip-game{background:var(--surface-high);color:var(--ink-soft)}
 .chip-new{background:var(--primary-fixed);color:var(--on-primary-c)}
+/* selectable chip buttons (roadmap wizard) */
+button.gw-chip{cursor:pointer;border:1.5px solid var(--outline-v);background:var(--white);
+  color:var(--ink);padding:7px 13px;font-size:13px;transition:.12s}
+button.gw-chip.active{background:var(--primary-c);color:var(--on-primary-c);border-color:var(--primary-c)}
+button.gw-chip:active{transform:translateY(1px)}
 
 /* progress — candy stripe */
 .gw-progress{height:16px;border-radius:var(--r-pill);background:rgba(0,0,0,.07);overflow:hidden}
@@ -236,8 +244,9 @@ body {
   display:flex;justify-content:space-around;align-items:flex-end;
   background:rgba(255,248,242,.92);backdrop-filter:blur(12px);border-top:1px solid var(--outline-v);
   padding:8px 8px 14px}
-.gw-nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;text-decoration:none;
+.gw-nav a{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;text-decoration:none;
   color:var(--outline);font-size:11px;font-weight:800;cursor:pointer}
+.gw-nav a span:not(.bubble){max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
 .gw-nav a svg{font-size:25px}
 .gw-nav a.active{color:var(--primary)}
 .gw-nav a.active .bubble{width:54px;height:54px;border-radius:50%;background:var(--primary-c);color:#fff;

@@ -2,8 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { createTaskAction } from "@/lib/app/parent-actions";
-import type { Child } from "@/lib/types";
+import { createTaskAction, updateTaskAction } from "@/lib/app/parent-actions";
+import type { Child, Task } from "@/lib/types";
 import { useLang } from "./LangProvider";
 import Emoji from "@/components/Emoji";
 
@@ -16,19 +16,28 @@ const CATEGORIES = [
 
 const ICONS = ["🧹", "📚", "💪", "🎨", "🍽️", "🛏️", "🪥", "🐶", "🌱", "🧺", "✏️", "🎹"];
 
-export default function CreateTaskForm({ children }: { children: Child[] }) {
+export default function CreateTaskForm({
+  children,
+  task,
+  onDone,
+}: {
+  children: Child[];
+  task?: Task;
+  onDone?: () => void;
+}) {
   const router = useRouter();
   const { t } = useLang();
-  const [childId, setChildId] = useState(children[0]?.id ?? "");
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [category, setCategory] = useState(CATEGORIES[0].key);
-  const [icon, setIcon] = useState(ICONS[0]);
-  const [coinReward, setCoinReward] = useState(50);
-  const [autoApprove, setAutoApprove] = useState(false);
-  const [autoAfter, setAutoAfter] = useState(3);
-  const [hasPenalty, setHasPenalty] = useState(false);
-  const [penaltyPercent, setPenaltyPercent] = useState(10);
+  const isEdit = Boolean(task);
+  const [childId, setChildId] = useState(task?.child_id ?? children[0]?.id ?? "");
+  const [title, setTitle] = useState(task?.title ?? "");
+  const [description, setDescription] = useState(task?.description ?? "");
+  const [category, setCategory] = useState(task?.category ?? CATEGORIES[0].key);
+  const [icon, setIcon] = useState(task?.icon ?? ICONS[0]);
+  const [coinReward, setCoinReward] = useState(task?.coin_reward ?? 50);
+  const [autoApprove, setAutoApprove] = useState(task ? task.auto_approve_after != null : false);
+  const [autoAfter, setAutoAfter] = useState(task?.auto_approve_after ?? 0);
+  const [hasPenalty, setHasPenalty] = useState(task?.has_penalty ?? false);
+  const [penaltyPercent, setPenaltyPercent] = useState(task?.penalty_percent ?? 10);
   const [error, setError] = useState("");
   const [pending, start] = useTransition();
 
@@ -37,19 +46,32 @@ export default function CreateTaskForm({ children }: { children: Child[] }) {
     setError("");
     if (!title.trim()) return setError(t("taskNameRequired"));
     start(async () => {
-      const res = await createTaskAction({
-        childId,
-        title: title.trim(),
-        description: description.trim(),
-        category,
-        icon,
-        coinReward,
-        autoApproveAfter: autoApprove ? autoAfter : null,
-        hasPenalty,
-        penaltyPercent,
-      });
+      const res = isEdit
+        ? await updateTaskAction({
+            taskId: task!.id,
+            title: title.trim(),
+            description: description.trim(),
+            category,
+            icon,
+            coinReward,
+            autoApprove,
+            hasPenalty,
+            penaltyPercent,
+          })
+        : await createTaskAction({
+            childId,
+            title: title.trim(),
+            description: description.trim(),
+            category,
+            icon,
+            coinReward,
+            autoApproveAfter: autoApprove ? autoAfter : null,
+            hasPenalty,
+            penaltyPercent,
+          });
       if (res.ok) {
-        router.push("/parent");
+        if (onDone) onDone();
+        else router.push("/parent");
         router.refresh();
       } else {
         setError(res.error ?? t("createTaskError"));
@@ -173,7 +195,7 @@ export default function CreateTaskForm({ children }: { children: Child[] }) {
       <div style={{ display: "flex", gap: "12px", paddingTop: "8px" }}>
         <button
           type="button"
-          onClick={() => router.push("/parent")}
+          onClick={() => (onDone ? onDone() : router.push("/parent"))}
           className="gw-btn gw-btn--ghost"
         >
           {t("cancel")}
@@ -183,7 +205,7 @@ export default function CreateTaskForm({ children }: { children: Child[] }) {
           disabled={pending}
           className="gw-btn gw-btn--primary"
         >
-          {pending ? t("creating") : t("navCreateTask")}
+          {pending ? t("creating") : isEdit ? t("rmUpdated") : t("navCreateTask")}
         </button>
       </div>
     </form>

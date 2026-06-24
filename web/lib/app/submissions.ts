@@ -1,4 +1,5 @@
 import { createServerSupabase } from '@/lib/supabase-server'
+import { startOfTodayVN } from '@/lib/app/day'
 import type { Task, TaskSubmission, Child } from '@/lib/types'
 
 export interface SubmissionWithRelations extends TaskSubmission {
@@ -44,6 +45,18 @@ export async function getChildSubmissions(childId: string): Promise<TaskSubmissi
     .from('task_submissions')
     .select('*')
     .eq('child_id', childId)
+    .order('created_at', { ascending: false })
+  return (data as TaskSubmission[]) ?? []
+}
+
+/** A child's submissions created today (VN time), newest first — daily cycle. */
+export async function getTodaySubmissions(childId: string): Promise<TaskSubmission[]> {
+  const supabase = await createServerSupabase()
+  const { data } = await supabase
+    .from('task_submissions')
+    .select('*')
+    .eq('child_id', childId)
+    .gte('created_at', startOfTodayVN().toISOString())
     .order('created_at', { ascending: false })
   return (data as TaskSubmission[]) ?? []
 }

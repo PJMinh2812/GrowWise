@@ -1,5 +1,7 @@
 import { getFamilyForUser, getChildren } from "@/lib/app/children";
+import { getTaskTemplates } from "@/lib/app/tasks";
 import RoadmapManager from "@/components/app/RoadmapManager";
+import RoadmapWizard from "@/components/app/RoadmapWizard";
 import CreateTaskForm from "@/components/app/CreateTaskForm";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
@@ -10,6 +12,7 @@ export default async function ParentRoadmapPage() {
   const lang = await getLang();
   const family = await getFamilyForUser();
   const children = family ? await getChildren(family.id) : [];
+  const tasks = family ? await getTaskTemplates(family.id, undefined, true) : [];
 
   return (
     <div className="max-w-2xl">
@@ -24,7 +27,10 @@ export default async function ParentRoadmapPage() {
         </div>
       ) : (
         <>
-          <RoadmapManager children={children.map((c) => ({ id: c.id, name: c.name, emoji: c.avatar_emoji }))} />
+          <RoadmapWizard
+            children={children.map((c) => ({ id: c.id, name: c.name, emoji: c.avatar_emoji, age: c.age }))}
+          />
+          <RoadmapManager children={children} tasks={tasks} />
           <h2 className="font-extrabold text-on-surface mb-3">{t(lang, "createTaskBtn")}</h2>
           <CreateTaskForm children={children} />
         </>

@@ -5,6 +5,7 @@ import type { Task } from '@/lib/types'
 export async function getTaskTemplates(
   familyId: string,
   childId?: string,
+  includeInactive = false,
 ): Promise<Task[]> {
   const supabase = await createServerSupabase()
   let q = supabase
@@ -12,7 +13,7 @@ export async function getTaskTemplates(
     .select('*')
     .eq('family_id', familyId)
     .eq('is_template', true)
-    .eq('is_active', true)
+  if (!includeInactive) q = q.eq('is_active', true)
   if (childId) q = q.eq('child_id', childId)
   const { data } = await q.order('created_at', { ascending: false })
   return (data as Task[]) ?? []

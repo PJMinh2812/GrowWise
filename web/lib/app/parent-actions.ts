@@ -4,8 +4,14 @@ import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
 import { createServerSupabase } from '@/lib/supabase-server'
 import { getActivePlan } from '@/lib/app/subscription'
+import { splitJars, splitAndCreditJars } from '@/lib/app/credit'
 import type { Child, Task, TaskSubmission } from '@/lib/types'
 import { calcAge } from '@/lib/types'
+
+/** A task auto-approves once its approval_count reaches the threshold. */
+function isAutoApprove(task: Task): boolean {
+  return task.auto_approve_after != null && task.approval_count >= task.auto_approve_after
+}
 
 /**
  * Add a child to the parent's family, enforcing the plan's max_children limit.
@@ -235,14 +241,6 @@ function qualityMultiplier(rating: number): number {
   return 1.0
 }
 
-/** Split an amount into the 3 jars (mirror mobile _addCoins): save 40%, share 20%, spend rest. */
-function splitJars(amount: number) {
-  const toSave = Math.round(amount * 0.4)
-  const toShare = Math.round(amount * 0.2)
-  const toSpend = amount - toSave - toShare
-  return { toSave, toShare, toSpend }
-}
-
 /** Apply XP gain with level-ups (mirror mobile _addXp). */
 function applyXp(child: Child, gain: number) {
   let xp = child.xp + gain
@@ -274,8 +272,11 @@ export async function approveSubmission(submissionId: string, rating: number) {
   const earned = Math.round(row.task.coin_reward * qualityMultiplier(rating))
   const xp = applyXp(row.child, 15)
 
-  // Coins are granted only when the child "collects" them into a jar
-  // (collected=false). Approval gives XP + records the earned amount.
+  // Auto-approve tasks: the machine credits + auto-splits the coins (no child
+  // "collect" step). Manual tasks: coins wait for the child to choose a jar
+  // (collected=false).
+  const auto = isAutoApprove(row.task)
+
   await supabase
     .from('task_submissions')
     .update({
@@ -283,7 +284,8 @@ export async function approveSubmission(submissionId: string, rating: number) {
       reviewed_at: new Date().toISOString(),
       quality_rating: rating,
       coin_earned: earned,
-      collected: false,
+      auto_approved: auto,
+      collected: auto,
     })
     .eq('id', submissionId)
 
@@ -293,6 +295,8 @@ export async function approveSubmission(submissionId: string, rating: number) {
     .from('children')
     .update({ ...xp, updated_at: new Date().toISOString() })
     .eq('id', row.child.id)
+
+  if (auto) await splitAndCreditJars(supabase, row.child, earned, row.task.title)
 
   await supabase.from('memories').insert({
     family_id: row.task.family_id,
@@ -402,5 +406,85 @@ export async function createTaskAction(input: {
 
   if (error) return { ok: false, error: error.message }
   revalidatePath('/parent')
+  revalidatePath('/parent/roadmap')
+  return { ok: true }
+}
+
+/** Verify a task belongs to the logged-in parent's family. Returns familyId or null. */
+async function ownTask(taskId: string) {
+  const supabase = await createServerSupabase()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { supabase, ok: false as const }
+  const { data: family } = await supabase
+    .from('families')
+    .select('id')
+    .eq('parent_id', user.id)
+    .maybeSingle()
+  if (!family) return { supabase, ok: false as const }
+  const { data: task } = await supabase
+    .from('tasks')
+    .select('id')
+    .eq('id', taskId)
+    .eq('family_id', family.id)
+    .maybeSingle()
+  return { supabase, ok: Boolean(task) }
+}
+
+/** Edit an existing task template (parent fine-tunes the roadmap). */
+export async function updateTaskAction(input: {
+  taskId: string
+  title: string
+  description: string
+  category: string
+  icon: string
+  coinReward: number
+  autoApprove?: boolean
+  hasPenalty?: boolean
+  penaltyPercent?: number
+}) {
+  const { supabase, ok } = await ownTask(input.taskId)
+  if (!ok) return { ok: false, error: 'unauthorized' }
+  const { error } = await supabase
+    .from('tasks')
+    .update({
+      title: input.title,
+      description: input.description,
+      category: input.category,
+      icon: input.icon,
+      coin_reward: Math.max(0, Math.round(input.coinReward)),
+      ...(input.hasPenalty != null ? { has_penalty: input.hasPenalty } : {}),
+      ...(input.penaltyPercent != null ? { penalty_percent: input.penaltyPercent } : {}),
+      ...(input.autoApprove != null ? { auto_approve_after: input.autoApprove ? 0 : null } : {}),
+    })
+    .eq('id', input.taskId)
+  if (error) return { ok: false, error: error.message }
+  revalidatePath('/parent/roadmap')
+  revalidatePath('/child/tasks')
+  return { ok: true }
+}
+
+/** Pause/resume a task (is_active). */
+export async function setTaskActiveAction(taskId: string, active: boolean) {
+  const { supabase, ok } = await ownTask(taskId)
+  if (!ok) return { ok: false, error: 'unauthorized' }
+  const { error } = await supabase.from('tasks').update({ is_active: active }).eq('id', taskId)
+  if (error) return { ok: false, error: error.message }
+  revalidatePath('/parent/roadmap')
+  revalidatePath('/child/tasks')
+  return { ok: true }
+}
+
+/** Remove a task from the roadmap (deletes its submissions then the task). */
+export async function deleteTaskAction(taskId: string) {
+  const { supabase, ok } = await ownTask(taskId)
+  if (!ok) return { ok: false, error: 'unauthorized' }
+  await supabase.from('task_submissions').delete().eq('task_id', taskId)
+  const { error } = await supabase.from('tasks').delete().eq('id', taskId)
+  if (error) {
+    // Fallback: if a FK blocks deletion, just deactivate.
+    await supabase.from('tasks').update({ is_active: false }).eq('id', taskId)
+  }
+  revalidatePath('/parent/roadmap')
+  revalidatePath('/child/tasks')
   return { ok: true }
 }

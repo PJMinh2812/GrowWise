@@ -90,7 +90,7 @@ export interface Lesson {
 // badges, dream_items, memories, user_settings, profiles
 // ───────────────────────────────────────────────────────────────
 
-export type TaskStatus = 'pending' | 'submitted' | 'approved' | 'rejected'
+export type TaskStatus = 'pending' | 'submitted' | 'approved' | 'rejected' | 'missed'
 
 export interface Family {
   id: string
