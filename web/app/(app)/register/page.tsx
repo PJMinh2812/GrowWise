@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { useLang } from "@/components/app/LangProvider";
 import LanguageToggle from "@/components/app/LanguageToggle";
+import Icon from "@/components/Icon";
+import Emoji from "@/components/Emoji";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -53,14 +55,14 @@ export default function RegisterPage() {
         <LanguageToggle />
       </div>
       <div className="hidden lg:flex" style={{ flexDirection: "column", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, var(--primary-fixed) 0%, var(--cream) 100%)", padding: "48px" }}>
-        <div style={{ fontSize: "120px" }}>🐷</div>
+        <div><Emoji name="piggy" size={120} /></div>
         <h2 style={{ fontSize: "24px", fontWeight: 900, color: "var(--ink)", marginTop: "16px" }}>{t("tagline")}</h2>
       </div>
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
         <div style={{ width: "100%", maxWidth: "360px" }}>
           <div style={{ textAlign: "center", marginBottom: "32px" }}>
-            <div style={{ fontSize: "40px", marginBottom: "8px" }}>🌱</div>
+            <div style={{ marginBottom: "8px" }}><Emoji name="seedling" size={40} /></div>
             <h1 style={{ fontSize: "24px", fontWeight: 900, color: "var(--ink)" }}>{t("registerTitle")}</h1>
           </div>
 
@@ -153,9 +155,7 @@ function Field({
             aria-label={showPw ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
             className="gw-eye"
           >
-            <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>
-              {showPw ? "visibility_off" : "visibility"}
-            </span>
+            <Icon name={showPw ? "visibility_off" : "visibility"} style={{ fontSize: "20px" }} />
           </button>
         )}
       </div>

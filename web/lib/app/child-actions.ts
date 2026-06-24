@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createServerSupabase } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
+import { startOfTodayVN } from '@/lib/app/day'
 import type { Task, TaskSubmission, Child } from '@/lib/types'
 
 /**
@@ -23,22 +24,11 @@ export async function completeLesson(childId: string, lessonId: string) {
   return { ok: true }
 }
 
-function applyXp(child: Child, gain: number) {
-  let xp = child.xp + gain
-  let level = child.level
-  let xpToNext = child.xp_to_next_level
-  while (xp >= xpToNext) {
-    xp -= xpToNext
-    level += 1
-    xpToNext = Math.round(xpToNext * 1.2)
-  }
-  return { xp, level, xp_to_next_level: xpToNext }
-}
-
 /**
- * Child submits proof for a task. Reuses an existing pending/rejected submission
- * or creates one, sets it to 'submitted'. If the template is past its
- * auto-approve threshold, immediately approves and awards coins (mirror mobile).
+ * Child submits photo proof for a task (always 'submitted'). Coins are no longer
+ * awarded instantly — auto-approve tasks are credited at the day-end rollover
+ * (cron) so a parent can confirm/reject first; manual tasks wait for review.
+ * Submissions are scoped to "today", so each day starts fresh.
  */
 export async function submitTask(input: {
   taskId: string
@@ -49,19 +39,21 @@ export async function submitTask(input: {
 
   const { data: task } = await supabase
     .from('tasks')
-    .select('*')
+    .select('id')
     .eq('id', input.taskId)
     .maybeSingle()
   if (!task) return { ok: false, error: 'Không tìm thấy nhiệm vụ' }
-  const t = task as Task
 
-  // Find a reusable submission (pending or rejected) for this task+child
+  // Reuse a NON-approved submission created today; otherwise create a fresh one
+  // (so yesterday's approved/missed row doesn't block today's submit).
+  const todayIso = startOfTodayVN().toISOString()
   const { data: existing } = await supabase
     .from('task_submissions')
     .select('*')
     .eq('task_id', input.taskId)
     .eq('child_id', input.childId)
-    .in('status', ['pending', 'rejected'])
+    .in('status', ['pending', 'rejected', 'missed'])
+    .gte('created_at', todayIso)
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle()
@@ -77,59 +69,19 @@ export async function submitTask(input: {
   }
   if (!submissionId) return { ok: false, error: 'Không tạo được bài nộp' }
 
-  const canAuto =
-    t.auto_approve_after != null && t.approval_count >= t.auto_approve_after
-
-  let coinsEarned = 0
-  let leveledUp = false
-
-  if (canAuto) {
-    // Auto-approve: award coins immediately
-    const earned = t.coin_reward
-    coinsEarned = earned
-    const { data: childRow } = await supabase
-      .from('children')
-      .select('*')
-      .eq('id', input.childId)
-      .maybeSingle()
-    const child = childRow as Child
-    const xp = applyXp(child, 15)
-    leveledUp = xp.level > child.level
-
-    // Coins are NOT added to jars here — the child "collects" them into a jar of
-    // their choice afterwards (collected=false). Only XP is granted now.
-    await supabase
-      .from('task_submissions')
-      .update({
-        status: 'approved',
-        submitted_at: new Date().toISOString(),
-        reviewed_at: new Date().toISOString(),
-        proof_image_url: input.proofUrl,
-        coin_earned: earned,
-        auto_approved: true,
-        collected: false,
-      })
-      .eq('id', submissionId)
-    await supabase.rpc('increment_task_approval_count', { p_task_id: t.id })
-    await supabase
-      .from('children')
-      .update({ ...xp, updated_at: new Date().toISOString() })
-      .eq('id', child.id)
-  } else {
-    await supabase
-      .from('task_submissions')
-      .update({
-        status: 'submitted',
-        submitted_at: new Date().toISOString(),
-        proof_image_url: input.proofUrl,
-        parent_note: null,
-      })
-      .eq('id', submissionId)
-  }
+  await supabase
+    .from('task_submissions')
+    .update({
+      status: 'submitted',
+      submitted_at: new Date().toISOString(),
+      proof_image_url: input.proofUrl,
+      parent_note: null,
+    })
+    .eq('id', submissionId)
 
   revalidatePath('/child')
   revalidatePath('/child/tasks')
-  return { ok: true, autoApproved: canAuto, coinsEarned, leveledUp }
+  return { ok: true }
 }
 
 /**
@@ -197,6 +149,7 @@ export async function addDream(input: {
   name: string
   price: number
   icon?: string
+  term?: 'short' | 'long'
 }) {
   const supabase = await createServerSupabase()
   const { error } = await supabase.from('dream_items').insert({
@@ -204,6 +157,7 @@ export async function addDream(input: {
     name: input.name,
     price: input.price,
     icon: input.icon ?? '🎁',
+    term: input.term ?? 'short',
   })
   if (error) return { ok: false, error: error.message }
   revalidatePath('/child/dreams')

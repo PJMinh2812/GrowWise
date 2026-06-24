@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLang } from "./LangProvider";
 import type { RenewalInfo } from "@/lib/app/subscription";
+import Icon from "@/components/Icon";
 
 export default function SubscriptionBanner({ info }: { info: RenewalInfo }) {
   const router = useRouter();
@@ -26,9 +27,7 @@ export default function SubscriptionBanner({ info }: { info: RenewalInfo }) {
         borderLeft: `4px solid ${expired ? "var(--error, #d33)" : "var(--primary)"}`,
       }}
     >
-      <span className="material-symbols-outlined text-primary" aria-hidden>
-        {expired ? "error" : "schedule"}
-      </span>
+      <Icon name={expired ? "error" : "schedule"} className="text-primary" />
       <div className="flex-1 min-w-0">
         <h3 className="font-extrabold text-on-surface">{title}</h3>
         <p className="text-sm text-on-surface-variant mt-0.5">{desc}</p>

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useLang } from "./LangProvider";
+import Icon from "@/components/Icon";
 
 interface Msg {
   role: "user" | "assistant";
@@ -136,7 +137,7 @@ export default function WisyChat({ childId, childName }: { childId: string; chil
           className={`gw-btn gw-btn--sm ${speakOn ? "gw-btn--secondary" : "gw-btn--ghost"}`}
           style={{ width: "42px", padding: 0, borderRadius: "50%" }}
         >
-          <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>{speakOn ? "volume_up" : "volume_off"}</span>
+          <Icon name={speakOn ? "volume_up" : "volume_off"} style={{ fontSize: "20px" }} />
         </button>
       </div>
 
@@ -202,7 +203,7 @@ export default function WisyChat({ childId, childName }: { childId: string; chil
         style={{ display: "flex", alignItems: "center", gap: "8px" }}
       >
         <div className="gw-field" style={{ flex: 1 }}>
-          <span className="material-symbols-outlined">chat</span>
+          <Icon name="chat" />
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -217,7 +218,7 @@ export default function WisyChat({ childId, childName }: { childId: string; chil
           style={{ width: "48px", padding: 0, borderRadius: "50%", flexShrink: 0 }}
           aria-label="Gửi"
         >
-          <span className="material-symbols-outlined">send</span>
+          <Icon name="send" />
         </button>
       </form>
     </div>

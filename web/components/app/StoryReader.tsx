@@ -5,6 +5,8 @@ import type { Lesson, LessonQuiz } from "@/lib/types";
 import { speak, stopSpeak } from "@/lib/app/tts";
 import QuizOverlay from "./QuizOverlay";
 import { completeLesson } from "@/lib/app/child-actions";
+import Icon from "@/components/Icon";
+import Emoji from "@/components/Emoji";
 
 const IMG_FALLBACK =
   "data:image/svg+xml;utf8," +
@@ -78,7 +80,7 @@ export default function StoryReader({ lesson, childId }: { lesson: Lesson; child
       <div>
         <StoryHeader lesson={lesson} />
         <div className="gw-card gw-card--glow" style={{ padding: "40px 24px", marginTop: "16px", textAlign: "center" }}>
-          <div style={{ fontSize: "64px", marginBottom: "12px", animation: "bouncein .5s cubic-bezier(.2,1.4,.4,1)" }}>🎉</div>
+          <div style={{ marginBottom: "12px", animation: "bouncein .5s cubic-bezier(.2,1.4,.4,1)" }}><Emoji name="party" size={64} /></div>
           <h2 style={{ fontSize: "22px", fontWeight: 900, color: "var(--ink)" }}>Hoàn thành truyện!</h2>
           <p style={{ color: "var(--ink-soft)", marginTop: "8px", fontWeight: 600 }}>Bé giỏi lắm! Cùng đọc truyện khác nhé.</p>
           <div style={{ marginTop: "24px" }}>
@@ -87,7 +89,7 @@ export default function StoryReader({ lesson, childId }: { lesson: Lesson; child
               className="gw-btn gw-btn--primary"
               onClick={() => { setFinished(false); setPage(0); }}
             >
-              <span className="material-symbols-outlined">replay</span>
+              <Icon name="replay" />
               Đọc lại
             </button>
           </div>
@@ -127,7 +129,7 @@ export default function StoryReader({ lesson, childId }: { lesson: Lesson; child
               onClick={() => speak(current.caption)}
               aria-label="Đọc to"
             >
-              <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>volume_up</span>
+              <Icon name="volume_up" style={{ fontSize: "20px" }} />
             </button>
             <p style={{ fontSize: "15px", lineHeight: 1.6, color: "var(--ink)", fontWeight: 600, flex: 1 }}>
               {current.caption}
@@ -155,7 +157,7 @@ export default function StoryReader({ lesson, childId }: { lesson: Lesson; child
           className="gw-btn gw-btn--ghost gw-btn--sm"
           style={{ flex: 1 }}
         >
-          <span className="material-symbols-outlined">arrow_back</span>
+          <Icon name="arrow_back" />
           Trước
         </button>
         {isLast ? (
@@ -166,7 +168,7 @@ export default function StoryReader({ lesson, childId }: { lesson: Lesson; child
             style={{ flex: 1 }}
           >
             {quizzes.length > 0 ? "Làm bài" : "Xong"}
-            <span className="material-symbols-outlined">{quizzes.length > 0 ? "quiz" : "check_circle"}</span>
+            <Icon name={quizzes.length > 0 ? "quiz" : "check_circle"} />
           </button>
         ) : (
           <button
@@ -176,7 +178,7 @@ export default function StoryReader({ lesson, childId }: { lesson: Lesson; child
             style={{ flex: 1 }}
           >
             Trang sau
-            <span className="material-symbols-outlined">arrow_forward</span>
+            <Icon name="arrow_forward" />
           </button>
         )}
       </div>

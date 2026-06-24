@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useRef, useState } from "react";
+import Emoji, { type EmojiName } from "@/components/Emoji";
 
 type ToastType = "success" | "error" | "info";
 interface ToastItem {
@@ -19,7 +20,7 @@ export function useToast() {
   return useContext(Ctx);
 }
 
-const ICON: Record<ToastType, string> = { success: "✅", error: "⚠️", info: "💡" };
+const ICON: Record<ToastType, EmojiName> = { success: "check", error: "warning", info: "bulb" };
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<ToastItem[]>([]);
@@ -39,7 +40,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       <div className="gw-toast-wrap" aria-live="polite">
         {items.map((t) => (
           <div key={t.id} className={`gw-toast gw-toast--${t.type}`} role="status">
-            <span className="gw-toast__ico" aria-hidden>{ICON[t.type]}</span>
+            <span className="gw-toast__ico" aria-hidden><Emoji name={ICON[t.type]} size={20} /></span>
             <span>{t.msg}</span>
           </div>
         ))}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { submitTask, collectReward } from "@/lib/app/child-actions";
@@ -9,6 +9,9 @@ import { useLang } from "./LangProvider";
 import { useToast } from "./ToastProvider";
 import { celebrate } from "@/lib/app/feedback";
 import Confetti from "./Confetti";
+import CameraCapture from "./CameraCapture";
+import Icon from "@/components/Icon";
+import Emoji, { type EmojiName } from "@/components/Emoji";
 
 export interface ChildTaskItem {
   task: Task;
@@ -31,6 +34,7 @@ export default function ChildTaskList({
   const todo = items.filter((i) => i.status === "todo");
   const submitted = items.filter((i) => i.status === "submitted");
   const done = items.filter((i) => i.status === "approved");
+  const missed = items.filter((i) => i.status === "missed");
 
   return (
     <div className="space-y-3">
@@ -45,6 +49,9 @@ export default function ChildTaskList({
       ))}
       {done.map((i) => (
         <TaskCard key={i.task.id} item={i} childId={childId} variant="done" />
+      ))}
+      {missed.map((i) => (
+        <TaskCard key={i.task.id} item={i} childId={childId} variant="missed" />
       ))}
       {items.length === 0 && (
         <div className="gw-card text-center text-on-surface-variant font-semibold py-8">
@@ -62,13 +69,13 @@ function TaskCard({
 }: {
   item: ChildTaskItem;
   childId: string;
-  variant: "rejected" | "todo" | "submitted" | "done";
+  variant: "rejected" | "todo" | "submitted" | "done" | "missed";
 }) {
   const router = useRouter();
   const { t } = useLang();
   const { toast } = useToast();
-  const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
   const [error, setError] = useState("");
   const [celebrateCoins, setCelebrateCoins] = useState<number | null>(null);
   const [showJar, setShowJar] = useState(false);
@@ -92,12 +99,8 @@ function TaskCard({
       router.refresh();
     });
   }
-  const cameraOnly =
-    task.auto_approve_after != null && task.approval_count >= task.auto_approve_after;
-
-  async function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  async function handleFile(file: File) {
+    setShowCamera(false);
     setError("");
     setUploading(true);
     try {
@@ -119,15 +122,10 @@ function TaskCard({
           toast(res.error ?? t("toastError"), "error");
           return;
         }
-        if (res.autoApproved) {
-          celebrate();
-          setCelebrateCoins(res.coinsEarned ?? 0);
-          toast(t("toastCoinsEarned").replace("{n}", String(res.coinsEarned ?? 0)), "success");
-          if (res.leveledUp) toast(t("toastLevelUp"), "success");
-          setTimeout(() => setCelebrateCoins(null), 1600);
-        } else {
-          toast(t("toastTaskSubmitted"), "info");
-        }
+        // Coins are no longer granted instantly — they're credited at day-end
+        // (auto tasks) or after a parent approves.
+        celebrate();
+        toast(t("submitWaitDayEnd"), "success");
         router.refresh();
       });
     } catch (err) {
@@ -156,7 +154,7 @@ function TaskCard({
             className="gw-coinpop"
             style={{ left: "50%", top: "10%", transform: "translateX(-50%)" }}
           >
-            +{celebrateCoins} 🪙
+            +{celebrateCoins} <Emoji name="coin" size={16} />
           </span>
         </>
       )}
@@ -167,13 +165,13 @@ function TaskCard({
         <div className="flex-1 min-w-0">
           <p className="font-extrabold text-on-surface truncate">{task.title}</p>
           <span className="inline-flex items-center gap-1 text-sm font-extrabold text-primary mt-0.5">
-            <span className="material-symbols-outlined text-base">toll</span>+{task.coin_reward} {t("coinUnit")}
+            <Emoji name="coin" size={16} />+{task.coin_reward} {t("coinUnit")}
           </span>
         </div>
         {actionable ? (
           <button
             disabled={uploading || pending}
-            onClick={() => fileRef.current?.click()}
+            onClick={() => setShowCamera(true)}
             className="gw-btn gw-btn--primary gw-btn--sm"
           >
             {uploading || pending ? "…" : variant === "rejected" ? t("resubmit") : t("submit")}
@@ -184,7 +182,7 @@ function TaskCard({
             onClick={() => setShowJar(true)}
             className="gw-btn gw-btn--secondary gw-btn--sm"
           >
-            🪙 {t("collectBtn")}
+            <Emoji name="coin" size={16} /> {t("collectBtn")}
           </button>
         ) : (
           <StatusChip variant={variant} label={statusLabel(variant, t)} />
@@ -198,12 +196,12 @@ function TaskCard({
             <h3 className="font-extrabold text-on-surface" style={{ fontSize: 17 }}>
               {t("collectChooseJar")}
             </h3>
-            <p className="text-sm text-on-surface-variant mt-1">🪙 +{item.coinEarned ?? 0}</p>
+            <p className="text-sm text-on-surface-variant mt-1" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Emoji name="coin" size={16} /> +{item.coinEarned ?? 0}</p>
             <div className="grid grid-cols-3 gap-2 mt-4">
               {([
-                { jar: "spend" as const, emoji: "🛒", label: t("jarSpend") },
-                { jar: "save" as const, emoji: "🏦", label: t("jarSave") },
-                { jar: "share" as const, emoji: "❤️", label: t("jarShare") },
+                { jar: "spend" as const, icon: "cart" as EmojiName, label: t("jarSpend") },
+                { jar: "save" as const, icon: "bank" as EmojiName, label: t("jarSave") },
+                { jar: "share" as const, icon: "gift" as EmojiName, label: t("jarShare") },
               ]).map((j) => (
                 <button
                   key={j.jar}
@@ -212,7 +210,7 @@ function TaskCard({
                   className="gw-card gw-card--press"
                   style={{ padding: "14px 6px", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}
                 >
-                  <span style={{ fontSize: 26 }}>{j.emoji}</span>
+                  <Emoji name={j.icon} size={26} />
                   <span className="text-xs font-extrabold text-on-surface">{j.label}</span>
                 </button>
               ))}
@@ -225,21 +223,10 @@ function TaskCard({
         <p className="mt-2 text-sm text-error font-semibold">{t("parentSaid")} {item.parentNote}</p>
       )}
 
-      {actionable && (
-        <div className="mt-2">
-          {cameraOnly && (
-            <p className="text-xs text-amber-600 mb-2">{t("autoApproveNote")}</p>
-          )}
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            capture={cameraOnly ? "environment" : undefined}
-            onChange={onPickFile}
-            className="hidden"
-          />
-          {error && <p className="text-sm text-error mt-1">{error}</p>}
-        </div>
+      {actionable && error && <p className="text-sm text-error mt-1">{error}</p>}
+
+      {showCamera && (
+        <CameraCapture onCapture={handleFile} onClose={() => setShowCamera(false)} />
       )}
     </div>
   );
@@ -251,7 +238,8 @@ function statusLabel(variant: string, t: TFn): string {
   switch (variant) {
     case "rejected": return t("statusRejected");
     case "todo": return t("statusTodo");
-    case "submitted": return t("statusSubmitted");
+    case "submitted": return t("submitWaitDayEnd");
+    case "missed": return t("statusMissed");
     default: return t("statusDone");
   }
 }
@@ -262,6 +250,7 @@ function StatusChip({ variant, label }: { variant: string; label: string }) {
     todo: "bg-surface-container text-on-surface-variant",
     submitted: "bg-amber-100 text-amber-700",
     done: "bg-tertiary-container/40 text-tertiary",
+    missed: "bg-error/10 text-error",
   };
   return (
     <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${cls[variant] ?? cls.done}`}>{label}</span>

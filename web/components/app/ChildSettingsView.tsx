@@ -8,6 +8,7 @@ import LanguageToggle from "./LanguageToggle";
 import AvatarUpload from "./AvatarUpload";
 import { useLang } from "./LangProvider";
 import { updateChildSelfAction } from "@/lib/app/parent-actions";
+import Icon from "@/components/Icon";
 
 const EMOJIS = ["👦", "👧", "🧒", "👶", "🐱", "🐶", "🦊", "🐼", "🦄", "🐯"];
 
@@ -54,7 +55,7 @@ export default function ChildSettingsView({
           <h2 className="font-bold text-on-surface">{t("childProfile")}</h2>
           {!profileEditing && (
             <button onClick={() => setProfileEditing(true)} className="gw-btn gw-btn--ghost gw-btn--sm">
-              <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>edit</span>
+              <Icon name="edit" style={{ fontSize: "16px" }} />
               {t("edit")}
             </button>
           )}

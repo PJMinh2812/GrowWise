@@ -2,7 +2,7 @@ import { getFamilyForUser, getChildren } from "@/lib/app/children";
 import { getSubscriptionDetails } from "@/lib/app/subscription";
 import { getAppProfile } from "@/lib/app/auth";
 import SettingsView from "@/components/app/SettingsView";
-import ParentChildTools from "@/components/app/ParentChildTools";
+import LanguageToggle from "@/components/app/LanguageToggle";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
 
@@ -26,6 +26,10 @@ export default async function SettingsPage() {
   return (
     <div className="max-w-2xl">
       <h1 className="text-2xl md:text-3xl font-extrabold text-on-surface mb-6">{t(lang, "navSettings")}</h1>
+      <div className="gw-card mb-4" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px" }}>
+        <span className="font-extrabold text-on-surface">🌐 {t(lang, "language")}</span>
+        <LanguageToggle />
+      </div>
       <SettingsView
         planLabel={PLAN_LABEL[plan.name] ?? plan.name}
         planName={plan.name}
@@ -44,7 +48,6 @@ export default async function SettingsPage() {
           hasPin: Boolean(c.child_pin_hash),
         }))}
       />
-      <ParentChildTools children={children.map((c) => ({ id: c.id, name: c.name, emoji: c.avatar_emoji }))} />
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useLang } from "./LangProvider";
+import Icon from "@/components/Icon";
 
 type Mode = "verify" | "create";
 
@@ -131,7 +132,7 @@ export default function ParentPinDialog({
           aria-label={t("close")}
           className="absolute top-4 right-4 text-on-surface-variant hover:text-on-surface"
         >
-          <span className="material-symbols-outlined">close</span>
+          <Icon name="close" />
         </button>
 
         <div className="flex flex-col items-center text-center">
@@ -188,7 +189,7 @@ export default function ParentPinDialog({
             className="h-14 rounded-[14px] flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition"
             aria-label={t("back")}
           >
-            <span className="material-symbols-outlined">backspace</span>
+            <Icon name="backspace" />
           </button>
         </div>
 

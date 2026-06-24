@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import * as XLSX from 'xlsx'
+import Emoji from '@/components/Emoji'
 
 interface Stats {
   totalUsers: number
@@ -469,8 +470,8 @@ export default function DashboardPage() {
         {/* Revenue */}
         <div className="group bg-surface-container-lowest p-6 rounded-xl border border-outline-variant flex flex-col gap-3 hover:-translate-y-0.5 hover:shadow-md transition-all cursor-default">
           <div className="flex justify-between items-start">
-            <div className="p-2 bg-secondary/10 rounded-lg text-xl">
-              💰
+            <div className="p-2 bg-secondary/10 rounded-lg">
+              <Emoji name="moneybag" size={22} />
             </div>
             <span className={`text-xs font-semibold px-2 py-0.5 rounded ${revDeltaPct >= 0 ? 'text-secondary bg-secondary/10' : 'text-error bg-error/10'}`}>
               {revDeltaPct >= 0 ? '+' : ''}{revDeltaPct}% so với tháng trước
@@ -486,8 +487,8 @@ export default function DashboardPage() {
         {/* Total users */}
         <div className="group bg-surface-container-lowest p-6 rounded-xl border border-outline-variant flex flex-col gap-3 hover:-translate-y-0.5 hover:shadow-md transition-all cursor-default">
           <div className="flex justify-between items-start">
-            <div className="p-2 bg-blue-100 rounded-lg text-xl">
-              👥
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <Emoji name="people" size={22} />
             </div>
             {stats.newUsersThisMonth > 0 && (
               <span className="text-xs font-semibold text-blue-600 bg-blue-100 px-2 py-0.5 rounded">+{stats.newUsersThisMonth} mới</span>
@@ -502,8 +503,8 @@ export default function DashboardPage() {
         {/* Active premium */}
         <div className="group bg-surface-container-lowest p-6 rounded-xl border border-outline-variant flex flex-col gap-3 hover:-translate-y-0.5 hover:shadow-md transition-all cursor-default">
           <div className="flex justify-between items-start">
-            <div className="p-2 bg-primary/10 rounded-lg text-xl">
-              ⭐
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <Emoji name="star" size={22} />
             </div>
             <span className="text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded">
               {stats.totalUsers > 0 ? Math.round((stats.activeSubs / stats.totalUsers) * 100) : 0}% tỷ lệ
@@ -518,8 +519,8 @@ export default function DashboardPage() {
         {/* New users */}
         <div className="group bg-surface-container-lowest p-6 rounded-xl border border-outline-variant flex flex-col gap-3 hover:-translate-y-0.5 hover:shadow-md transition-all cursor-default">
           <div className="flex justify-between items-start">
-            <div className="p-2 bg-orange-100 rounded-lg text-xl">
-              🆕
+            <div className="p-2 bg-orange-100 rounded-lg">
+              <Emoji name="new" size={22} />
             </div>
           </div>
           <div>

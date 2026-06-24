@@ -90,7 +90,7 @@ export interface Lesson {
 // badges, dream_items, memories, user_settings, profiles
 // ───────────────────────────────────────────────────────────────
 
-export type TaskStatus = 'pending' | 'submitted' | 'approved' | 'rejected'
+export type TaskStatus = 'pending' | 'submitted' | 'approved' | 'rejected' | 'missed'
 
 export interface Family {
   id: string
@@ -191,6 +191,8 @@ export interface DreamItem {
   price: number
   icon: string
   is_purchased: boolean
+  /** 'short' = mục tiêu ngắn hạn (sắp mua), 'long' = mục tiêu lớn (dài hạn). */
+  term?: 'short' | 'long'
   created_at: string
 }
 

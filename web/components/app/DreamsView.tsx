@@ -6,6 +6,8 @@ import { addDream, redeemDream, deleteDream, updateDream } from "@/lib/app/child
 import type { DreamItem } from "@/lib/types";
 import { useLang } from "./LangProvider";
 import { useToast } from "./ToastProvider";
+import Icon from "@/components/Icon";
+import Emoji from "@/components/Emoji";
 
 const ICONS = ["🎁", "🎮", "🚲", "📱", "🧸", "👟", "🎨", "📚", "⚽", "🎧"];
 
@@ -13,10 +15,13 @@ export default function DreamsView({
   childId,
   totalCoins,
   dreams,
+  term,
 }: {
   childId: string;
   totalCoins: number;
   dreams: DreamItem[];
+  /** When set, only show + create goals of this term. */
+  term?: "short" | "long";
 }) {
   const router = useRouter();
   const { t } = useLang();
@@ -27,10 +32,12 @@ export default function DreamsView({
   const [icon, setIcon] = useState(ICONS[0]);
   const [pending, start] = useTransition();
 
+  const list = term ? dreams.filter((d) => (d.term ?? "short") === term) : dreams;
+
   function add() {
     if (!name.trim()) return;
     start(async () => {
-      await addDream({ childId, name: name.trim(), price, icon });
+      await addDream({ childId, name: name.trim(), price, icon, term });
       setOpen(false);
       setName("");
       setPrice(100);
@@ -42,16 +49,16 @@ export default function DreamsView({
   return (
     <div>
       <button onClick={() => setOpen(true)} className="gw-btn gw-btn--primary gw-btn--sm" style={{ marginBottom: "20px" }}>
-        <span className="material-symbols-outlined">add</span> {t("addDream")}
+        <Icon name="add" /> {t("addDream")}
       </button>
 
-      {dreams.length === 0 ? (
+      {list.length === 0 ? (
         <div className="gw-card" style={{ padding: "32px", textAlign: "center", color: "var(--ink-soft)" }}>
           {t("noDreams")}
         </div>
       ) : (
         <div className="gw-grid">
-          {dreams.map((d) => (
+          {list.map((d) => (
             <DreamCard key={d.id} dream={d} childId={childId} totalCoins={totalCoins} />
           ))}
         </div>
@@ -78,11 +85,11 @@ export default function DreamsView({
               ))}
             </div>
             <div className="gw-field" style={{ marginBottom: "12px" }}>
-              <span className="material-symbols-outlined">star</span>
+              <Icon name="star" />
               <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("dreamItemName")} className="gw-input" />
             </div>
             <div className="gw-field" style={{ marginBottom: "16px" }}>
-              <span className="material-symbols-outlined">toll</span>
+              <Icon name="toll" />
               <input type="number" min={1} value={price} onChange={(e) => setPrice(Number(e.target.value))} className="gw-input" placeholder={t("dreamPrice")} />
             </div>
             <div style={{ display: "flex", gap: "8px" }}>
@@ -126,7 +133,7 @@ function DreamCard({ dream, childId, totalCoins }: { dream: DreamItem; childId: 
             style={{ padding: "4px", borderRadius: "50%", border: "none", background: "none", cursor: "pointer", color: "var(--ink-soft)" }}
             title={t("edit")}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>edit</span>
+            <Icon name="edit" style={{ fontSize: "18px" }} />
           </button>
         )}
         <button
@@ -135,7 +142,7 @@ function DreamCard({ dream, childId, totalCoins }: { dream: DreamItem; childId: 
           style={{ padding: "4px", borderRadius: "50%", border: "none", background: "none", cursor: "pointer", color: "var(--ink-soft)" }}
           title={t("deletePinTitle")}
         >
-          <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>delete</span>
+          <Icon name="delete" style={{ fontSize: "18px" }} />
         </button>
       </div>
 
@@ -146,8 +153,8 @@ function DreamCard({ dream, childId, totalCoins }: { dream: DreamItem; childId: 
         <p style={{ fontSize: "13px", color: "var(--secondary)", fontWeight: 700, marginTop: "4px" }}>{t("redeemed")}</p>
       ) : (
         <>
-          <p style={{ fontSize: "12px", color: "var(--ink-soft)", marginTop: "4px" }}>
-            🪙 {totalCoins.toLocaleString("vi-VN")} / {dream.price.toLocaleString("vi-VN")}
+          <p style={{ fontSize: "12px", color: "var(--ink-soft)", marginTop: "4px", display: "flex", alignItems: "center", gap: "4px" }}>
+            <Emoji name="coin" size={14} /> {totalCoins.toLocaleString("vi-VN")} / {dream.price.toLocaleString("vi-VN")}
           </p>
           <div className="gw-progress orange" style={{ marginTop: "8px" }}>
             <i style={{ width: `${pct}%` }} />
@@ -184,11 +191,11 @@ function DreamCard({ dream, childId, totalCoins }: { dream: DreamItem; childId: 
               ))}
             </div>
             <div className="gw-field" style={{ marginBottom: "12px" }}>
-              <span className="material-symbols-outlined">star</span>
+              <Icon name="star" />
               <input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder={t("dreamItemName")} className="gw-input" />
             </div>
             <div className="gw-field" style={{ marginBottom: "16px" }}>
-              <span className="material-symbols-outlined">toll</span>
+              <Icon name="toll" />
               <input type="number" min={1} value={editPrice} onChange={(e) => setEditPrice(Number(e.target.value))} className="gw-input" placeholder={t("dreamPrice")} />
             </div>
             <div style={{ display: "flex", gap: "8px" }}>

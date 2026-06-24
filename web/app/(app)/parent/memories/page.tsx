@@ -5,6 +5,7 @@ import MemoryGallery from "@/components/app/MemoryGallery";
 import type { ChildMap } from "@/lib/memory-export";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
+import Icon from "@/components/Icon";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +28,7 @@ export default async function MemoriesPage() {
 
       {memories.length === 0 ? (
         <div className="gw-card" style={{ padding: "40px", textAlign: "center", color: "var(--ink-soft)" }}>
-          <span className="material-symbols-outlined text-5xl text-primary mb-2">photo_library</span>
+          <Icon name="photo_library" className="text-5xl text-primary mb-2" />
           <p>{t(lang, "memoriesEmptyTitle")}</p>
           <p className="text-sm mt-1">
             {t(lang, "memoriesEmptyDesc")}{" "}

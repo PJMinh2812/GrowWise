@@ -12,6 +12,7 @@ import AvatarUpload from "./AvatarUpload";
 import { useLang } from "./LangProvider";
 import { cancelScheduledChange, } from "@/lib/app/subscription-actions";
 import { updateParentProfileAction } from "@/lib/app/parent-actions";
+import Icon from "@/components/Icon";
 
 interface ChildInfo {
   id: string;
@@ -86,7 +87,7 @@ export default function SettingsView({
           <h2 className="font-bold text-on-surface">{t("parentProfile")}</h2>
           {!profileEditing && (
             <button onClick={() => setProfileEditing(true)} className="gw-btn gw-btn--ghost gw-btn--sm">
-              <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>edit</span>
+              <Icon name="edit" style={{ fontSize: "16px" }} />
               {t("edit")}
             </button>
           )}
@@ -153,16 +154,14 @@ export default function SettingsView({
                   className="p-1.5 rounded-full hover:bg-surface-container transition-colors"
                   title={t("edit")}
                 >
-                  <span className="material-symbols-outlined text-lg text-on-surface-variant">edit</span>
+                  <Icon name="edit" className="text-lg text-on-surface-variant" />
                 </button>
                 <button
                   onClick={() => openPinMenu(c)}
                   className="p-1.5 rounded-full hover:bg-surface-container transition-colors"
                   title={c.hasPin ? t("changeChildPin") : t("setPin")}
                 >
-                  <span className={`material-symbols-outlined text-lg ${c.hasPin ? "text-primary" : "text-on-surface-variant"}`}>
-                    {c.hasPin ? "lock" : "lock_open"}
-                  </span>
+                  <Icon name={c.hasPin ? "lock" : "lock_open"} className={`text-lg ${c.hasPin ? "text-primary" : "text-on-surface-variant"}`} />
                 </button>
               </li>
             ))}
@@ -183,7 +182,7 @@ export default function SettingsView({
             onClick={() => setAddOpen(true)}
             className="gw-btn gw-btn--primary gw-btn--sm"
           >
-            <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>person_add</span>
+            <Icon name="person_add" style={{ fontSize: "18px" }} />
             {t("addChild")}
           </button>
         )}
@@ -196,7 +195,7 @@ export default function SettingsView({
           onClick={() => setPinOpen(true)}
           className="flex items-center gap-2 text-primary font-semibold"
         >
-          <span className="material-symbols-outlined">lock_reset</span>
+          <Icon name="lock_reset" />
           {t("changePin")}
         </button>
         {pinDone && <p className="text-sm text-green-600 mt-2">{t("pinUpdated")}</p>}
@@ -239,7 +238,7 @@ export default function SettingsView({
           className="gw-btn gw-btn--primary gw-btn--sm"
           style={{ marginTop: "16px", display: "inline-flex" }}
         >
-          <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>workspace_premium</span>
+          <Icon name="workspace_premium" style={{ fontSize: "18px" }} />
           {isFree ? t("viewPlans") : t("changePlan")}
         </Link>
       </section>
@@ -487,9 +486,7 @@ function PinReveal({ show, onToggle }: { show: boolean; onToggle: () => void }) 
       onClick={onToggle}
       className="mx-auto -mt-2 mb-2 flex items-center gap-1 text-xs font-semibold text-on-surface-variant hover:text-on-surface"
     >
-      <span className="material-symbols-outlined text-base">
-        {show ? "visibility_off" : "visibility"}
-      </span>
+      <Icon name={show ? "visibility_off" : "visibility"} className="text-base" />
       {show ? t("hidePin") : t("showPinBtn")}
     </button>
   );

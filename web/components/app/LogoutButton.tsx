@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { useLang } from "./LangProvider";
+import Icon from "@/components/Icon";
 
 export default function LogoutButton() {
   const router = useRouter();
@@ -17,7 +18,7 @@ export default function LogoutButton() {
       onClick={logout}
       className="flex items-center gap-1 text-sm font-semibold text-on-surface-variant hover:text-error transition"
     >
-      <span className="material-symbols-outlined text-xl">logout</span>
+      <Icon name="logout" className="text-xl" />
       <span className="hidden sm:inline">{t("logout")}</span>
     </button>
   );

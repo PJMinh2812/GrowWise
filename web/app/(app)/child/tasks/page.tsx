@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getSelectedChild, getFamilyForUser } from "@/lib/app/children";
 import { getTaskTemplates } from "@/lib/app/tasks";
-import { getChildSubmissions } from "@/lib/app/submissions";
+import { getTodaySubmissions } from "@/lib/app/submissions";
 import { seedRoadmapForChild } from "@/lib/app/roadmap";
 import ChildTaskList, { type ChildTaskItem } from "@/components/app/ChildTaskList";
 import type { TaskStatus } from "@/lib/types";
@@ -31,7 +31,7 @@ export default async function ChildTasksPage() {
     templates = await getTaskTemplates(family.id, child.id);
   }
 
-  const submissions = await getChildSubmissions(child.id);
+  const submissions = await getTodaySubmissions(child.id);
   const items: ChildTaskItem[] = templates.map((task) => {
     const latest = submissions.find((s) => s.task_id === task.id);
     if (!latest) return { task, status: "todo" as const };

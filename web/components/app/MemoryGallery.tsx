@@ -10,6 +10,7 @@ import {
   safeFilename,
   type ChildMap,
 } from "@/lib/memory-export";
+import Icon from "@/components/Icon";
 
 export default function MemoryGallery({
   memories,
@@ -60,7 +61,7 @@ export default function MemoryGallery({
           disabled={allBusy}
           className="gw-btn gw-btn--primary gw-btn--sm"
         >
-          <span className="material-symbols-outlined text-xl">download</span>
+          <Icon name="download" className="text-xl" />
           {allBusy ? t("creatingImage") : t("downloadAll")}
         </button>
       </div>
@@ -95,7 +96,7 @@ export default function MemoryGallery({
                 className="gw-btn gw-btn--secondary gw-btn--sm"
               style={{ marginTop: "12px", width: "100%" }}
               >
-                <span className="material-symbols-outlined text-lg">image</span>
+                <Icon name="image" className="text-lg" />
                 {busyId === m.id ? t("creatingImage") : t("downloadImage")}
               </button>
             </div>
