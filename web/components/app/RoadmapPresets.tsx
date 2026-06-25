@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useLang } from "./LangProvider";
 import { useToast } from "./ToastProvider";
 import { saveRoadmapTasks } from "@/lib/app/roadmap";
+import { track } from "@/lib/analytics";
 import type { RoadmapTask, RoadmapStageSeed } from "@/lib/app/roadmap-bands";
 import type { TKey } from "@/lib/i18n";
 
@@ -61,6 +62,7 @@ export default function RoadmapPresets({ children }: { children: ChildLite[] }) 
       });
       const data = await res.json();
       if (!res.ok) { toast(data?.message ?? t("toastError"), "error"); return; }
+      track("roadmap_generated", { source: "preset", preset: p.key, age: child.age });
       start(async () => {
         const save = await saveRoadmapTasks(child.id, data.tasks as RoadmapTask[], data.stages as RoadmapStageSeed[]);
         if (save.ok) { toast(t("rmSaved"), "success"); router.refresh(); }

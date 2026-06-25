@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { addDream, redeemDream, deleteDream, updateDream } from "@/lib/app/child-actions";
+import { track } from "@/lib/analytics";
 import type { DreamItem } from "@/lib/types";
 import { useLang } from "./LangProvider";
 import { useToast } from "./ToastProvider";
@@ -43,6 +44,7 @@ export default function DreamsView({
       setOpen(false);
       setName("");
       setPrice(100);
+      track("add_dream", { kind: term ?? "short" });
       toast(t("toastDreamAdded"), "success");
       router.refresh();
     });

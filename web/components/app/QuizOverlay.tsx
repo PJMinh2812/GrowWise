@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { LessonQuiz } from "@/lib/types";
 import { useLang } from "./LangProvider";
+import { track } from "@/lib/analytics";
 
 /** Modal câu hỏi trắc nghiệm. Dùng chung cho bài video (LessonPlayer) và truyện (StoryReader). */
 export default function QuizOverlay({
@@ -38,7 +39,7 @@ export default function QuizOverlay({
               <button
                 key={i}
                 disabled={picked !== null}
-                onClick={() => setPicked(i)}
+                onClick={() => { setPicked(i); track("lesson_quiz_answered", { correct: i === quiz.correct_index }); }}
                 className={`w-full text-left px-4 py-3 rounded-[14px] border-2 font-semibold text-on-surface flex items-center gap-2 ${cls}`}
               >
                 <span className="text-xl">{o.emoji}</span>

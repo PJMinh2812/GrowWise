@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { useLang } from "./LangProvider";
+import { track } from "@/lib/analytics";
 import Icon from "@/components/Icon";
 
 interface Result {
@@ -70,6 +71,7 @@ export default function EmotionCheckIn() {
         setLimitReached(true);
         setErrMsg(data.message ?? t("moodLimitReached"));
         setStage("error");
+        track("limit_reached", { feature: "emotion" });
         return;
       }
       if (!res.ok) {
@@ -79,6 +81,7 @@ export default function EmotionCheckIn() {
       }
       setResult(data);
       setStage("result");
+      track("emotion_checkin", { mood: data.label });
     } catch {
       setErrMsg(t("moodConnError"));
       setStage("error");
@@ -168,7 +171,7 @@ export default function EmotionCheckIn() {
                 {limitReached ? (
                   <Link
                     href="/parent/pricing"
-                    onClick={close}
+                    onClick={() => { track("upgrade_click", { source: "emotion_limit" }); close(); }}
                     className="gw-btn gw-btn--primary"
                     style={{ marginTop: "16px", display: "inline-flex" }}
                   >

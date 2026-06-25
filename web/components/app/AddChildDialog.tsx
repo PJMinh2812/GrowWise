@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { addChildAction } from "@/lib/app/parent-actions";
+import { track } from "@/lib/analytics";
 import { calcAge } from "@/lib/types";
 import { useLang } from "./LangProvider";
 
@@ -37,6 +38,7 @@ export default function AddChildDialog({ onClose }: { onClose: () => void }) {
     start(async () => {
       const res = await addChildAction({ name: name.trim(), dateOfBirth: dob, avatarEmoji: emoji });
       if (res.ok) {
+        track("add_child");
         onClose();
         router.refresh();
       } else {

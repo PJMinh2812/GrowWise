@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
+import { track } from "@/lib/analytics";
 import { useLang } from "./LangProvider";
 import Icon from "@/components/Icon";
 import Emoji from "@/components/Emoji";
@@ -66,6 +67,7 @@ export default function PaymentQrModal({
       }
       setData(json);
       setStatus("waiting");
+      track("begin_checkout", { plan: planName, billing: billingInterval, value: json.amount });
 
       pollRef.current = setInterval(async () => {
         const r = await fetch(`/api/payment/sepay/status?orderId=${json.orderId}`);
@@ -73,10 +75,12 @@ export default function PaymentQrModal({
         if (s.status === "paid" || s.status === "success" || s.status === "completed") {
           if (pollRef.current) clearInterval(pollRef.current);
           setStatus("paid");
+          track("purchase", { transaction_id: json.orderId, plan: planName, billing: billingInterval, value: json.amount });
         } else if (s.status === "cancelled" || s.status === "failed") {
           if (pollRef.current) clearInterval(pollRef.current);
           setError(t("paymentCancelled"));
           setStatus("error");
+          track("payment_failed", { reason: "cancelled", plan: planName });
         }
       }, 3000);
     })();
@@ -107,6 +111,7 @@ export default function PaymentQrModal({
       if (countdownRef.current) clearInterval(countdownRef.current);
       setError(t("qrExpired"));
       setStatus("error");
+      track("payment_failed", { reason: "expired", plan: planName });
     }
   }, [countdown, status]);
 

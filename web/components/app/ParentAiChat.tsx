@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect } from "react";
 import { useLang } from "./LangProvider";
+import { track } from "@/lib/analytics";
 
 interface Msg {
   role: "user" | "assistant";
@@ -26,6 +27,7 @@ export default function ParentAiChat() {
     setMessages(next);
     setInput("");
     setLoading(true);
+    track("ai_message_sent", { role: "parent" });
     try {
       const res = await fetch("/api/parent-ai", {
         method: "POST",

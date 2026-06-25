@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { submitTask } from "@/lib/app/child-actions";
 import { celebrate } from "@/lib/app/feedback";
+import { track } from "@/lib/analytics";
 import { useLang } from "./LangProvider";
 import { useToast } from "./ToastProvider";
 import CameraCapture from "./CameraCapture";
@@ -200,6 +201,7 @@ function TimelineRow({
         const res = await submitTask({ taskId: task.id, childId, proofUrl: url });
         if (!res.ok) { toast(res.error ?? t("toastError"), "error"); return; }
         celebrate();
+        track("task_completed", { coin_reward: task.coin_reward });
         toast(t("submitWaitDayEnd"), "success");
         router.refresh();
       });
