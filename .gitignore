@@ -1,0 +1,4 @@
+# IDE / OS — không track cấu hình máy cá nhân
+.idea/
+.vscode/
+.DS_Store
