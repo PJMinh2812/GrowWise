@@ -74,7 +74,8 @@ export default function RoadmapPresets({ children }: { children: ChildLite[] }) 
   }
 
   return (
-    <div>
+    <div className="mb-6">
+      <h2 className="font-extrabold text-on-surface mb-2">{t("rmQuickPresets")}</h2>
       {children.length > 1 && (
         <div className="flex gap-2 mb-3 flex-wrap">
           {children.map((c) => (

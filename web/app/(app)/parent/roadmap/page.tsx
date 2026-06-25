@@ -38,9 +38,7 @@ export default async function ParentRoadmapPage() {
       ) : (
         <>
           <RoadmapWizard children={lite} />
-          <Collapsible title={t(lang, "rmQuickPresets")} icon="star">
-            <RoadmapPresets children={lite} />
-          </Collapsible>
+          <RoadmapPresets children={lite} />
 
           <Collapsible title={t(lang, "rmCurrentRoadmap")} icon="route" defaultOpen>
             <div className="flex items-center gap-3 mb-3 flex-wrap">
