@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { transferJar } from "@/lib/app/child-actions";
 import { useLang } from "./LangProvider";
+import { track } from "@/lib/analytics";
 import { useToast } from "./ToastProvider";
 import Icon from "@/components/Icon";
 import Emoji, { type EmojiName } from "@/components/Emoji";
@@ -39,6 +40,7 @@ export default function JarsView({
       const res = await transferJar({ childId, to, amount });
       if (res.ok) {
         setOpen(false);
+        track("transfer_jars", { to, amount });
         toast(t("toastTransferOk"), "success");
         router.refresh();
       } else {

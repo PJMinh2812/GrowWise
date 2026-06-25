@@ -4,6 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { ActiveSurvey } from "@/lib/app/surveys";
 import { dismissSurvey } from "@/lib/app/survey-actions";
+import { track } from "@/lib/analytics";
 import { useLang } from "./LangProvider";
 import Icon from "@/components/Icon";
 
@@ -29,6 +30,7 @@ export default function SurveyBanner({
   if (hidden) return null;
 
   function openForm() {
+    track("survey_started", { survey_id: survey.id });
     window.open(survey.url, "_blank", "noopener,noreferrer");
     if (survey.verified) {
       // Don't hide — banner disappears only after a real submit (webhook records it).

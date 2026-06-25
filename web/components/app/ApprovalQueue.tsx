@@ -6,6 +6,7 @@ import {
   rejectSubmission,
   retroactiveReject,
 } from "@/lib/app/parent-actions";
+import { track } from "@/lib/analytics";
 import type { SubmissionWithRelations } from "@/lib/app/submissions";
 import { useLang } from "./LangProvider";
 
@@ -135,6 +136,7 @@ function PendingCard({ sub }: { sub: SubmissionWithRelations }) {
                   onClick={() =>
                     start(async () => {
                       await rejectSubmission(sub.id, reason.trim() || undefined);
+                      track("task_rejected");
                     })
                   }
                   className="gw-btn gw-btn--sm"
@@ -157,6 +159,7 @@ function PendingCard({ sub }: { sub: SubmissionWithRelations }) {
                 onClick={() =>
                   start(async () => {
                     await approveSubmission(sub.id, rating);
+                    track("task_approved", { rating });
                   })
                 }
                 className="gw-btn gw-btn--tertiary gw-btn--sm"

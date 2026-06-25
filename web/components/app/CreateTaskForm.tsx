@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createTaskAction, updateTaskAction } from "@/lib/app/parent-actions";
+import { track } from "@/lib/analytics";
 import type { Child, Task } from "@/lib/types";
 import { useLang } from "./LangProvider";
 import Emoji from "@/components/Emoji";
@@ -74,6 +75,7 @@ export default function CreateTaskForm({
             durationMinutes,
           });
       if (res.ok) {
+        if (!isEdit) track("task_created", { category });
         if (onDone) onDone();
         else router.push("/parent");
         router.refresh();

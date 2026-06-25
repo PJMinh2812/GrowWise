@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useLang } from "./LangProvider";
 import { useToast } from "./ToastProvider";
 import { saveRoadmapTasks } from "@/lib/app/roadmap";
+import { track } from "@/lib/analytics";
 import type { RoadmapTask, RoadmapStageSeed } from "@/lib/app/roadmap-bands";
 import Emoji from "@/components/Emoji";
 
@@ -79,6 +80,7 @@ export default function RoadmapWizard({ children }: { children: ChildLite[] }) {
       }
       setStages((data.stages as RoadmapStageSeed[]) ?? []);
       setPreview((data.tasks as RoadmapTask[]).map((tk) => ({ ...tk, _include: true })));
+      track("roadmap_generated", { source: "wizard", goals: goals.length, age: child.age });
     } catch {
       toast(t("toastError"), "error");
     } finally {

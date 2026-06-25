@@ -5,6 +5,7 @@ import type { Lesson, LessonQuiz } from "@/lib/types";
 import QuizOverlay from "./QuizOverlay";
 import StoryReader from "./StoryReader";
 import { completeLesson } from "@/lib/app/child-actions";
+import { track } from "@/lib/analytics";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 declare global {
@@ -70,6 +71,7 @@ function VideoLessonPlayer({ lesson, childId }: { lesson: Lesson; childId?: stri
             // YT.PlayerState.ENDED === 0 → mark the lesson complete.
             if (e?.data === 0 && childId && lesson.id) {
               completeLesson(childId, lesson.id);
+              track("lesson_completed", { lesson_id: lesson.id });
             }
           },
         },

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useLang } from "./LangProvider";
+import { track } from "@/lib/analytics";
 import Icon from "@/components/Icon";
 
 interface Msg {
@@ -100,6 +101,7 @@ export default function WisyChat({ childId, childName }: { childId: string; chil
     setMessages(next);
     setInput("");
     setLoading(true);
+    track("ai_message_sent", { role: "child" });
     try {
       const res = await fetch("/api/ai-chat", {
         method: "POST",
@@ -110,6 +112,7 @@ export default function WisyChat({ childId, childName }: { childId: string; chil
       if (res.status === 429) {
         setLimited(true);
         setMessages((m) => [...m, { role: "assistant", content: data.message ?? "Hết lượt chat hôm nay 😅" }]);
+        track("limit_reached", { feature: "ai_chat" });
         return;
       }
       const reply = data.reply ?? data.error ?? t("wisyThinking");
@@ -191,7 +194,7 @@ export default function WisyChat({ childId, childName }: { childId: string; chil
       {limited && (
         <div className="gw-card" style={{ marginBottom: "10px", padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", background: "var(--primary-fixed)" }}>
           <span style={{ fontSize: "13px", color: "var(--on-primary-c)", fontWeight: 700 }}>{t("chatLimit")}</span>
-          <Link href="/parent/settings">
+          <Link href="/parent/settings" onClick={() => track("upgrade_click", { source: "chat_limit" })}>
             <button className="gw-btn gw-btn--primary gw-btn--sm" style={{ whiteSpace: "nowrap" }}>{t("upgrade")}</button>
           </Link>
         </div>

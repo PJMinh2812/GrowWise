@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import type { Child } from "@/lib/types";
 import ParentPinDialog from "./ParentPinDialog";
+import { track } from "@/lib/analytics";
 import LanguageToggle from "./LanguageToggle";
 import { useLang } from "./LangProvider";
 import Icon from "@/components/Icon";
@@ -51,7 +52,7 @@ export default function RolePicker({ children }: { children: Child[] }) {
       <div className="grid grid-cols-1 gap-4 w-full max-w-sm">
         {/* Parent */}
         <button
-          onClick={() => setShowPin(true)}
+          onClick={() => { track("select_role", { role: "parent" }); setShowPin(true); }}
           className="gw-card gw-card--press flex items-center gap-4 text-left relative"
         >
           <span className="absolute top-3 right-3 flex items-center gap-1 text-xs font-extrabold bg-surface-container-high px-2 py-1 rounded-full text-on-surface-variant">
@@ -68,7 +69,7 @@ export default function RolePicker({ children }: { children: Child[] }) {
 
         {/* Child */}
         <button
-          onClick={onChildCard}
+          onClick={() => { track("select_role", { role: "child" }); onChildCard(); }}
           className="gw-card gw-card--press flex items-center gap-4 text-left"
         >
           <div className="w-16 h-16 rounded-full bg-primary-fixed flex items-center justify-center text-3xl shrink-0">
