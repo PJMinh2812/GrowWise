@@ -43,7 +43,7 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 relative" style={{ background: "var(--surface)" }}>
+    <div className="theme-neutral min-h-screen flex items-center justify-center p-6 relative" style={{ background: "var(--surface)" }}>
       <div className="absolute top-4 right-4 z-10">
         <LanguageToggle />
       </div>
