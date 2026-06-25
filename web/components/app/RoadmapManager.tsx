@@ -27,10 +27,7 @@ export default function RoadmapManager({ children, tasks }: { children: Child[];
   }
 
   return (
-    <div className="mb-6">
-      <div className="flex items-center justify-between mb-2">
-        <h2 className="font-extrabold text-on-surface">{t("rmCurrentRoadmap")}</h2>
-      </div>
+    <div>
       {children.map((c) => {
         const list = [...tasks.filter((tk) => tk.child_id === c.id)].sort((a, b) =>
           (a.scheduled_time ?? "99").localeCompare(b.scheduled_time ?? "99"),

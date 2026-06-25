@@ -7,6 +7,7 @@ import RoadmapWizard from "@/components/app/RoadmapWizard";
 import RoadmapPresets from "@/components/app/RoadmapPresets";
 import RoadmapMilestones from "@/components/app/RoadmapMilestones";
 import CreateTaskForm from "@/components/app/CreateTaskForm";
+import Collapsible from "@/components/app/Collapsible";
 import Icon from "@/components/Icon";
 import { getLang } from "@/lib/i18n-server";
 import { t } from "@/lib/i18n";
@@ -37,27 +38,27 @@ export default async function ParentRoadmapPage() {
       ) : (
         <>
           <RoadmapWizard children={lite} />
-          <RoadmapPresets children={lite} />
+          <Collapsible title={t(lang, "rmQuickPresets")} icon="star">
+            <RoadmapPresets children={lite} />
+          </Collapsible>
 
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="font-extrabold text-on-surface">{t(lang, "rmCurrentRoadmap")}</h2>
-            <div className="flex items-center gap-3">
+          <Collapsible title={t(lang, "rmCurrentRoadmap")} icon="route" defaultOpen>
+            <div className="flex items-center gap-3 mb-3 flex-wrap">
               {firstChild && plan?.stages?.length ? (
                 <RoadmapMilestones childId={firstChild.id} currentStage={plan.current_stage} stages={plan.stages} />
               ) : null}
+              {firstChild && (
+                <Link href={`/parent/roadmap/timeline?child=${firstChild.id}`} className="inline-flex items-center gap-1 text-sm font-extrabold text-primary">
+                  <Icon name="route" className="text-base" /> {t(lang, "rmViewChildTimeline")}
+                </Link>
+              )}
             </div>
-          </div>
+            <RoadmapManager children={children} tasks={tasks} />
+          </Collapsible>
 
-          {firstChild && (
-            <Link href={`/parent/roadmap/timeline?child=${firstChild.id}`} className="gw-btn gw-btn--ghost gw-btn--sm mb-3" style={{ width: "auto" }}>
-              <Icon name="route" className="text-base" /> {t(lang, "rmViewChildTimeline")}
-            </Link>
-          )}
-
-          <RoadmapManager children={children} tasks={tasks} />
-
-          <h2 className="font-extrabold text-on-surface mb-3">{t(lang, "createTaskBtn")}</h2>
-          <CreateTaskForm children={children} />
+          <Collapsible title={t(lang, "createTaskBtn")} icon="add">
+            <CreateTaskForm children={children} />
+          </Collapsible>
         </>
       )}
     </div>
