@@ -127,6 +127,26 @@ body {
   color: var(--color-on-surface);
 }
 
+/* Parent area uses a calmer teal accent (kids keep the playful orange). */
+.theme-parent {
+  /* Tailwind M3 tokens */
+  --color-primary: #0B6E6B;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #0E7C7B;
+  --color-on-primary-container: #ffffff;
+  --color-primary-fixed: #BCEAE7;
+  --color-primary-fixed-dim: #7FCFCB;
+  --color-on-primary-fixed: #00201F;
+  --color-on-primary-fixed-variant: #0B5E5C;
+  --color-inverse-primary: #7FCFCB;
+  /* short aliases used by .gw-* classes */
+  --primary: #0B6E6B;
+  --primary-c: #0E7C7B;
+  --primary-fixed: #BCEAE7;
+  --on-primary-c: #ffffff;
+  --glow: 0 12px 26px -12px rgba(14,124,123,.45);
+}
+
 /* ============================================================
    .gw-* component classes — ported 1:1 from the Stitch mockups
    ============================================================ */

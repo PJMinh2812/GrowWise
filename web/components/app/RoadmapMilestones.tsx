@@ -43,7 +43,7 @@ export default function RoadmapMilestones({
 
       {open && (
         <Portal>
-        <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,.45)", display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={() => setOpen(false)}>
+        <div className="theme-parent" style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,.45)", display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={() => setOpen(false)}>
           <div className="gw-card" style={{ width: "100%", maxWidth: 430, borderRadius: "20px 20px 0 0", maxHeight: "85vh", overflowY: "auto", paddingBottom: 24 }} onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
               <b className="text-on-surface">{t("rmMilestonesTitle")}</b>
