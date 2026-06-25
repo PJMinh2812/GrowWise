@@ -40,7 +40,7 @@ export default function RolePicker({ children }: { children: Child[] }) {
   }
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center px-4 relative" style={{ background: "var(--surface)" }}>
+    <div className="theme-neutral min-h-screen w-full flex flex-col items-center justify-center px-4 relative" style={{ background: "var(--surface)" }}>
       <div className="absolute top-4 right-4">
         <LanguageToggle />
       </div>

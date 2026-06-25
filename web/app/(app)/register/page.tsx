@@ -50,7 +50,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="lg:grid-cols-2" style={{ minHeight: "100vh", display: "grid", background: "var(--cream)", position: "relative" }}>
+    <div className="theme-neutral lg:grid-cols-2" style={{ minHeight: "100vh", display: "grid", background: "var(--cream)", position: "relative" }}>
       <div style={{ position: "absolute", top: "16px", right: "16px", zIndex: 10 }}>
         <LanguageToggle />
       </div>
