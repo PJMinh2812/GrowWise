@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-admin'
-import { splitAndCreditJars, deductPenalty } from '@/lib/app/credit'
+import { splitAndCreditJars, deductPenalty, lateAdjusted } from '@/lib/app/credit'
 import { startOfTodayVN } from '@/lib/app/day'
 import type { Task, Child, TaskSubmission } from '@/lib/types'
 
@@ -58,11 +58,11 @@ export async function GET(request: NextRequest) {
     const { data: childRow } = await admin.from('children').select('*').eq('id', s.child.id).maybeSingle()
     if (!childRow) continue
     const child = childRow as Child
-    const earned = s.task.coin_reward
+    const { earned, wasLate } = lateAdjusted(s.task.coin_reward, s.task, s.submitted_at)
     const xp = applyXp(child, 15)
     await admin
       .from('task_submissions')
-      .update({ status: 'approved', reviewed_at: now, coin_earned: earned, auto_approved: true, collected: true })
+      .update({ status: 'approved', reviewed_at: now, coin_earned: earned, auto_approved: true, collected: true, was_late: wasLate })
       .eq('id', s.id)
     await admin.rpc('increment_task_approval_count', { p_task_id: s.task.id })
     await admin.from('children').update({ ...xp, updated_at: now }).eq('id', child.id)

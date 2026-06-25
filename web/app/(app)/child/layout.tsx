@@ -10,7 +10,7 @@ export default async function ChildLayout({ children }: { children: React.ReactN
   const [lang, child] = await Promise.all([getLang(), getSelectedChild()]);
   const nav: NavItem[] = [
     { href: "/child", label: t(lang, "navHome"), icon: "home" },
-    { href: "/child/tasks", label: t(lang, "navTasks"), icon: "assignment" },
+    { href: "/child/tasks", label: t(lang, "navRoadmap"), icon: "route" },
     { href: "/child/thu-chi", label: t(lang, "navMoney"), icon: "account_balance_wallet" },
     { href: "/child/learn", label: t(lang, "navLearn"), icon: "school" },
   ];

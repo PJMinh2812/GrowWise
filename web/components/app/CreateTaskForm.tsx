@@ -34,10 +34,8 @@ export default function CreateTaskForm({
   const [category, setCategory] = useState(task?.category ?? CATEGORIES[0].key);
   const [icon, setIcon] = useState(task?.icon ?? ICONS[0]);
   const [coinReward, setCoinReward] = useState(task?.coin_reward ?? 50);
-  const [autoApprove, setAutoApprove] = useState(task ? task.auto_approve_after != null : false);
-  const [autoAfter, setAutoAfter] = useState(task?.auto_approve_after ?? 0);
-  const [hasPenalty, setHasPenalty] = useState(task?.has_penalty ?? false);
-  const [penaltyPercent, setPenaltyPercent] = useState(task?.penalty_percent ?? 10);
+  const [scheduledTime, setScheduledTime] = useState((task?.scheduled_time ?? "").slice(0, 5));
+  const [durationMinutes, setDurationMinutes] = useState(task?.duration_minutes ?? 15);
   const [error, setError] = useState("");
   const [pending, start] = useTransition();
 
@@ -46,6 +44,8 @@ export default function CreateTaskForm({
     setError("");
     if (!title.trim()) return setError(t("taskNameRequired"));
     start(async () => {
+      // Roadmap tasks always auto-approve (credited at day-end / on approval) and
+      // carry a default 10% late penalty — no manual toggles needed.
       const res = isEdit
         ? await updateTaskAction({
             taskId: task!.id,
@@ -54,9 +54,11 @@ export default function CreateTaskForm({
             category,
             icon,
             coinReward,
-            autoApprove,
-            hasPenalty,
-            penaltyPercent,
+            autoApprove: true,
+            hasPenalty: true,
+            penaltyPercent: 10,
+            scheduledTime: scheduledTime || null,
+            durationMinutes,
           })
         : await createTaskAction({
             childId,
@@ -65,9 +67,11 @@ export default function CreateTaskForm({
             category,
             icon,
             coinReward,
-            autoApproveAfter: autoApprove ? autoAfter : null,
-            hasPenalty,
-            penaltyPercent,
+            autoApproveAfter: 0,
+            hasPenalty: true,
+            penaltyPercent: 10,
+            scheduledTime: scheduledTime || null,
+            durationMinutes,
           });
       if (res.ok) {
         if (onDone) onDone();
@@ -163,32 +167,14 @@ export default function CreateTaskForm({
         </div>
       </Field>
 
-      <Toggle
-        label={t("autoApproveN")}
-        checked={autoApprove}
-        onChange={setAutoApprove}
-      >
-        <input
-          type="number"
-          min={1}
-          value={autoAfter}
-          onChange={(e) => setAutoAfter(Math.max(1, Number(e.target.value)))}
-          className="gw-input"
-          style={{ width: "80px" }}
-        />
-      </Toggle>
-
-      <Toggle label={t("penaltyN")} checked={hasPenalty} onChange={setHasPenalty}>
-        <input
-          type="number"
-          min={0}
-          max={100}
-          value={penaltyPercent}
-          onChange={(e) => setPenaltyPercent(Number(e.target.value))}
-          className="gw-input"
-          style={{ width: "80px" }}
-        />
-      </Toggle>
+      <div style={{ display: "flex", gap: "12px" }}>
+        <Field label={t("rmFieldTime")}>
+          <input type="time" value={scheduledTime} onChange={(e) => setScheduledTime(e.target.value)} className="gw-input" style={{ paddingLeft: 14 }} />
+        </Field>
+        <Field label={t("rmFieldDuration")}>
+          <input type="number" min={1} value={durationMinutes} onChange={(e) => setDurationMinutes(Math.max(1, parseInt(e.target.value) || 0))} className="gw-input" style={{ paddingLeft: 14 }} />
+        </Field>
+      </div>
 
       {error && <p style={{ fontSize: "14px", color: "var(--color-error)" }}>{error}</p>}
 
@@ -221,30 +207,3 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function Toggle({
-  label,
-  checked,
-  onChange,
-  children,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
-      <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "14px", fontWeight: 600, color: "var(--ink)" }}>
-        <input
-          type="checkbox"
-          checked={checked}
-          onChange={(e) => onChange(e.target.checked)}
-          className="accent-primary"
-          style={{ width: "16px", height: "16px" }}
-        />
-        {label}
-      </label>
-      {checked && children}
-    </div>
-  );
-}

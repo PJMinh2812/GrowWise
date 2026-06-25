@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useLang } from "./LangProvider";
+import Portal from "./Portal";
 
 /**
  * In-app camera capture. On devices with a camera the child MUST take a live
@@ -107,7 +108,8 @@ export default function CameraCapture({
   }
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 70, background: "rgba(0,0,0,.85)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 16 }}>
+    <Portal>
+    <div style={{ position: "fixed", inset: 0, zIndex: 110, background: "rgba(0,0,0,.85)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 16 }}>
       <div style={{ width: "100%", maxWidth: 400, background: "var(--surface)", borderRadius: 20, overflow: "hidden", padding: 16 }}>
         <div className="flex items-center justify-between mb-3">
           <b className="text-on-surface">{t("camTake")}</b>
@@ -144,5 +146,6 @@ export default function CameraCapture({
         )}
       </div>
     </div>
+    </Portal>
   );
 }

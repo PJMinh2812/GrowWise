@@ -12,6 +12,68 @@ export interface RoadmapTask {
   auto_approve?: boolean
   has_penalty?: boolean
   penalty_percent?: number
+  /** Giờ hẹn 'HH:MM' (timeline). */
+  scheduled_time?: string | null
+  duration_minutes?: number
+  frequency?: string
+  stage?: number
+}
+
+export interface RoadmapStageSeed {
+  month: number
+  theme: string
+  goal: string
+  lesson_category: string
+  milestone: string
+}
+
+/**
+ * Fallback 12-stage money curriculum (1 year). Used when the AI is unavailable
+ * so the roadmap still has a progressive arc: earn → 3 jars → saving goal →
+ * smart spending → sharing → budgeting → review.
+ */
+export const FALLBACK_STAGES: RoadmapStageSeed[] = [
+  { month: 1, theme: 'Làm quen với xu & thói quen', goal: 'Hiểu xu kiếm từ việc tốt', lesson_category: 'Cơ bản', milestone: 'Hoàn thành 5 ngày liên tục' },
+  { month: 2, theme: 'Hệ thống 3 hũ', goal: 'Biết chia Tiêu/Tiết kiệm/Chia sẻ', lesson_category: 'Tiết kiệm', milestone: 'Chia xu vào đủ 3 hũ' },
+  { month: 3, theme: 'Mục tiêu tiết kiệm nhỏ', goal: 'Đặt và đạt 1 mục tiêu nhỏ', lesson_category: 'Tiết kiệm', milestone: 'Mua được 1 món mơ ước' },
+  { month: 4, theme: 'Chi tiêu thông minh', goal: 'Phân biệt cần và muốn', lesson_category: 'Chi tiêu', milestone: 'Tự quyết 1 lần mua' },
+  { month: 5, theme: 'Kiên nhẫn & trì hoãn', goal: 'Chờ để tiết kiệm nhiều hơn', lesson_category: 'Tiết kiệm', milestone: 'Dồn xu 2 tuần' },
+  { month: 6, theme: 'Chia sẻ & cho đi', goal: 'Dùng hũ Chia sẻ ý nghĩa', lesson_category: 'Chia sẻ', milestone: 'Làm 1 việc chia sẻ' },
+  { month: 7, theme: 'Mục tiêu lớn', goal: 'Lập kế hoạch món lớn', lesson_category: 'Tiết kiệm', milestone: 'Đạt 50% mục tiêu lớn' },
+  { month: 8, theme: 'Ghi chép Thu/Chi', goal: 'Theo dõi tiền vào ra', lesson_category: 'Quản lý', milestone: 'Ghi đủ Thu/Chi 1 tuần' },
+  { month: 9, theme: 'Lập ngân sách', goal: 'Phân bổ xu theo kế hoạch', lesson_category: 'Quản lý', milestone: 'Lập 1 ngân sách tuần' },
+  { month: 10, theme: 'Tránh lãng phí', goal: 'Nhận ra chi tiêu bốc đồng', lesson_category: 'Chi tiêu', milestone: 'Tuần không chi bốc đồng' },
+  { month: 11, theme: 'Kiếm thêm xu', goal: 'Làm thêm việc có ích', lesson_category: 'Cơ bản', milestone: 'Hoàn thành nhiệm vụ thưởng' },
+  { month: 12, theme: 'Tổng kết & tự quản', goal: 'Tự quản lý tiền cơ bản', lesson_category: 'Quản lý', milestone: 'Đạt mục tiêu lớn cả năm' },
+]
+
+/** Extra habit tasks offered in "Gợi ý thêm nhiệm vụ". */
+export const SUGGEST_POOL: RoadmapTask[] = [
+  { title: 'Tưới cây', description: 'Chăm cây mỗi ngày', category: 'Việc nhà', icon: '🪴', coin_reward: 20, scheduled_time: '06:45', duration_minutes: 10 },
+  { title: 'Gấp quần áo', description: 'Gấp và cất quần áo', category: 'Việc nhà', icon: '👕', coin_reward: 30, scheduled_time: '20:00', duration_minutes: 15 },
+  { title: 'Thiền 5 phút', description: 'Ngồi yên hít thở', category: 'Sức khỏe', icon: '🧘', coin_reward: 20, scheduled_time: '21:00', duration_minutes: 5 },
+  { title: 'Viết nhật ký', description: 'Ghi lại điều hôm nay', category: 'Sáng tạo', icon: '📓', coin_reward: 30, scheduled_time: '20:45', duration_minutes: 10 },
+  { title: 'Học tiếng Anh', description: 'Học từ mới mỗi ngày', category: 'Học tập', icon: '🔤', coin_reward: 40, scheduled_time: '18:00', duration_minutes: 15 },
+  { title: 'Bỏ heo đất', description: 'Bỏ xu tiết kiệm mỗi ngày', category: 'Học tập', icon: '🐷', coin_reward: 25, scheduled_time: '21:15', duration_minutes: 5 },
+  { title: 'Uống đủ nước', description: 'Uống nước đều trong ngày', category: 'Sức khỏe', icon: '💧', coin_reward: 15, scheduled_time: '12:00', duration_minutes: 5 },
+  { title: 'Đọc 1 trang sách', description: 'Đọc thêm mỗi tối', category: 'Học tập', icon: '📕', coin_reward: 30, scheduled_time: '20:30', duration_minutes: 15 },
+]
+
+/** Spread tasks across sensible default times when none is given. */
+const DEFAULT_TIMES = ['07:00', '07:30', '17:30', '18:30', '19:30', '20:30']
+
+/** Enrich plain band tasks with default schedule so the timeline looks right. */
+export function withSchedule(tasks: RoadmapTask[]): RoadmapTask[] {
+  return tasks.map((t, i) => ({
+    ...t,
+    scheduled_time: t.scheduled_time ?? DEFAULT_TIMES[i % DEFAULT_TIMES.length],
+    duration_minutes: t.duration_minutes ?? 15,
+    frequency: t.frequency ?? 'daily',
+    auto_approve: t.auto_approve ?? true,
+    has_penalty: t.has_penalty ?? true,
+    penalty_percent: t.penalty_percent ?? 10,
+    stage: t.stage ?? 1,
+  }))
 }
 
 const BANDS: { max: number; tasks: RoadmapTask[] }[] = [
