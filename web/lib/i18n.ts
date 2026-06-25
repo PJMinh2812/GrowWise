@@ -581,6 +581,7 @@ export const dict: Dict = {
 
   // dreams
   addDream: { vi: 'Thêm ước mơ', en: 'Add dream' },
+  addWant: { vi: 'Thêm món muốn mua', en: 'Add item to buy' },
   noDreams: { vi: 'Chưa có ước mơ nào. Hãy thêm điều con muốn tiết kiệm để mua nhé!', en: "No dreams yet. Add something your child wants to save for!" },
   editDream: { vi: 'Sửa ước mơ', en: 'Edit dream' },
   redeemed: { vi: '✓ Đã đổi', en: '✓ Redeemed' },

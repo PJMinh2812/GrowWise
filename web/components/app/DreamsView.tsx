@@ -33,6 +33,8 @@ export default function DreamsView({
   const [pending, start] = useTransition();
 
   const list = term ? dreams.filter((d) => (d.term ?? "short") === term) : dreams;
+  // "Muốn mua" (short) → mua đồ; "Ước mơ" (long) → giữ chữ ước mơ.
+  const addLabel = term === "short" ? t("addWant") : t("addDream");
 
   function add() {
     if (!name.trim()) return;
@@ -49,7 +51,7 @@ export default function DreamsView({
   return (
     <div>
       <button onClick={() => setOpen(true)} className="gw-btn gw-btn--primary gw-btn--sm" style={{ marginBottom: "20px" }}>
-        <Icon name="add" /> {t("addDream")}
+        <Icon name="add" /> {addLabel}
       </button>
 
       {list.length === 0 ? (
@@ -67,7 +69,7 @@ export default function DreamsView({
       {open && (
         <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,.45)", padding: "16px" }}>
           <div className="gw-card" style={{ width: "100%", maxWidth: "360px" }}>
-            <h3 style={{ fontSize: "17px", fontWeight: 900, color: "var(--ink)", marginBottom: "16px" }}>{t("addDream")}</h3>
+            <h3 style={{ fontSize: "17px", fontWeight: 900, color: "var(--ink)", marginBottom: "16px" }}>{addLabel}</h3>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "12px" }}>
               {ICONS.map((ic) => (
                 <button
