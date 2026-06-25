@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { sendGAEvent } from "@next/third-parties/google";
 import { createClient } from "@/lib/supabase";
 import { useLang } from "@/components/app/LangProvider";
 import LanguageToggle from "@/components/app/LanguageToggle";
@@ -39,6 +40,7 @@ function LoginForm() {
       setLoading(false);
       return;
     }
+    sendGAEvent("event", "login", { method: "email" });
     router.push("/role");
     router.refresh();
   }

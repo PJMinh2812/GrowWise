@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { sendGAEvent } from "@next/third-parties/google";
 import { createClient } from "@/lib/supabase";
 import { useLang } from "@/components/app/LangProvider";
 import LanguageToggle from "@/components/app/LanguageToggle";
@@ -40,6 +41,7 @@ export default function RegisterPage() {
       setLoading(false);
       return;
     }
+    sendGAEvent("event", "sign_up", { method: "email" });
     if (data.session) {
       router.push("/role");
       router.refresh();

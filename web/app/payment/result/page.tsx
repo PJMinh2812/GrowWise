@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
 import { activateSubscriptionForOrder } from '@/lib/payment/subscription';
 import Emoji from '@/components/Emoji';
+import PurchaseTracker from './PurchaseTracker';
 
 export const metadata = {
   title: 'Kết quả thanh toán – GrowWise',
@@ -51,6 +52,7 @@ export default async function PaymentResultPage({ searchParams }: Props) {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--cream)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
       <div className={`gw-card ${success ? 'gw-card--glow' : ''}`} style={{ maxWidth: '384px', width: '100%', textAlign: 'center' }}>
+        {success && <PurchaseTracker orderId={orderId} />}
         <div style={{ fontSize: '72px', marginBottom: '16px' }}>{success ? <Emoji name="party" size={72} /> : '❌'}</div>
 
         <h1 style={{ fontSize: '24px', fontWeight: 900, color: 'var(--ink)', marginBottom: '8px' }}>
