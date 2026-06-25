@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { sendGAEvent } from "@next/third-parties/google";
 import { Check, Lock, Zap } from "lucide-react";
 import type { PlanKey, PlanPrice } from "@/lib/app/plan-prices";
 import { useLang } from "@/components/app/LangProvider";
@@ -204,6 +205,13 @@ export function Pricing({ prices }: { prices?: Record<PlanKey, PlanPrice> }) {
                 {/* CTA */}
                 <button
                   disabled={plan.buttonDisabled}
+                  onClick={() =>
+                    sendGAEvent("event", "select_plan", {
+                      plan: plan.id,
+                      billing: isYearly ? "yearly" : "monthly",
+                      value: displayPrice,
+                    })
+                  }
                   className={`w-full py-3 px-4 rounded-2xl font-bold text-sm transition-all ${plan.buttonStyle} ${
                     !plan.buttonDisabled ? "active:scale-95" : ""
                   }`}
