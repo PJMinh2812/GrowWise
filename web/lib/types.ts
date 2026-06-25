@@ -150,6 +150,13 @@ export interface Task {
   has_penalty: boolean
   penalty_percent: number
   auto_approve_after: number | null
+  /** Giờ hẹn trong ngày 'HH:MM[:SS]' (timeline). Null = không cố định giờ. */
+  scheduled_time: string | null
+  duration_minutes: number
+  /** 'daily' | (mở rộng sau). */
+  frequency: string
+  /** Chặng (tháng 1..12) của lộ trình năm. */
+  stage: number
   created_at: string
 }
 
@@ -167,7 +174,27 @@ export interface TaskSubmission {
   auto_approved: boolean
   /** Xu đã duyệt nhưng chưa "collect" vào hũ (true sau khi bé chọn hũ). */
   collected?: boolean
+  /** Nộp sau giờ hẹn → bị giảm thưởng. */
+  was_late?: boolean
   created_at: string
+}
+
+/** Một chặng (tháng) trong lộ trình 1 năm hiểu về tiền. */
+export interface RoadmapStage {
+  month: number
+  theme: string
+  goal: string
+  /** Category của Bài học gắn cho chặng này. */
+  lesson_category: string
+  milestone: string
+}
+
+export interface RoadmapPlan {
+  child_id: string
+  current_stage: number
+  stages: RoadmapStage[]
+  created_at?: string
+  updated_at?: string
 }
 
 /** A task template joined with its active submission (mirror mobile TaskModel). */

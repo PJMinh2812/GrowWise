@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useLang } from "./LangProvider";
 import { useToast } from "./ToastProvider";
 import { saveRoadmapTasks } from "@/lib/app/roadmap";
-import type { RoadmapTask } from "@/lib/app/roadmap-bands";
+import type { RoadmapTask, RoadmapStageSeed } from "@/lib/app/roadmap-bands";
 import Emoji from "@/components/Emoji";
 
 interface ChildLite {
@@ -27,11 +27,14 @@ export default function RoadmapWizard({ children }: { children: ChildLite[] }) {
   const [goals, setGoals] = useState<Goal[]>(["habit", "saving"]);
   const [tasksPerDay, setTasksPerDay] = useState(4);
   const [coinLevel, setCoinLevel] = useState<"low" | "medium" | "high">("medium");
+  const [schoolSession, setSchoolSession] = useState<"morning" | "afternoon" | "fullday">("morning");
+  const [timeBudget, setTimeBudget] = useState<"low" | "medium" | "high">("medium");
   const [knowsSaving, setKnowsSaving] = useState(false);
   const [penalty, setPenalty] = useState(true);
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState<PreviewTask[] | null>(null);
+  const [stages, setStages] = useState<RoadmapStageSeed[]>([]);
   const [saving, startSave] = useTransition();
 
   if (children.length === 0) return null;
@@ -64,6 +67,8 @@ export default function RoadmapWizard({ children }: { children: ChildLite[] }) {
           coinLevel,
           knowsSaving,
           penalty,
+          schoolSession: t(`rm${schoolSession === "morning" ? "Morning" : schoolSession === "afternoon" ? "Afternoon" : "Fullday"}`),
+          timeBudget: t(`rm${timeBudget === "low" ? "TimeLow" : timeBudget === "high" ? "TimeHigh" : "TimeMed"}`),
           note,
         }),
       });
@@ -72,6 +77,7 @@ export default function RoadmapWizard({ children }: { children: ChildLite[] }) {
         toast(data?.message ?? t("toastError"), "error");
         return;
       }
+      setStages((data.stages as RoadmapStageSeed[]) ?? []);
       setPreview((data.tasks as RoadmapTask[]).map((tk) => ({ ...tk, _include: true })));
     } catch {
       toast(t("toastError"), "error");
@@ -88,7 +94,7 @@ export default function RoadmapWizard({ children }: { children: ChildLite[] }) {
     const chosen = (preview ?? []).filter((tk) => tk._include);
     if (!chosen.length) return;
     startSave(async () => {
-      const res = await saveRoadmapTasks(child.id, chosen);
+      const res = await saveRoadmapTasks(child.id, chosen, stages);
       if (res.ok) {
         toast(t("rmSaved"), "success");
         setOpen(false);
@@ -167,6 +173,28 @@ export default function RoadmapWizard({ children }: { children: ChildLite[] }) {
               ))}
             </div>
           </div>
+          {/* school session */}
+          <div>
+            <label className="text-sm font-bold text-on-surface">{t("rmSchoolSession")}</label>
+            <div className="flex gap-2 mt-1 flex-wrap">
+              {(["morning", "afternoon", "fullday"] as const).map((s) => (
+                <button key={s} onClick={() => setSchoolSession(s)} className={`gw-chip${schoolSession === s ? " active" : ""}`}>
+                  {s === "morning" ? t("rmMorning") : s === "afternoon" ? t("rmAfternoon") : t("rmFullday")}
+                </button>
+              ))}
+            </div>
+          </div>
+          {/* time budget */}
+          <div>
+            <label className="text-sm font-bold text-on-surface">{t("rmTimeBudget")}</label>
+            <div className="flex gap-2 mt-1 flex-wrap">
+              {(["low", "medium", "high"] as const).map((s) => (
+                <button key={s} onClick={() => setTimeBudget(s)} className={`gw-chip${timeBudget === s ? " active" : ""}`}>
+                  {s === "low" ? t("rmTimeLow") : s === "high" ? t("rmTimeHigh") : t("rmTimeMed")}
+                </button>
+              ))}
+            </div>
+          </div>
           {/* toggles */}
           <Toggle label={t("rmKnowsSaving")} value={knowsSaving} onChange={setKnowsSaving} yes={t("rmYes")} no={t("rmNo")} />
           <Toggle label={t("rmPenalty")} value={penalty} onChange={setPenalty} yes={t("rmYes")} no={t("rmNo")} />
@@ -193,6 +221,9 @@ export default function RoadmapWizard({ children }: { children: ChildLite[] }) {
                   style={{ width: 18, height: 18 }}
                 />
                 <span style={{ fontSize: 20 }}>{tk.icon}</span>
+                {tk.scheduled_time && (
+                  <span className="text-xs font-extrabold text-primary shrink-0" style={{ width: 44 }}>{tk.scheduled_time}</span>
+                )}
                 <input
                   value={tk.title}
                   onChange={(e) => patch(i, { title: e.target.value })}

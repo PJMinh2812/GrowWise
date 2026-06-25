@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
 import { createServerSupabase } from '@/lib/supabase-server'
 import { getActivePlan } from '@/lib/app/subscription'
-import { splitJars, splitAndCreditJars } from '@/lib/app/credit'
+import { splitJars, splitAndCreditJars, lateAdjusted } from '@/lib/app/credit'
 import type { Child, Task, TaskSubmission } from '@/lib/types'
 import { calcAge } from '@/lib/types'
 
@@ -269,14 +269,12 @@ export async function approveSubmission(submissionId: string, rating: number) {
   const { supabase, row } = await loadSubmission(submissionId)
   if (!row || !row.task || !row.child) return { ok: false, error: 'Không tìm thấy bài nộp' }
 
-  const earned = Math.round(row.task.coin_reward * qualityMultiplier(rating))
+  const base = Math.round(row.task.coin_reward * qualityMultiplier(rating))
+  const { earned, wasLate } = lateAdjusted(base, row.task, row.submitted_at)
   const xp = applyXp(row.child, 15)
 
-  // Auto-approve tasks: the machine credits + auto-splits the coins (no child
-  // "collect" step). Manual tasks: coins wait for the child to choose a jar
-  // (collected=false).
-  const auto = isAutoApprove(row.task)
-
+  // Coins are always credited + auto-split across the 3 jars on approval
+  // (timeline model — no separate "collect" step).
   await supabase
     .from('task_submissions')
     .update({
@@ -284,8 +282,9 @@ export async function approveSubmission(submissionId: string, rating: number) {
       reviewed_at: new Date().toISOString(),
       quality_rating: rating,
       coin_earned: earned,
-      auto_approved: auto,
-      collected: auto,
+      auto_approved: isAutoApprove(row.task),
+      collected: true,
+      was_late: wasLate,
     })
     .eq('id', submissionId)
 
@@ -296,7 +295,7 @@ export async function approveSubmission(submissionId: string, rating: number) {
     .update({ ...xp, updated_at: new Date().toISOString() })
     .eq('id', row.child.id)
 
-  if (auto) await splitAndCreditJars(supabase, row.child, earned, row.task.title)
+  await splitAndCreditJars(supabase, row.child, earned, row.task.title)
 
   await supabase.from('memories').insert({
     family_id: row.task.family_id,
@@ -373,6 +372,9 @@ export async function createTaskAction(input: {
   autoApproveAfter?: number | null
   hasPenalty?: boolean
   penaltyPercent?: number
+  scheduledTime?: string | null
+  durationMinutes?: number
+  frequency?: string
 }) {
   const supabase = await createServerSupabase()
   const {
@@ -390,6 +392,9 @@ export async function createTaskAction(input: {
   const { error } = await supabase.from('tasks').insert({
     family_id: family.id,
     child_id: input.childId,
+    scheduled_time: input.scheduledTime || null,
+    duration_minutes: input.durationMinutes ?? 15,
+    frequency: input.frequency ?? 'daily',
     created_by: user.id,
     title: input.title,
     description: input.description,
@@ -441,6 +446,9 @@ export async function updateTaskAction(input: {
   autoApprove?: boolean
   hasPenalty?: boolean
   penaltyPercent?: number
+  scheduledTime?: string | null
+  durationMinutes?: number
+  frequency?: string
 }) {
   const { supabase, ok } = await ownTask(input.taskId)
   if (!ok) return { ok: false, error: 'unauthorized' }
@@ -455,6 +463,9 @@ export async function updateTaskAction(input: {
       ...(input.hasPenalty != null ? { has_penalty: input.hasPenalty } : {}),
       ...(input.penaltyPercent != null ? { penalty_percent: input.penaltyPercent } : {}),
       ...(input.autoApprove != null ? { auto_approve_after: input.autoApprove ? 0 : null } : {}),
+      ...(input.scheduledTime !== undefined ? { scheduled_time: input.scheduledTime || null } : {}),
+      ...(input.durationMinutes != null ? { duration_minutes: input.durationMinutes } : {}),
+      ...(input.frequency ? { frequency: input.frequency } : {}),
     })
     .eq('id', input.taskId)
   if (error) return { ok: false, error: error.message }

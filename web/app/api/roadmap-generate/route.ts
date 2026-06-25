@@ -7,7 +7,13 @@ import {
   incrementAiUsage,
   FREE_LIMITS,
 } from '@/lib/app/subscription'
-import { bandFor, type RoadmapTask } from '@/lib/app/roadmap-bands'
+import {
+  bandFor,
+  withSchedule,
+  FALLBACK_STAGES,
+  type RoadmapTask,
+  type RoadmapStageSeed,
+} from '@/lib/app/roadmap-bands'
 
 const GROQ_ENDPOINT = 'https://api.groq.com/openai/v1/chat/completions'
 const GROQ_MODEL = 'llama-3.3-70b-versatile'
@@ -22,31 +28,41 @@ interface Answers {
   coinLevel: 'low' | 'medium' | 'high'
   knowsSaving: boolean
   penalty: boolean
+  schoolSession?: string
+  timeBudget?: string
   note?: string
 }
 
 function buildPrompt(a: Answers): string {
   const coinHint = a.coinLevel === 'low' ? '10–30' : a.coinLevel === 'high' ? '50–100' : '20–60'
-  return `Bạn là chuyên gia giáo dục tài chính cho trẻ em (app GrowWise, hệ thống 3 hũ: Tiêu/Tiết kiệm/Chia sẻ).
-Hãy tạo lộ trình ${a.tasksPerDay} nhiệm vụ HẰNG NGÀY cho một bé ${a.age} tuổi.
-Mục tiêu ưu tiên của phụ huynh: ${a.goals.join(', ') || 'thói quen tốt'}.
-Bé ${a.knowsSaving ? 'đã' : 'chưa'} quen tiết kiệm.
-Phạt khi bỏ lỡ: ${a.penalty ? 'có' : 'không'}.
-Ghi chú thêm của phụ huynh: ${a.note?.trim() || 'không'}.
+  return `Bạn là CHUYÊN GIA giáo dục tài chính cho trẻ em, thiết kế một LỘ TRÌNH 1 NĂM để bé hiểu cơ bản về
+chi tiêu – tiết kiệm – quản lý tiền (app GrowWise, hệ thống 3 hũ: Tiêu/Tiết kiệm/Chia sẻ).
 
-CHỈ TRẢ VỀ JSON hợp lệ, không giải thích, không markdown. Định dạng:
-{"tasks":[{"title":"...","description":"...","category":"Việc nhà|Học tập|Sức khỏe|Sáng tạo","icon":"<1 emoji>","coin_reward":<số ${coinHint}>,"auto_approve":true,"has_penalty":${a.penalty},"penalty_percent":10}]}
-Yêu cầu: tiêu đề ngắn gọn tiếng Việt, phù hợp ${a.age} tuổi, cân bằng giữa việc nhà/học tập/sức khỏe và thói quen tiền (tiết kiệm/chia sẻ). Đúng ${a.tasksPerDay} nhiệm vụ.`
+Thông tin bé: ${a.age} tuổi; đi học buổi: ${a.schoolSession || 'không rõ'}; quỹ thời gian mỗi ngày: ${a.timeBudget || 'vừa phải'}.
+Mục tiêu phụ huynh: ${a.goals.join(', ') || 'thói quen tốt'}. Bé ${a.knowsSaving ? 'đã' : 'chưa'} quen tiết kiệm.
+Phạt khi trễ: ${a.penalty ? 'có' : 'không'}. Ghi chú: ${a.note?.trim() || 'không'}.
+
+CHỈ TRẢ VỀ JSON hợp lệ (không markdown, không giải thích) dạng:
+{
+ "stages":[{"month":1,"theme":"...","goal":"...","lesson_category":"Cơ bản|Tiết kiệm|Chi tiêu|Chia sẻ|Quản lý","milestone":"..."}, ... đúng 12 phần tử, tiến triển từ kiếm xu → 3 hũ → mục tiêu tiết kiệm → chi tiêu thông minh → chia sẻ → ngân sách → tự quản ],
+ "tasks":[{"title":"...","description":"...","category":"Việc nhà|Học tập|Sức khỏe|Sáng tạo","icon":"<1 emoji>","coin_reward":<${coinHint}>,"scheduled_time":"HH:MM","duration_minutes":<5-30>,"frequency":"daily","auto_approve":true,"has_penalty":${a.penalty},"penalty_percent":10}]
+}
+Yêu cầu cho "tasks" (đúng ${a.tasksPerDay} nhiệm vụ HẰNG NGÀY cho CHẶNG 1):
+- Xếp "scheduled_time" hợp lý trong ngày, TRÁNH giờ đi học (${a.schoolSession || 'sáng'}), tổng thời lượng vừa quỹ thời gian.
+- Cân bằng việc nhà/học tập/sức khỏe + ít nhất 1 nhiệm vụ liên quan tiền (bỏ heo/tiết kiệm).
+- Tiêu đề ngắn gọn tiếng Việt, phù hợp ${a.age} tuổi.`
 }
 
-function parseTasks(raw: string): RoadmapTask[] | null {
+interface GenResult { tasks: RoadmapTask[]; stages: RoadmapStageSeed[] }
+
+function parseResult(raw: string): GenResult | null {
   try {
     const jsonStr = raw.replace(/```json|```/g, '').trim()
     const start = jsonStr.indexOf('{')
     const end = jsonStr.lastIndexOf('}')
     if (start < 0 || end < 0) return null
     const obj = JSON.parse(jsonStr.slice(start, end + 1))
-    const arr = Array.isArray(obj?.tasks) ? obj.tasks : Array.isArray(obj) ? obj : null
+    const arr = Array.isArray(obj?.tasks) ? obj.tasks : null
     if (!arr) return null
     const tasks: RoadmapTask[] = arr
       .filter((t: unknown) => t && typeof (t as { title?: unknown }).title === 'string')
@@ -56,11 +72,26 @@ function parseTasks(raw: string): RoadmapTask[] | null {
         category: String(t.category ?? 'Học tập'),
         icon: String(t.icon ?? '⭐').slice(0, 4),
         coin_reward: Math.max(0, Math.round(Number(t.coin_reward) || 20)),
+        scheduled_time: typeof t.scheduled_time === 'string' ? t.scheduled_time.slice(0, 5) : null,
+        duration_minutes: Math.min(120, Math.max(5, Math.round(Number(t.duration_minutes) || 15))),
+        frequency: 'daily',
         auto_approve: t.auto_approve !== false,
         has_penalty: t.has_penalty !== false,
         penalty_percent: Math.min(100, Math.max(0, Math.round(Number(t.penalty_percent) || 10))),
+        stage: 1,
       }))
-    return tasks.length ? tasks : null
+    if (!tasks.length) return null
+    const stagesArr = Array.isArray(obj?.stages) ? obj.stages : []
+    const stages: RoadmapStageSeed[] = stagesArr
+      .filter((s: unknown) => s && typeof (s as { theme?: unknown }).theme === 'string')
+      .map((s: Record<string, unknown>, i: number) => ({
+        month: Number(s.month) || i + 1,
+        theme: String(s.theme).slice(0, 80),
+        goal: String(s.goal ?? '').slice(0, 120),
+        lesson_category: String(s.lesson_category ?? 'Cơ bản').slice(0, 40),
+        milestone: String(s.milestone ?? '').slice(0, 120),
+      }))
+    return { tasks, stages: stages.length ? stages : FALLBACK_STAGES }
   } catch {
     return null
   }
@@ -74,7 +105,6 @@ export async function POST(req: NextRequest) {
   const a = (await req.json()) as Answers
   const age = Number(a.age) || 8
 
-  // Reuse the free daily AI quota.
   const plan = await getUserPlan()
   if (!isPremiumPlan(plan)) {
     const used = await getDailyAiUsage(user.id)
@@ -86,15 +116,13 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const apiKey = process.env.GROQ_API_KEY
-  const fallback = bandFor(age).map((t) => ({
-    ...t,
-    auto_approve: true,
-    has_penalty: a.penalty ?? true,
-    penalty_percent: 10,
-  }))
+  const fallback: GenResult = {
+    tasks: withSchedule(bandFor(age)).map((t) => ({ ...t, has_penalty: a.penalty ?? true })),
+    stages: FALLBACK_STAGES,
+  }
 
-  if (!apiKey) return NextResponse.json({ tasks: fallback, source: 'fallback' })
+  const apiKey = process.env.GROQ_API_KEY
+  if (!apiKey) return NextResponse.json({ ...fallback, source: 'fallback' })
 
   try {
     const res = await fetch(GROQ_ENDPOINT, {
@@ -104,16 +132,16 @@ export async function POST(req: NextRequest) {
         model: GROQ_MODEL,
         messages: [{ role: 'user', content: buildPrompt({ ...a, age }) }],
         temperature: 0.6,
-        max_tokens: 900,
+        max_tokens: 1600,
         response_format: { type: 'json_object' },
       }),
     })
-    if (!res.ok) return NextResponse.json({ tasks: fallback, source: 'fallback' })
+    if (!res.ok) return NextResponse.json({ ...fallback, source: 'fallback' })
     const data = await res.json()
-    const tasks = parseTasks(data?.choices?.[0]?.message?.content ?? '')
+    const parsed = parseResult(data?.choices?.[0]?.message?.content ?? '')
     if (!isPremiumPlan(plan)) await incrementAiUsage(user.id)
-    return NextResponse.json({ tasks: tasks ?? fallback, source: tasks ? 'ai' : 'fallback' })
+    return NextResponse.json(parsed ? { ...parsed, source: 'ai' } : { ...fallback, source: 'fallback' })
   } catch {
-    return NextResponse.json({ tasks: fallback, source: 'fallback' })
+    return NextResponse.json({ ...fallback, source: 'fallback' })
   }
 }

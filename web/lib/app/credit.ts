@@ -1,5 +1,27 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Child } from '@/lib/types'
+import type { Child, Task } from '@/lib/types'
+
+/**
+ * Reduce the reward if the proof was submitted after the task's scheduled time
+ * (VN time-of-day). Returns the adjusted coins + whether it was late.
+ */
+export function lateAdjusted(
+  reward: number,
+  task: Pick<Task, 'scheduled_time' | 'has_penalty' | 'penalty_percent'>,
+  submittedAtIso: string | null,
+): { earned: number; wasLate: boolean } {
+  if (!task.scheduled_time || !task.has_penalty || !submittedAtIso) {
+    return { earned: reward, wasLate: false }
+  }
+  const vn = new Date(new Date(submittedAtIso).getTime() + 7 * 3600 * 1000)
+  const submittedMin = vn.getUTCHours() * 60 + vn.getUTCMinutes()
+  const [h, m] = task.scheduled_time.split(':').map(Number)
+  const scheduledMin = h * 60 + (m || 0)
+  if (submittedMin > scheduledMin) {
+    return { earned: Math.round(reward * (1 - task.penalty_percent / 100)), wasLate: true }
+  }
+  return { earned: reward, wasLate: false }
+}
 
 /** Split an amount into the 3 jars: save 40%, share 20%, spend the rest. */
 export function splitJars(amount: number) {
