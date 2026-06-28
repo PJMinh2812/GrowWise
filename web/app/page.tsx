@@ -6,6 +6,7 @@ import { Pricing } from "@/components/landing/pricing";
 import { DownloadCTA } from "@/components/landing/download-cta";
 import { Header } from "@/components/landing/header";
 import { Footer } from "@/components/landing/footer";
+import { LandingJsonLd } from "@/components/landing/json-ld";
 import { getPlanPrices } from "@/lib/app/plan-prices";
 import { getLang } from "@/lib/i18n-server";
 import { LangProvider } from "@/components/app/LangProvider";
@@ -16,6 +17,7 @@ export default async function LandingPage() {
   const [prices, lang] = await Promise.all([getPlanPrices(), getLang()]);
   return (
     <LangProvider initialLang={lang}>
+      <LandingJsonLd />
       <div className="landing-theme min-h-screen bg-white">
         <Header />
         <main>

@@ -15,16 +15,40 @@ const nunitoSans = Nunito_Sans({
   weight: ["400", "500", "600", "700"],
 });
 
+const SITE_URL = "https://www.growwise.io.vn";
+const TITLE = "GrowWise - Dạy con yêu tiền, đúng cách, đúng lúc";
+const DESCRIPTION =
+  "GrowWise giúp trẻ học quản lý tiền qua nhiệm vụ hằng ngày, hệ thống 3 hũ và trợ lý AI thông minh. Ứng dụng giáo dục tài chính #1 cho trẻ em Việt Nam.";
+
 export const metadata: Metadata = {
-  title: "GrowWise - Dạy con yêu tiền, đúng cách, đúng lúc",
-  description: "GrowWise giúp trẻ học quản lý tiền qua nhiệm vụ hằng ngày, hệ thống 3 hũ và trợ lý AI thông minh. Ứng dụng giáo dục tài chính #1 cho trẻ em Việt Nam.",
+  metadataBase: new URL(SITE_URL),
+  title: TITLE,
+  description: DESCRIPTION,
   keywords: ["giáo dục tài chính", "trẻ em", "quản lý tiền", "tiết kiệm", "Việt Nam", "GrowWise"],
-  authors: [{ name: "GrowWise" }],
+  authors: [{ name: "GrowWise", url: SITE_URL }],
+  alternates: { canonical: "/" },
+  robots: { index: true, follow: true },
   openGraph: {
-    title: "GrowWise - Dạy con yêu tiền, đúng cách, đúng lúc",
-    description: "GrowWise giúp trẻ học quản lý tiền qua nhiệm vụ hằng ngày, hệ thống 3 hũ và trợ lý AI thông minh.",
+    title: TITLE,
+    description: DESCRIPTION,
     type: "website",
     locale: "vi_VN",
+    url: SITE_URL,
+    siteName: "GrowWise",
+    images: [
+      {
+        url: "/logo.jpg",
+        width: 1000,
+        height: 1000,
+        alt: "GrowWise - Dạy con yêu tiền, đúng cách, đúng lúc",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+    images: ["/logo.jpg"],
   },
 };
 
