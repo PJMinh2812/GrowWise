@@ -37,9 +37,9 @@ export const metadata: Metadata = {
     siteName: "GrowWise",
     images: [
       {
-        url: "/logo.jpg",
-        width: 1000,
-        height: 1000,
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
         alt: "GrowWise - Dạy con yêu tiền, đúng cách, đúng lúc",
       },
     ],
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: TITLE,
     description: DESCRIPTION,
-    images: ["/logo.jpg"],
+    images: ["/opengraph-image"],
   },
 };
 
