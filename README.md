@@ -22,8 +22,8 @@
     <img src="https://img.shields.io/badge/Download%20APK-v2.2.0-34A853?style=for-the-badge&logo=android&logoColor=white" alt="Download APK" />
   </a>
   &nbsp;
-  <a href="https://grow-wise-blue.vercel.app/">
-    <img src="https://img.shields.io/badge/Website-grow--wise--blue.vercel.app-000000?style=for-the-badge&logo=vercel&logoColor=white" alt="Website" />
+  <a href="https://www.growwise.io.vn/">
+    <img src="https://img.shields.io/badge/Website-growwise.io.vn-000000?style=for-the-badge&logo=vercel&logoColor=white" alt="Website" />
   </a>
 </p>
 
@@ -158,7 +158,7 @@ const supabaseAnonKey = '<your-anon-key>';
 ### 3. Cấu hình môi trường Admin
 
 ```bash
-cd admin
+cd web
 cp .env.example .env.local   # hoặc tạo mới
 ```
 
@@ -194,7 +194,7 @@ flutter pub get
 flutter run
 
 # Admin panel (terminal khác)
-cd admin
+cd web
 pnpm install
 pnpm dev          # http://localhost:3000
 ```
